@@ -1,0 +1,47 @@
+samples:
+  # - HD1328-4-0
+  # - HD1328-7-1
+  # - HD1328-7-2
+  # - HD1328-7-3
+  # - HD1328-8-1
+  # - HD1328-8-2
+  # - HD1328-8-3
+
+  # - YYS1417-2-0
+  # - YYS1328-7-1
+
+  # - PIFACS1328-7-1
+
+  # - YYS1328-7-1spikein
+
+  # - replicate1-Glycerol
+  # - replicate1-SPAST
+  # - replicate1-YEPD
+  # - replicate2-Glycerol
+  # - replicate2-SPAST
+  # - replicate2-YEPD
+  # - replicate3-Glycerol
+  # - replicate3-SPAST
+  # - replicate3-YEPD
+  # - RAWreplicate3-Glycerol
+  # - RAWreplicate3-SPAST
+  # - RAWreplicate3-YEPD
+  # - MergeReplicate-Glycerol
+  # - MergeReplicate-SPAST
+  # - MergeReplicate-YEPD
+  - 1260
+  - 1463
+
+sample_group_name: Erastin_treatment
+
+initial_time_point: 0
+
+first_round_hard_filtering_cutoff: 4
+
+input_dir: /data/c/yangyusheng_optimized/DIT_HAP_preprocessing_pipeline/results
+input_suffix: .Reads
+
+gene_IDs_names_products: /data/c/yangyusheng_optimized/resource/Pombase_FTP/release/20230701/gene_IDs_names_products.tsv
+hayles_essentiality: references/Hayles_2013_OB_merged_categories.xlsx
+Genome_regions_CDS_intron_IGR_annotated: references/20230701/Genome_regions_CDS_intron_IGR_annotated.bed
+

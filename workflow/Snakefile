@@ -2,3 +2,41 @@
 # Please follow the best practices: 
 # https://snakemake.readthedocs.io/en/stable/snakefiles/best_practices.html,
 # in particular regarding the standardized folder structure mentioned there. 
+
+from snakemake.utils import min_version
+from pathlib import Path
+import pandas as pd
+
+min_version("6.0")
+
+configfile: "config/config.yaml"
+project_name = config["project_name"]
+project_dir = Path("results/" + config["project_name"])
+input_dir = Path(config["raw_data"])
+genome_reference = config["genome_reference"]
+output_dir = Path(config["outputfolder"])
+gff3_file = config["pombe_gff"]
+peptide_stats = config["pombe_peptide"]
+fai_file = config["pombe_fai"]
+gene_product_file = config["gene_product"]
+gene_essentiality_file = config["gene_essentiality"]
+output_dir = Path(config["outputfolder"])
+
+samples_with_timepoints = pd.read_csv(config["samples_with_timepoints"], index_col=0)
+samples = samples_with_timepoints.columns.tolist()
+timepoints = samples_with_timepoints.index.tolist()
+
+rule all:
+    input:
+        # output_dir / "Genome_regions_CDS_intron_IGR_annotated.bed",
+        # expand(project_dir/"8_filtered_reads/{sample}.filtered.Reads", sample=samples),
+        # project_dir/f"9_annotated_insertions/{config['project_name']}.annotated.csv"
+        # expand(project_dir/"10_reformatted_insertions/{sample}.csv", sample=samples),
+        # expand(project_dir/"6_merged/{sample}/{sample}-{timepoint}.bed", sample=samples, timepoint=timepoints),
+        # directory(project_dir/"11_normalization/")
+        project_dir/f"12_concated_values/{project_name}.Confidence_score.csv"
+
+include: "rules/making_genome_intervals.smk"
+include: "rules/preprocessing.smk"
+include: "rules/annotating_and_normalizing.smk"
+include: "rules/depletion_curve_smoothing.smk"

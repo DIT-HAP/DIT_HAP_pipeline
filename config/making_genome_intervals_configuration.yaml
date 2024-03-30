@@ -1,0 +1,7 @@
+pombe_gff: resources/20230701/Schizosaccharomyces_pombe_all_chromosomes.gff3
+pombe_fai: resources/20230701/Schizosaccharomyces_pombe_all_chromosomes.fa.fai
+gene_product: resources/20230701/gene_IDs_names_products.tsv
+pombe_peptide: resources/20230701/PeptideStats.tsv
+gene_essentiality: resources/Hayles_2013_OB_merged_categories.xlsx
+
+outputfolder: results/genome_intervals

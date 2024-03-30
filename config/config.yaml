@@ -1,0 +1,32 @@
+
+project_name: DIT_HAP
+# preprocessing configuration
+samples_with_timepoints: config/samples_timepoints.csv
+raw_data: /data/c/yangyusheng_optimized/DIT_HAP_preprocessing_pipeline/data/5_insertions
+genome_reference: resources/20230701/Schizosaccharomyces_pombe_all_chromosomes.fa
+
+
+# making genome intervals configuration
+pombe_gff: resources/20230701/Schizosaccharomyces_pombe_all_chromosomes.gff3
+pombe_fai: resources/20230701/Schizosaccharomyces_pombe_all_chromosomes.fa.fai
+gene_product: resources/20230701/gene_IDs_names_products.tsv
+pombe_peptide: resources/20230701/PeptideStats.tsv
+gene_essentiality: resources/Hayles_2013_OB_merged_categories.xlsx
+
+outputfolder: results/genome_intervals
+
+# annotating and normalizing configuration
+initial_time_point: 0h
+first_round_hard_filtering_cutoff: 4
+
+
+# depletion curve smoothing configuration
+level:
+  - Site
+  - Bin
+  - Domain
+  - Gene
+
+start_timepoint: YES0
+unused_timepoints:
+  - Diploid

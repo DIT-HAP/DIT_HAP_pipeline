@@ -1,0 +1,2 @@
+['0h', 'YES0', 'YES1', 'YES2', 'YES3', 'YES4']
+[PosixPath('results/DIT_HAP/6_merged/HD1328-7-1/HD1328-7-1-0h.bed'), PosixPath('results/DIT_HAP/6_merged/HD1328-7-1/HD1328-7-1-YES0.bed'), PosixPath('results/DIT_HAP/6_merged/HD1328-7-1/HD1328-7-1-YES1.bed'), PosixPath('results/DIT_HAP/6_merged/HD1328-7-1/HD1328-7-1-YES2.bed'), PosixPath('results/DIT_HAP/6_merged/HD1328-7-1/HD1328-7-1-YES3.bed'), PosixPath('results/DIT_HAP/6_merged/HD1328-7-1/HD1328-7-1-YES4.bed')]
