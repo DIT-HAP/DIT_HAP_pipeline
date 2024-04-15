@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 
+
 def assign_protein_domain(row, domain):
     Gene = row["Systematic ID"]
     if Gene in domain["Systematic ID"].values:

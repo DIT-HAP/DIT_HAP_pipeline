@@ -108,3 +108,20 @@ rule annotate_the_genome_regions:
             -o {output}
         """
 
+rule create_bed_for_each_nucleotide:
+    input:
+        gff3=gff3_file,
+        peptide_stats=peptide_stats
+    output:
+        output_dir / "nucletides_for_each_coding_region.bed"
+    params:
+        cores=56
+    shell:
+        """
+        python workflow/scripts/making_genome_intervals/create_bed_for_each_nucleotide.py \
+            -g {input.gff3} \
+            -p {input.peptide_stats} \
+            -c {params.cores} \
+            -o {output}
+        """
+

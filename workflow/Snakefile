@@ -28,13 +28,15 @@ timepoints = samples_with_timepoints.index.tolist()
 
 rule all:
     input:
-        # output_dir / "Genome_regions_CDS_intron_IGR_annotated.bed",
+        output_dir / "nucletides_for_each_coding_region.bed",
         # expand(project_dir/"8_filtered_reads/{sample}.filtered.Reads", sample=samples),
         # project_dir/f"9_annotated_insertions/{config['project_name']}.annotated.csv"
         # expand(project_dir/"10_reformatted_insertions/{sample}.csv", sample=samples),
         # expand(project_dir/"6_merged/{sample}/{sample}-{timepoint}.bed", sample=samples, timepoint=timepoints),
         # directory(project_dir/"11_normalization/")
-        project_dir/f"12_concated_values/{project_name}.Confidence_score.csv"
+        # expand(project_dir/f"15_curve_fitting/{project_name}.{{smooth}}.site.csv", smooth=["before_smoothing", "after_smoothing"]),
+        expand(project_dir/f"15_curve_fitting/{project_name}.{{smooth}}.gene.csv", smooth=["before_smoothing", "after_smoothing"])
+
 
 include: "rules/making_genome_intervals.smk"
 include: "rules/preprocessing.smk"

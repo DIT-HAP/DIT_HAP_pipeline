@@ -79,33 +79,33 @@ checkpoint normalization:
         -o {output}
         """
 
-# def FWHM_analysis_and_filtering_input(wildcards):
-#     checkpoint_output = checkpoints.normalization.get(**wildcards).output.ouput
-#     return f"data/4_second_round_normalization/{wildcards.sample}.normalized.csv"
+def FWHM_analysis_and_filtering_input(wildcards):
+    checkpoint_output = checkpoints.normalization.get(**wildcards).output
+    return project_dir/f"11_normalization/normalized_values/{wildcards.sample}.normalized.csv"
 
-# checkpoint FWHM_analysis_and_filtering:
-#     input:
-#         normalized_reads = FWHM_analysis_and_filtering_input,
-#     output:
-#         FWHM_report = report("reports/FWHM_analysis_and_filtering/FWHM_report/{sample}.FWHM_report.csv"),
-#         FWHM_plot = report("reports/FWHM_analysis_and_filtering/FWHM_plot/{sample}.FWHM_plot.pdf"),
-#         MA_plot = report("reports/FWHM_analysis_and_filtering/MA_plot/{sample}.MA_plot.pdf"),
-#         filtered_reads = "data/5_FWHM_filtered_reads/{sample}.normalized.csv",
-#         Ms = "data/5_FWHM_filtered_reads/{sample}.M.csv",
-#         As = "data/5_FWHM_filtered_reads/{sample}.A.csv"
-#     params:
-#         initial_time_point=config["initial_time_point"]
-#     shell:
-#         """
-#         python src/FWHM_analysis_and_filtering.py \
-#         -i {input.normalized_reads} \
-#         -itp {params.initial_time_point} \
-#         -or {output.filtered_reads} \
-#         -om {output.Ms} \
-#         -oa {output.As} \
-#         -r {output.FWHM_report} \
-#         -f {output.FWHM_plot} \
-#         -ma {output.MA_plot}
-#         """
+checkpoint FWHM_analysis_and_filtering:
+    input:
+        normalized_reads = FWHM_analysis_and_filtering_input,
+    output:
+        FWHM_report = report("reports/FWHM_analysis_and_filtering/FWHM_report/{sample}.FWHM_report.csv"),
+        FWHM_plot = report("reports/FWHM_analysis_and_filtering/FWHM_plot/{sample}.FWHM_plot.pdf"),
+        MA_plot = report("reports/FWHM_analysis_and_filtering/MA_plot/{sample}.MA_plot.pdf"),
+        filtered_reads = project_dir/"12_FWHM_filtered_reads/{sample}.normalized.csv",
+        Ms = project_dir/"12_FWHM_filtered_reads/{sample}.M.csv",
+        As = project_dir/"12_FWHM_filtered_reads/{sample}.A.csv"
+    params:
+        initial_time_point=config["initial_time_point"]
+    shell:
+        """
+        python workflow/scripts/annotating_and_normalizing/FWHM_analysis_and_filtering.py \
+        -i {input.normalized_reads} \
+        -itp {params.initial_time_point} \
+        -or {output.filtered_reads} \
+        -om {output.Ms} \
+        -oa {output.As} \
+        -r {output.FWHM_report} \
+        -f {output.FWHM_plot} \
+        -ma {output.MA_plot}
+        """
 
 

@@ -22,7 +22,8 @@ def main(args):
     sample_name = args.input.name.split(".")[0]
 
     # read data
-    normalized_reads = pd.read_csv(args.input, header=0, index_col=[0, 1, 2, 3, 4])
+    normalized_reads = pd.read_csv(
+        args.input, header=0, index_col=[0, 1, 2, 3])
     log2_reads = np.log2(normalized_reads[init_timepoint] + 1)
 
     # FWHM plot
@@ -32,7 +33,8 @@ def main(args):
     FWHM_statistic.loc[sample_name, "FWHM"] = FWHM
     FWHM_statistic.loc[sample_name, "cutoff_x"] = cutoff_x
     FWHM_statistic.loc[sample_name, "peak_x"] = peak_x
-    FWHM_statistic.rename_axis("Sample").to_csv(args.report, header=True, index=True, float_format="%.3f")
+    FWHM_statistic.rename_axis("Sample").to_csv(
+        args.report, header=True, index=True, float_format="%.3f")
 
     # FWHM filtering
     filtered_reads = normalized_reads[log2_reads > cutoff_x].copy()
@@ -50,8 +52,10 @@ def main(args):
     # MA plot
     MA_plot(Ms, As, args.MA)
 
+
 def FWHM_calculate(values, sample_name, pdf_file):
-    kde_x, kde_y = sns.histplot(values, bins=50, kde=True).get_lines()[0].get_data()
+    kde_x, kde_y = sns.histplot(values, bins=50, kde=True).get_lines()[
+        0].get_data()
     density = stats.gaussian_kde(values)
     density_y = density(kde_x)
     factor = np.max(kde_y) / np.max(density_y)
