@@ -32,3 +32,13 @@ unused_timepoints:
   - Diploid
 
 domain_file: resources/UP000002485_284812_SCHPO_v4_and_vDulab_annotated_PAE_domain_based_on_pLDDT.tsv
+
+fatols:
+  # - 5e-1
+  # - 1e-1
+  # - 5e-2
+  # - 1e-2
+  - 5e-3
+  # - 1e-3
+  # - 5e-4
+  # - 1e-4

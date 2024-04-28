@@ -35,7 +35,11 @@ rule all:
         # expand(project_dir/"6_merged/{sample}/{sample}-{timepoint}.bed", sample=samples, timepoint=timepoints),
         # directory(project_dir/"11_normalization/")
         # expand(project_dir/f"15_curve_fitting/{project_name}.{{smooth}}.site.csv", smooth=["before_smoothing", "after_smoothing"]),
-        expand(project_dir/f"15_curve_fitting/{project_name}.{{smooth}}.gene.csv", smooth=["before_smoothing", "after_smoothing"])
+        # expand(project_dir/f"15_curve_fitting/{project_name}.{{smooth}}.gene.csv", smooth=["before_smoothing", "after_smoothing"])
+        # project_dir/f"14_integrated_values/{project_name}.GMs.csv",
+        # project_dir/f"14_integrated_values/{project_name}.annotated_with_domains.csv"
+        # project_dir/f"15_curve_fitting/{project_name}.LOWESSTrue.domain.csv"
+        expand(project_dir/f"15_curve_fitting/{project_name}.fit{{fitting}}.pred{{prediction}}.LOWESS{{LOWESS}}.fatol{{fatol}}.{{level}}.csv", fitting=["points5", "points7"], prediction=["points5", "points9", "points9g", "points13g"], LOWESS=[0, 1], level=["domain", "gene"], fatol=config["fatols"])
 
 
 include: "rules/making_genome_intervals.smk"
