@@ -28,8 +28,10 @@ def main(args):
         genome_region.columns.tolist(), insertion_names, "_Interval"
     )
     insertions_with_annotation = insertions_bed.intersect(
-        genome_region_bed, wa=True, wb=True
-    ).to_dataframe(names=insertion_names + genome_region_names)
+        genome_region_bed, wa=True, wb=True)
+
+    insertions_with_annotation = insertions_with_annotation.to_dataframe(
+        names=insertion_names + genome_region_names)
 
     insertions_with_annotation.rename(
         columns={"#Chr_Interval": "Chr_Interval"}, inplace=True

@@ -1,124 +1,120 @@
 
-# rule fastp_preprocessing:
-#     input:
-#         input_dir+"/{sample}-{timepoint}_1.fq.gz"
-#     output:
-#         fq="data/1_trimmed/{sample}/{sample}-{timepoint}.fq.gz",
-#         html="reports/fastp/{sample}/{sample}-{timepoint}.fastp.html",
-#         json="reports/fastp/{sample}/{sample}-{timepoint}.fastp.json"
-#     log:
-#         "logs/fastp/{sample}/{sample}-{timepoint}.log"
-#     threads: 8
-#     shell:
-#         """
-#         fastp --adapter_sequence CTGTCTCTTATACACATCT \
-#               --disable_quality_filtering \
-#               --disable_length_filtering \
-#               --overrepresentation_analysis \
-#               -j {output.json} \
-#               -h {output.html} \
-#               --thread {threads} \
-#               --in1 {input} \
-#               -o {output.fq} > {log}
-#         """
-
-# rule dissect_PBL_PBR:
-#     input:
-#         rules.fastp_preprocessing.output.fq
-#     output:
-#         outPBL="data/2_dissected/{sample}/{sample}-{timepoint}.PBL.fq.gz",
-#         outPBR="data/2_dissected/{sample}/{sample}-{timepoint}.PBR.fq.gz",
-#         summary="reports/dissect_PBL_PBR/{sample}/{sample}-{timepoint}_reads_summary.csv"
-#     log:
-#         "logs/dissect_PBL_PBR/{sample}/{sample}-{timepoint}.log"
-#     shell:
-#         "python src/dissect_PBL_and_PBR.py -i {input} -ol {output.outPBL} -or {output.outPBR} -s {output.summary} > {log}"
-
-# rule merge_read_summary:
-#     # input:
-#         # expand("reports/dissect_PBL_PBR/{sample}/{sample}-{timepoint}_reads_summary.csv", sample=config["samples"], timepoint=config["timepoints"])
-#         # expand(rules.dissect_PBL_PBR.output.summary, sample=config["samples"], timepoint=config["timepoints"])
-#     params:
-#         input_dir = "reports/dissect_PBL_PBR"
-#     output:
-#         report("reports/dissect_PBL_PBR/reads_summary.csv")
-#     run:
-#         import pandas as pd
-#         from pathlib import Path
-#         input_dir = Path(params.input_dir)
-#         input_files = input_dir.glob("*/*_reads_summary.csv")
-#         df = pd.concat(
-#             [pd.read_csv(f, sep="\t") for f in input_files], 
-#             axis=0
-#         )
-#         df.sort_values(by=df.columns[0], inplace=True)
-#         df.to_csv(output[0], index=False)
-
-# rule bwa_mem_mapping:
-#     input:
-#         ref=genome_reference,
-#         fqIn="data/2_dissected/{sample}/{sample}-{timepoint}.{PBtype}.fq.gz"
-#     output:
-#         "data/3_mapped/{sample}/{sample}-{timepoint}.{PBtype}.sam"
-#     log:
-#         "logs/bwa_mem_mapping/{sample}/{sample}-{timepoint}.{PBtype}.log"
-#     threads: 8
-#     shell:
-#         """
-#         bwa mem -t {threads} {input.ref} {input.fqIn} \
-#         | samtools sort -@ {threads} -O SAM -o {output} - > {log}
-#         """
-
-# rule samtools_filtering:
-#     input:
-#         rules.bwa_mem_mapping.output
-#     output:
-#         "data/4_filtered/{sample}/{sample}-{timepoint}.{PBtype}.unique.sam"
-#     log:
-#         "logs/samtools_filtering/{sample}/{sample}-{timepoint}.{PBtype}.log"
-#     params:
-#         filter="(flag==0||flag==16)&&([NM]&&[NM]<=3)&&(!(([XA])||([SA])))&&(ncigar==1)"
-#     threads: 8
-#     shell:
-#         """
-#         samtools view -@ {threads} -h -q 1 -e "{params.filter}" {input} > {output} 2> {log}
-#         """
-
-# rule extract_insertions:
-#     input:
-#         rules.samtools_filtering.output
-#     output:
-#         "data/5_insertions/{sample}/{sample}-{timepoint}.{PBtype}.bed"
-
-#     log:
-#         "logs/extract_insertions/{sample}/{sample}-{timepoint}.{PBtype}.log"
-#     threads: 8
-#     shell:
-#         """
-#         python src/extract_insertions.py -i {input} -o {output} -n {threads} > {log}
-#         """
-
-rule cp_insertions:
+rule fastp_preprocessing:
     input:
-        PBL=input_dir/"{sample}/{sample}-{timepoint}.PBL.bed",
-        PBR=input_dir/"{sample}/{sample}-{timepoint}.PBR.bed"
+        input_dir/"{sample}-{timepoint}_1.fq.gz"
     output:
-        PBL=project_dir/"5_insertions/{sample}/{sample}-{timepoint}.PBL.bed",
-        PBR=project_dir/"5_insertions/{sample}/{sample}-{timepoint}.PBR.bed"
+        fq=project_dir/"1_trimmed/{sample}/{sample}-{timepoint}.fq.gz",
+        html=f"reports/{project_name}/fastp/{{sample}}/{{sample}}-{{timepoint}}.fastp.html",
+        json=f"reports/{project_name}/fastp/{{sample}}/{{sample}}-{{timepoint}}.fastp.json"
+    log:
+        f"logs/{project_name}/fastp/{{sample}}/{{sample}}-{{timepoint}}.log"
+    threads: 8
     shell:
         """
-        cp {input.PBL} {output.PBL}
-        cp {input.PBR} {output.PBR}
+        fastp --adapter_sequence CTGTCTCTTATACACATCT \
+              --disable_quality_filtering \
+              --disable_length_filtering \
+              --overrepresentation_analysis \
+              -j {output.json} \
+              -h {output.html} \
+              --thread {threads} \
+              --in1 {input} \
+              -o {output.fq} > {log}
         """
+
+rule dissect_PBL_PBR:
+    input:
+        rules.fastp_preprocessing.output.fq
+    output:
+        outPBL=project_dir/"2_dissected/{sample}/{sample}-{timepoint}.PBL.fq.gz",
+        outPBR=project_dir/"2_dissected/{sample}/{sample}-{timepoint}.PBR.fq.gz",
+        summary=f"reports/{project_name}/dissect_PBL_PBR/{{sample}}/{{sample}}-{{timepoint}}_reads_summary.csv"
+    log:
+        f"logs/{project_name}/dissect_PBL_PBR/{{sample}}/{{sample}}-{{timepoint}}.log"
+    shell:
+        "python workflow/scripts/preprocessing/dissect_PBL_and_PBR.py -i {input} -ol {output.outPBL} -or {output.outPBR} -s {output.summary} > {log}"
+
+rule merge_read_summary:
+    params:
+        inputs = f"reports/{project_name}/dissect_PBL_PBR/"
+    output:
+        report(f"reports/{project_name}/dissect_PBL_PBR/reads_summary.csv")
+    run:
+        import pandas as pd
+        from pathlib import Path
+        input_dir = Path(params.inputs)
+        input_files = input_dir.glob("*/*_reads_summary.csv")
+        df = pd.concat(
+            [pd.read_csv(f, sep="\t") for f in input_files], 
+            axis=0
+        )
+        df.sort_values(by=df.columns[0], inplace=True)
+        df.to_csv(output[0], index=False)
+
+rule bwa_mem_mapping:
+    input:
+        ref=genome_reference,
+        fqIn=project_dir/"2_dissected/{sample}/{sample}-{timepoint}.{PBtype}.fq.gz"
+    output:
+        project_dir/"3_mapped/{sample}/{sample}-{timepoint}.{PBtype}.sam"
+    log:
+        f"logs/{project_name}/bwa_mem_mapping/{{sample}}/{{sample}}-{{timepoint}}.{{PBtype}}.log"
+    threads: 8
+    shell:
+        """
+        bwa mem -t {threads} {input.ref} {input.fqIn} \
+        | samtools sort -@ {threads} -O SAM -o {output} - > {log}
+        """
+
+rule samtools_filtering:
+    input:
+        rules.bwa_mem_mapping.output
+    output:
+        project_dir/"4_filtered/{sample}/{sample}-{timepoint}.{PBtype}.unique.sam"
+    log:
+        f"logs/{project_name}/samtools_filtering/{{sample}}/{{sample}}-{{timepoint}}.{{PBtype}}.log"
+    params:
+        filter="(flag==0||flag==16)&&([NM]&&[NM]<=3)&&(!(([XA])||([SA])))&&(ncigar==1)"
+    threads: 8
+    shell:
+        """
+        samtools view -@ {threads} -h -q 1 -e "{params.filter}" {input} > {output} 2> {log}
+        """
+
+rule extract_insertions:
+    input:
+        rules.samtools_filtering.output
+    output:
+        project_dir/"5_insertions/{sample}/{sample}-{timepoint}.{PBtype}.bed"
+    log:
+        f"logs/{project_name}/extract_insertions/{{sample}}/{{sample}}-{{timepoint}}.{{PBtype}}.log"
+    threads: 8
+    shell:
+        """
+        python workflow/scripts/preprocessing/extract_insertions.py -i {input} -o {output} -n {threads} > {log}
+        """
+
+# rule cp_insertions:
+#     input:
+#         PBL=input_dir/"{sample}/{sample}-{timepoint}.PBL.bed",
+#         PBR=input_dir/"{sample}/{sample}-{timepoint}.PBR.bed"
+#     output:
+#         PBL=project_dir/"5_insertions/{sample}/{sample}-{timepoint}.PBL.bed",
+#         PBR=project_dir/"5_insertions/{sample}/{sample}-{timepoint}.PBR.bed"
+#     shell:
+#         """
+#         cp {input.PBL} {output.PBL}
+#         cp {input.PBR} {output.PBR}
+#         """
 
 rule merge_insertions:
     input:
-        PBL_insertions=rules.cp_insertions.output.PBL,
-        PBR_insertions=rules.cp_insertions.output.PBR
+        PBL_insertions=project_dir/"5_insertions/{sample}/{sample}-{timepoint}.PBL.bed",
+        PBR_insertions=project_dir/"5_insertions/{sample}/{sample}-{timepoint}.PBR.bed"
     output:
         project_dir/"6_merged/{sample}/{sample}-{timepoint}.bed"
     log:
-        "workflow/logs/merge_insertions/{sample}/{sample}-{timepoint}.log"
+        f"logs/{project_name}/merge_insertions/{{sample}}/{{sample}}-{{timepoint}}.log"
     shell:
         """
         python workflow/scripts/preprocessing/merge_insertions.py \
@@ -136,7 +132,7 @@ rule concat_timepoints:
         PBR=project_dir/"7_concated/{sample}/{sample}.PBR",
         Reads=project_dir/"7_concated/{sample}/{sample}.Reads"
     log:
-        "workflow/logs/concat_timepoints/{sample}.log"
+        f"logs/{project_name}/concat_timepoints/{{sample}}.log"
     params:
         timepoints = timepoints
     shell:

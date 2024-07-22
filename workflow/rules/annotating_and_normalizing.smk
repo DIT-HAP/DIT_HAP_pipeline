@@ -87,9 +87,9 @@ checkpoint FWHM_analysis_and_filtering:
     input:
         normalized_reads = FWHM_analysis_and_filtering_input,
     output:
-        FWHM_report = report("reports/FWHM_analysis_and_filtering/FWHM_report/{sample}.FWHM_report.csv"),
-        FWHM_plot = report("reports/FWHM_analysis_and_filtering/FWHM_plot/{sample}.FWHM_plot.pdf"),
-        MA_plot = report("reports/FWHM_analysis_and_filtering/MA_plot/{sample}.MA_plot.pdf"),
+        FWHM_report = report(f"reports/{project_name}/FWHM_analysis_and_filtering/FWHM_report/{{sample}}.FWHM_report.csv"),
+        FWHM_plot = report(f"reports/{project_name}/FWHM_analysis_and_filtering/FWHM_plot/{{sample}}.FWHM_plot.pdf"),
+        MA_plot = report(f"reports/{project_name}/FWHM_analysis_and_filtering/MA_plot/{{sample}}.MA_plot.pdf"),
         filtered_reads = project_dir/"12_FWHM_filtered_reads/{sample}.normalized.csv",
         Ms = project_dir/"12_FWHM_filtered_reads/{sample}.M.csv",
         As = project_dir/"12_FWHM_filtered_reads/{sample}.A.csv"

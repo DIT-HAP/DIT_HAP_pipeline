@@ -10,29 +10,31 @@ from Bio import SeqIO
 import pandas as pd
 
 
-def main(argv):
+def parse_arguments():
     # add argument parser
     parser = argparse.ArgumentParser(
         description="This script is to dissect the PBL and PBR reads from the trimmed reads."
     )
-    parser.add_argument("-i", "--input", help="The input file of trimmed reads.")
     parser.add_argument(
-        "-ol", "--outputPBL", help="The output file of dissected PBL reads."
+        "-i", "--input", type=Path, help="The input file of trimmed reads.")
+    parser.add_argument(
+        "-ol", "--outputPBL", type=Path, help="The output file of dissected PBL reads."
     )
     parser.add_argument(
-        "-or", "--outputPBR", help="The output file of dissected PBR reads."
+        "-or", "--outputPBR", type=Path, help="The output file of dissected PBR reads."
     )
-    parser.add_argument("-s", "--summary", help="The summary file of dissected reads.")
+    parser.add_argument("-s", "--summary", type=Path,
+                        help="The summary file of dissected reads.")
     parser.add_argument("-n", "--cores", help="The number of cores to use.")
-    args = parser.parse_args()
 
-    # Get the input files
-    inputFile = Path(args.input)
-    outputPBLFile = Path(args.outputPBL)
-    outputPBRFile = Path(args.outputPBR)
-    summaryFile = Path(args.summary)
+    return parser.parse_args()
 
-    if not summaryFile.exists():
+
+def main():
+
+    args = parse_arguments()
+
+    if not args.summary.exists():
         # Add headers to the summary file
         summaryHeader = [
             "Fastq File",
@@ -46,11 +48,11 @@ def main(argv):
             "Reads with TTAA",
             "Fraction of reads with TTAA",
         ]
-        with open(summaryFile, "w") as summary_handle:
+        with open(args.summary, "w") as summary_handle:
             summary_handle.write("\t".join(summaryHeader) + "\n")
 
     # Dissect the reads
-    dissect_reads(inputFile, outputPBLFile, outputPBRFile, summaryFile)
+    dissect_reads(args.input, args.outputPBL, args.outputPBR, args.summary)
 
 
 def dissect_reads(fqIn, PBLout, PBRout, summaryInfo):
@@ -138,4 +140,4 @@ def dissect_reads(fqIn, PBLout, PBRout, summaryInfo):
 
 
 if __name__ == "__main__":
-    main(sys.argv[1:])
+    main()

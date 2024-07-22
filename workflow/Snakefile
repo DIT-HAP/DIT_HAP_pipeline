@@ -29,9 +29,9 @@ timepoints = samples_with_timepoints.index.tolist()
 rule all:
     input:
         output_dir / "nucletides_for_each_coding_region.bed",
-        # expand(project_dir/"8_filtered_reads/{sample}.filtered.Reads", sample=samples),
+        expand(project_dir/"7_concated/{sample}/{sample}.Reads", sample=samples),
         # project_dir/f"9_annotated_insertions/{config['project_name']}.annotated.csv"
-        # expand(project_dir/"10_reformatted_insertions/{sample}.csv", sample=samples),
+        # expand(project_dir/"12_FWHM_filtered_reads/{sample}.normalized.csv", sample=samples),
         # expand(project_dir/"6_merged/{sample}/{sample}-{timepoint}.bed", sample=samples, timepoint=timepoints),
         # directory(project_dir/"11_normalization/")
         # expand(project_dir/f"15_curve_fitting/{project_name}.{{smooth}}.site.csv", smooth=["before_smoothing", "after_smoothing"]),
@@ -39,7 +39,8 @@ rule all:
         # project_dir/f"14_integrated_values/{project_name}.GMs.csv",
         # project_dir/f"14_integrated_values/{project_name}.annotated_with_domains.csv"
         # project_dir/f"15_curve_fitting/{project_name}.LOWESSTrue.domain.csv"
-        expand(project_dir/f"15_curve_fitting/{project_name}.fit{{fitting}}.pred{{prediction}}.LOWESS{{LOWESS}}.fatol{{fatol}}.{{level}}.csv", fitting=["points5", "points7"], prediction=["points5", "points9", "points9g", "points13g"], LOWESS=[0, 1], level=["domain", "gene"], fatol=config["fatols"])
+        # expand(project_dir/"12_FWHM_filtered_reads/{sample}.A.csv", sample=samples),
+        # expand(project_dir/f"15_curve_fitting/{project_name}.fit{{fitting}}.pred{{prediction}}.LOWESS{{LOWESS}}.fatol{{fatol}}.{{level}}.csv", fitting=["points5"], prediction=["points5"], LOWESS=[0, 1], level=["domain", "gene"], fatol=config["fatols"])
 
 
 include: "rules/making_genome_intervals.smk"

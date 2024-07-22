@@ -1,0 +1,819 @@
+Assuming unrestricted shared filesystem usage.
+Building DAG of jobs...
+Using shell: /usr/bin/bash
+Provided cores: 48
+Rules claiming more threads will be scaled down.
+Job stats:
+job                    count
+-------------------  -------
+all                        1
+bwa_mem_mapping            6
+concat_timepoints          1
+dissect_PBL_PBR            3
+extract_insertions         6
+fastp_preprocessing        3
+merge_insertions           3
+samtools_filtering         6
+total                     29
+
+Select jobs to execute...
+Execute 3 jobs...
+
+[Fri Jun 21 14:25:10 2024]
+localrule fastp_preprocessing:
+    input: /hugedata/YushengYang/20240621_resequencing_YES456/01.RawData/reseqYYS1328-7-1-YES6_1.fq.gz
+    output: results/DIT_HAP_reseq2/1_trimmed/reseqYYS1328-7-1/reseqYYS1328-7-1-YES6.fq.gz, reports/DIT_HAP_reseq2/fastp/reseqYYS1328-7-1/reseqYYS1328-7-1-YES6.fastp.html, reports/DIT_HAP_reseq2/fastp/reseqYYS1328-7-1/reseqYYS1328-7-1-YES6.fastp.json
+    log: logs/DIT_HAP_reseq2/fastp/reseqYYS1328-7-1/reseqYYS1328-7-1-YES6.log
+    jobid: 26
+    reason: Missing output files: results/DIT_HAP_reseq2/1_trimmed/reseqYYS1328-7-1/reseqYYS1328-7-1-YES6.fq.gz
+    wildcards: sample=reseqYYS1328-7-1, timepoint=YES6
+    threads: 8
+    resources: tmpdir=/tmp
+
+
+        fastp --adapter_sequence CTGTCTCTTATACACATCT               --disable_quality_filtering               --disable_length_filtering               --overrepresentation_analysis               -j reports/DIT_HAP_reseq2/fastp/reseqYYS1328-7-1/reseqYYS1328-7-1-YES6.fastp.json               -h reports/DIT_HAP_reseq2/fastp/reseqYYS1328-7-1/reseqYYS1328-7-1-YES6.fastp.html               --thread 8               --in1 /hugedata/YushengYang/20240621_resequencing_YES456/01.RawData/reseqYYS1328-7-1-YES6_1.fq.gz               -o results/DIT_HAP_reseq2/1_trimmed/reseqYYS1328-7-1/reseqYYS1328-7-1-YES6.fq.gz > logs/DIT_HAP_reseq2/fastp/reseqYYS1328-7-1/reseqYYS1328-7-1-YES6.log
+        
+
+[Fri Jun 21 14:25:11 2024]
+localrule fastp_preprocessing:
+    input: /hugedata/YushengYang/20240621_resequencing_YES456/01.RawData/reseqYYS1328-7-1-YES4_1.fq.gz
+    output: results/DIT_HAP_reseq2/1_trimmed/reseqYYS1328-7-1/reseqYYS1328-7-1-YES4.fq.gz, reports/DIT_HAP_reseq2/fastp/reseqYYS1328-7-1/reseqYYS1328-7-1-YES4.fastp.html, reports/DIT_HAP_reseq2/fastp/reseqYYS1328-7-1/reseqYYS1328-7-1-YES4.fastp.json
+    log: logs/DIT_HAP_reseq2/fastp/reseqYYS1328-7-1/reseqYYS1328-7-1-YES4.log
+    jobid: 8
+    reason: Missing output files: results/DIT_HAP_reseq2/1_trimmed/reseqYYS1328-7-1/reseqYYS1328-7-1-YES4.fq.gz
+    wildcards: sample=reseqYYS1328-7-1, timepoint=YES4
+    threads: 8
+    resources: tmpdir=/tmp
+
+
+        fastp --adapter_sequence CTGTCTCTTATACACATCT               --disable_quality_filtering               --disable_length_filtering               --overrepresentation_analysis               -j reports/DIT_HAP_reseq2/fastp/reseqYYS1328-7-1/reseqYYS1328-7-1-YES4.fastp.json               -h reports/DIT_HAP_reseq2/fastp/reseqYYS1328-7-1/reseqYYS1328-7-1-YES4.fastp.html               --thread 8               --in1 /hugedata/YushengYang/20240621_resequencing_YES456/01.RawData/reseqYYS1328-7-1-YES4_1.fq.gz               -o results/DIT_HAP_reseq2/1_trimmed/reseqYYS1328-7-1/reseqYYS1328-7-1-YES4.fq.gz > logs/DIT_HAP_reseq2/fastp/reseqYYS1328-7-1/reseqYYS1328-7-1-YES4.log
+        
+
+[Fri Jun 21 14:25:11 2024]
+localrule fastp_preprocessing:
+    input: /hugedata/YushengYang/20240621_resequencing_YES456/01.RawData/reseqYYS1328-7-1-YES5_1.fq.gz
+    output: results/DIT_HAP_reseq2/1_trimmed/reseqYYS1328-7-1/reseqYYS1328-7-1-YES5.fq.gz, reports/DIT_HAP_reseq2/fastp/reseqYYS1328-7-1/reseqYYS1328-7-1-YES5.fastp.html, reports/DIT_HAP_reseq2/fastp/reseqYYS1328-7-1/reseqYYS1328-7-1-YES5.fastp.json
+    log: logs/DIT_HAP_reseq2/fastp/reseqYYS1328-7-1/reseqYYS1328-7-1-YES5.log
+    jobid: 17
+    reason: Missing output files: results/DIT_HAP_reseq2/1_trimmed/reseqYYS1328-7-1/reseqYYS1328-7-1-YES5.fq.gz
+    wildcards: sample=reseqYYS1328-7-1, timepoint=YES5
+    threads: 8
+    resources: tmpdir=/tmp
+
+
+        fastp --adapter_sequence CTGTCTCTTATACACATCT               --disable_quality_filtering               --disable_length_filtering               --overrepresentation_analysis               -j reports/DIT_HAP_reseq2/fastp/reseqYYS1328-7-1/reseqYYS1328-7-1-YES5.fastp.json               -h reports/DIT_HAP_reseq2/fastp/reseqYYS1328-7-1/reseqYYS1328-7-1-YES5.fastp.html               --thread 8               --in1 /hugedata/YushengYang/20240621_resequencing_YES456/01.RawData/reseqYYS1328-7-1-YES5_1.fq.gz               -o results/DIT_HAP_reseq2/1_trimmed/reseqYYS1328-7-1/reseqYYS1328-7-1-YES5.fq.gz > logs/DIT_HAP_reseq2/fastp/reseqYYS1328-7-1/reseqYYS1328-7-1-YES5.log
+        
+Read1 before filtering:
+total reads: 17750717
+total bases: 2662607550
+Q20 bases: 2601321565(97.6983%)
+Q30 bases: 2506571368(94.1397%)
+
+Read1 after filtering:
+total reads: 17750717
+total bases: 2462300022
+Q20 bases: 2432391363(98.7853%)
+Q30 bases: 2368913229(96.2073%)
+
+Filtering result:
+reads passed filter: 17750717
+reads failed due to low quality: 0
+reads failed due to too many N: 0
+reads with adapter trimmed: 3770452
+bases trimmed due to adapters: 200307528
+
+Duplication rate (may be overestimated since this is SE data): 72.7519%
+
+JSON report: reports/DIT_HAP_reseq2/fastp/reseqYYS1328-7-1/reseqYYS1328-7-1-YES5.fastp.json
+HTML report: reports/DIT_HAP_reseq2/fastp/reseqYYS1328-7-1/reseqYYS1328-7-1-YES5.fastp.html
+
+fastp --adapter_sequence CTGTCTCTTATACACATCT --disable_quality_filtering --disable_length_filtering --overrepresentation_analysis -j reports/DIT_HAP_reseq2/fastp/reseqYYS1328-7-1/reseqYYS1328-7-1-YES5.fastp.json -h reports/DIT_HAP_reseq2/fastp/reseqYYS1328-7-1/reseqYYS1328-7-1-YES5.fastp.html --thread 8 --in1 /hugedata/YushengYang/20240621_resequencing_YES456/01.RawData/reseqYYS1328-7-1-YES5_1.fq.gz -o results/DIT_HAP_reseq2/1_trimmed/reseqYYS1328-7-1/reseqYYS1328-7-1-YES5.fq.gz 
+fastp v0.23.4, time used: 61 seconds
+[Fri Jun 21 14:26:12 2024]
+Finished job 17.
+1 of 29 steps (3%) done
+Select jobs to execute...
+Execute 1 jobs...
+
+[Fri Jun 21 14:26:12 2024]
+localrule dissect_PBL_PBR:
+    input: results/DIT_HAP_reseq2/1_trimmed/reseqYYS1328-7-1/reseqYYS1328-7-1-YES5.fq.gz
+    output: results/DIT_HAP_reseq2/2_dissected/reseqYYS1328-7-1/reseqYYS1328-7-1-YES5.PBL.fq.gz, results/DIT_HAP_reseq2/2_dissected/reseqYYS1328-7-1/reseqYYS1328-7-1-YES5.PBR.fq.gz, reports/DIT_HAP_reseq2/dissect_PBL_PBR/reseqYYS1328-7-1/reseqYYS1328-7-1-YES5_reads_summary.csv
+    log: logs/DIT_HAP_reseq2/dissect_PBL_PBR/reseqYYS1328-7-1/reseqYYS1328-7-1-YES5.log
+    jobid: 16
+    reason: Missing output files: results/DIT_HAP_reseq2/2_dissected/reseqYYS1328-7-1/reseqYYS1328-7-1-YES5.PBR.fq.gz, results/DIT_HAP_reseq2/2_dissected/reseqYYS1328-7-1/reseqYYS1328-7-1-YES5.PBL.fq.gz; Input files updated by another job: results/DIT_HAP_reseq2/1_trimmed/reseqYYS1328-7-1/reseqYYS1328-7-1-YES5.fq.gz
+    wildcards: sample=reseqYYS1328-7-1, timepoint=YES5
+    resources: tmpdir=/tmp
+
+python workflow/scripts/preprocessing/dissect_PBL_and_PBR.py -i results/DIT_HAP_reseq2/1_trimmed/reseqYYS1328-7-1/reseqYYS1328-7-1-YES5.fq.gz -ol results/DIT_HAP_reseq2/2_dissected/reseqYYS1328-7-1/reseqYYS1328-7-1-YES5.PBL.fq.gz -or results/DIT_HAP_reseq2/2_dissected/reseqYYS1328-7-1/reseqYYS1328-7-1-YES5.PBR.fq.gz -s reports/DIT_HAP_reseq2/dissect_PBL_PBR/reseqYYS1328-7-1/reseqYYS1328-7-1-YES5_reads_summary.csv > logs/DIT_HAP_reseq2/dissect_PBL_PBR/reseqYYS1328-7-1/reseqYYS1328-7-1-YES5.log
+Read1 before filtering:
+total reads: 18803698
+total bases: 2820554700
+Q20 bases: 2757348544(97.7591%)
+Q30 bases: 2660262632(94.317%)
+
+Read1 after filtering:
+total reads: 18803697
+total bases: 2621064504
+Q20 bases: 2589412519(98.7924%)
+Q30 bases: 2522109385(96.2246%)
+
+Filtering result:
+reads passed filter: 18803697
+reads failed due to low quality: 0
+reads failed due to too many N: 0
+reads with adapter trimmed: 3723122
+bases trimmed due to adapters: 199490196
+
+Duplication rate (may be overestimated since this is SE data): 72.9753%
+
+JSON report: reports/DIT_HAP_reseq2/fastp/reseqYYS1328-7-1/reseqYYS1328-7-1-YES4.fastp.json
+HTML report: reports/DIT_HAP_reseq2/fastp/reseqYYS1328-7-1/reseqYYS1328-7-1-YES4.fastp.html
+
+fastp --adapter_sequence CTGTCTCTTATACACATCT --disable_quality_filtering --disable_length_filtering --overrepresentation_analysis -j reports/DIT_HAP_reseq2/fastp/reseqYYS1328-7-1/reseqYYS1328-7-1-YES4.fastp.json -h reports/DIT_HAP_reseq2/fastp/reseqYYS1328-7-1/reseqYYS1328-7-1-YES4.fastp.html --thread 8 --in1 /hugedata/YushengYang/20240621_resequencing_YES456/01.RawData/reseqYYS1328-7-1-YES4_1.fq.gz -o results/DIT_HAP_reseq2/1_trimmed/reseqYYS1328-7-1/reseqYYS1328-7-1-YES4.fq.gz 
+fastp v0.23.4, time used: 62 seconds
+[Fri Jun 21 14:26:13 2024]
+Finished job 8.
+2 of 29 steps (7%) done
+Select jobs to execute...
+Execute 1 jobs...
+
+[Fri Jun 21 14:26:13 2024]
+localrule dissect_PBL_PBR:
+    input: results/DIT_HAP_reseq2/1_trimmed/reseqYYS1328-7-1/reseqYYS1328-7-1-YES4.fq.gz
+    output: results/DIT_HAP_reseq2/2_dissected/reseqYYS1328-7-1/reseqYYS1328-7-1-YES4.PBL.fq.gz, results/DIT_HAP_reseq2/2_dissected/reseqYYS1328-7-1/reseqYYS1328-7-1-YES4.PBR.fq.gz, reports/DIT_HAP_reseq2/dissect_PBL_PBR/reseqYYS1328-7-1/reseqYYS1328-7-1-YES4_reads_summary.csv
+    log: logs/DIT_HAP_reseq2/dissect_PBL_PBR/reseqYYS1328-7-1/reseqYYS1328-7-1-YES4.log
+    jobid: 7
+    reason: Missing output files: results/DIT_HAP_reseq2/2_dissected/reseqYYS1328-7-1/reseqYYS1328-7-1-YES4.PBL.fq.gz, results/DIT_HAP_reseq2/2_dissected/reseqYYS1328-7-1/reseqYYS1328-7-1-YES4.PBR.fq.gz; Input files updated by another job: results/DIT_HAP_reseq2/1_trimmed/reseqYYS1328-7-1/reseqYYS1328-7-1-YES4.fq.gz
+    wildcards: sample=reseqYYS1328-7-1, timepoint=YES4
+    resources: tmpdir=/tmp
+
+python workflow/scripts/preprocessing/dissect_PBL_and_PBR.py -i results/DIT_HAP_reseq2/1_trimmed/reseqYYS1328-7-1/reseqYYS1328-7-1-YES4.fq.gz -ol results/DIT_HAP_reseq2/2_dissected/reseqYYS1328-7-1/reseqYYS1328-7-1-YES4.PBL.fq.gz -or results/DIT_HAP_reseq2/2_dissected/reseqYYS1328-7-1/reseqYYS1328-7-1-YES4.PBR.fq.gz -s reports/DIT_HAP_reseq2/dissect_PBL_PBR/reseqYYS1328-7-1/reseqYYS1328-7-1-YES4_reads_summary.csv > logs/DIT_HAP_reseq2/dissect_PBL_PBR/reseqYYS1328-7-1/reseqYYS1328-7-1-YES4.log
+Read1 before filtering:
+total reads: 26735360
+total bases: 4010304000
+Q20 bases: 3915360462(97.6325%)
+Q30 bases: 3772410644(94.0679%)
+
+Read1 after filtering:
+total reads: 26735360
+total bases: 3687184848
+Q20 bases: 3640651483(98.738%)
+Q30 bases: 3542310111(96.0709%)
+
+Filtering result:
+reads passed filter: 26735360
+reads failed due to low quality: 0
+reads failed due to too many N: 0
+reads with adapter trimmed: 6193048
+bases trimmed due to adapters: 323119152
+
+Duplication rate (may be overestimated since this is SE data): 73.2654%
+
+JSON report: reports/DIT_HAP_reseq2/fastp/reseqYYS1328-7-1/reseqYYS1328-7-1-YES6.fastp.json
+HTML report: reports/DIT_HAP_reseq2/fastp/reseqYYS1328-7-1/reseqYYS1328-7-1-YES6.fastp.html
+
+fastp --adapter_sequence CTGTCTCTTATACACATCT --disable_quality_filtering --disable_length_filtering --overrepresentation_analysis -j reports/DIT_HAP_reseq2/fastp/reseqYYS1328-7-1/reseqYYS1328-7-1-YES6.fastp.json -h reports/DIT_HAP_reseq2/fastp/reseqYYS1328-7-1/reseqYYS1328-7-1-YES6.fastp.html --thread 8 --in1 /hugedata/YushengYang/20240621_resequencing_YES456/01.RawData/reseqYYS1328-7-1-YES6_1.fq.gz -o results/DIT_HAP_reseq2/1_trimmed/reseqYYS1328-7-1/reseqYYS1328-7-1-YES6.fq.gz 
+fastp v0.23.4, time used: 84 seconds
+[Fri Jun 21 14:26:35 2024]
+Finished job 26.
+3 of 29 steps (10%) done
+Select jobs to execute...
+Execute 1 jobs...
+
+[Fri Jun 21 14:26:35 2024]
+localrule dissect_PBL_PBR:
+    input: results/DIT_HAP_reseq2/1_trimmed/reseqYYS1328-7-1/reseqYYS1328-7-1-YES6.fq.gz
+    output: results/DIT_HAP_reseq2/2_dissected/reseqYYS1328-7-1/reseqYYS1328-7-1-YES6.PBL.fq.gz, results/DIT_HAP_reseq2/2_dissected/reseqYYS1328-7-1/reseqYYS1328-7-1-YES6.PBR.fq.gz, reports/DIT_HAP_reseq2/dissect_PBL_PBR/reseqYYS1328-7-1/reseqYYS1328-7-1-YES6_reads_summary.csv
+    log: logs/DIT_HAP_reseq2/dissect_PBL_PBR/reseqYYS1328-7-1/reseqYYS1328-7-1-YES6.log
+    jobid: 25
+    reason: Missing output files: results/DIT_HAP_reseq2/2_dissected/reseqYYS1328-7-1/reseqYYS1328-7-1-YES6.PBR.fq.gz, results/DIT_HAP_reseq2/2_dissected/reseqYYS1328-7-1/reseqYYS1328-7-1-YES6.PBL.fq.gz; Input files updated by another job: results/DIT_HAP_reseq2/1_trimmed/reseqYYS1328-7-1/reseqYYS1328-7-1-YES6.fq.gz
+    wildcards: sample=reseqYYS1328-7-1, timepoint=YES6
+    resources: tmpdir=/tmp
+
+python workflow/scripts/preprocessing/dissect_PBL_and_PBR.py -i results/DIT_HAP_reseq2/1_trimmed/reseqYYS1328-7-1/reseqYYS1328-7-1-YES6.fq.gz -ol results/DIT_HAP_reseq2/2_dissected/reseqYYS1328-7-1/reseqYYS1328-7-1-YES6.PBL.fq.gz -or results/DIT_HAP_reseq2/2_dissected/reseqYYS1328-7-1/reseqYYS1328-7-1-YES6.PBR.fq.gz -s reports/DIT_HAP_reseq2/dissect_PBL_PBR/reseqYYS1328-7-1/reseqYYS1328-7-1-YES6_reads_summary.csv > logs/DIT_HAP_reseq2/dissect_PBL_PBR/reseqYYS1328-7-1/reseqYYS1328-7-1-YES6.log
+[Fri Jun 21 14:53:49 2024]
+Finished job 16.
+4 of 29 steps (14%) done
+Select jobs to execute...
+Execute 2 jobs...
+
+[Fri Jun 21 14:53:49 2024]
+localrule bwa_mem_mapping:
+    input: resources/20230701/Schizosaccharomyces_pombe_all_chromosomes.fa, results/DIT_HAP_reseq2/2_dissected/reseqYYS1328-7-1/reseqYYS1328-7-1-YES5.PBL.fq.gz
+    output: results/DIT_HAP_reseq2/3_mapped/reseqYYS1328-7-1/reseqYYS1328-7-1-YES5.PBL.sam
+    log: logs/DIT_HAP_reseq2/bwa_mem_mapping/reseqYYS1328-7-1/reseqYYS1328-7-1-YES5.PBL.log
+    jobid: 15
+    reason: Missing output files: results/DIT_HAP_reseq2/3_mapped/reseqYYS1328-7-1/reseqYYS1328-7-1-YES5.PBL.sam; Input files updated by another job: results/DIT_HAP_reseq2/2_dissected/reseqYYS1328-7-1/reseqYYS1328-7-1-YES5.PBL.fq.gz
+    wildcards: sample=reseqYYS1328-7-1, timepoint=YES5, PBtype=PBL
+    threads: 8
+    resources: tmpdir=/tmp
+
+
+        bwa mem -t 8 resources/20230701/Schizosaccharomyces_pombe_all_chromosomes.fa results/DIT_HAP_reseq2/2_dissected/reseqYYS1328-7-1/reseqYYS1328-7-1-YES5.PBL.fq.gz         | samtools sort -@ 8 -O SAM -o results/DIT_HAP_reseq2/3_mapped/reseqYYS1328-7-1/reseqYYS1328-7-1-YES5.PBL.sam - > logs/DIT_HAP_reseq2/bwa_mem_mapping/reseqYYS1328-7-1/reseqYYS1328-7-1-YES5.PBL.log
+        
+
+[Fri Jun 21 14:53:49 2024]
+localrule bwa_mem_mapping:
+    input: resources/20230701/Schizosaccharomyces_pombe_all_chromosomes.fa, results/DIT_HAP_reseq2/2_dissected/reseqYYS1328-7-1/reseqYYS1328-7-1-YES5.PBR.fq.gz
+    output: results/DIT_HAP_reseq2/3_mapped/reseqYYS1328-7-1/reseqYYS1328-7-1-YES5.PBR.sam
+    log: logs/DIT_HAP_reseq2/bwa_mem_mapping/reseqYYS1328-7-1/reseqYYS1328-7-1-YES5.PBR.log
+    jobid: 20
+    reason: Missing output files: results/DIT_HAP_reseq2/3_mapped/reseqYYS1328-7-1/reseqYYS1328-7-1-YES5.PBR.sam; Input files updated by another job: results/DIT_HAP_reseq2/2_dissected/reseqYYS1328-7-1/reseqYYS1328-7-1-YES5.PBR.fq.gz
+    wildcards: sample=reseqYYS1328-7-1, timepoint=YES5, PBtype=PBR
+    threads: 8
+    resources: tmpdir=/tmp
+
+
+        bwa mem -t 8 resources/20230701/Schizosaccharomyces_pombe_all_chromosomes.fa results/DIT_HAP_reseq2/2_dissected/reseqYYS1328-7-1/reseqYYS1328-7-1-YES5.PBR.fq.gz         | samtools sort -@ 8 -O SAM -o results/DIT_HAP_reseq2/3_mapped/reseqYYS1328-7-1/reseqYYS1328-7-1-YES5.PBR.sam - > logs/DIT_HAP_reseq2/bwa_mem_mapping/reseqYYS1328-7-1/reseqYYS1328-7-1-YES5.PBR.log
+        
+[M::bwa_idx_load_from_disk] read 0 ALT contigs
+[M::bwa_idx_load_from_disk] read 0 ALT contigs
+[M::process] read 754660 sequences (80000087 bp)...
+[M::process] read 837604 sequences (80000047 bp)...
+[M::process] read 748128 sequences (80000190 bp)...
+[M::process] read 835842 sequences (80000113 bp)...
+[M::mem_process_seqs] Processed 754660 reads in 32.127 CPU sec, 3.939 real sec
+[M::mem_process_seqs] Processed 837604 reads in 33.093 CPU sec, 4.057 real sec
+[M::process] read 837850 sequences (80000056 bp)...
+[M::process] read 746712 sequences (80000063 bp)...
+[M::mem_process_seqs] Processed 748128 reads in 32.439 CPU sec, 3.912 real sec
+[M::mem_process_seqs] Processed 835842 reads in 34.304 CPU sec, 4.214 real sec
+[M::process] read 755064 sequences (80000198 bp)...
+[M::process] read 835822 sequences (80000190 bp)...
+[M::mem_process_seqs] Processed 746712 reads in 33.335 CPU sec, 4.011 real sec
+[M::mem_process_seqs] Processed 837850 reads in 36.828 CPU sec, 4.408 real sec
+[M::process] read 450962 sequences (48143306 bp)...
+[M::process] read 828960 sequences (80000067 bp)...
+[M::mem_process_seqs] Processed 755064 reads in 34.424 CPU sec, 4.328 real sec
+[M::mem_process_seqs] Processed 835822 reads in 34.762 CPU sec, 4.200 real sec
+[M::mem_process_seqs] Processed 450962 reads in 20.945 CPU sec, 2.578 real sec
+[main] Version: 0.7.17-r1188
+[main] CMD: bwa mem -t 8 resources/20230701/Schizosaccharomyces_pombe_all_chromosomes.fa results/DIT_HAP_reseq2/2_dissected/reseqYYS1328-7-1/reseqYYS1328-7-1-YES5.PBL.fq.gz
+[main] Real time: 20.358 sec; CPU: 154.749 sec
+[bam_sort_core] merging from 0 files and 8 in-memory blocks...
+[M::process] read 833238 sequences (80000111 bp)...
+[M::mem_process_seqs] Processed 828960 reads in 33.931 CPU sec, 4.133 real sec
+[M::process] read 831540 sequences (80000059 bp)...
+[M::mem_process_seqs] Processed 833238 reads in 29.849 CPU sec, 3.540 real sec
+[Fri Jun 21 14:54:16 2024]
+Finished job 15.
+5 of 29 steps (17%) done
+Select jobs to execute...
+Execute 1 jobs...
+
+[Fri Jun 21 14:54:16 2024]
+localrule samtools_filtering:
+    input: results/DIT_HAP_reseq2/3_mapped/reseqYYS1328-7-1/reseqYYS1328-7-1-YES5.PBL.sam
+    output: results/DIT_HAP_reseq2/4_filtered/reseqYYS1328-7-1/reseqYYS1328-7-1-YES5.PBL.unique.sam
+    log: logs/DIT_HAP_reseq2/samtools_filtering/reseqYYS1328-7-1/reseqYYS1328-7-1-YES5.PBL.log
+    jobid: 14
+    reason: Missing output files: results/DIT_HAP_reseq2/4_filtered/reseqYYS1328-7-1/reseqYYS1328-7-1-YES5.PBL.unique.sam; Input files updated by another job: results/DIT_HAP_reseq2/3_mapped/reseqYYS1328-7-1/reseqYYS1328-7-1-YES5.PBL.sam
+    wildcards: sample=reseqYYS1328-7-1, timepoint=YES5, PBtype=PBL
+    threads: 8
+    resources: tmpdir=/tmp
+
+
+        samtools view -@ 8 -h -q 1 -e "(flag==0||flag==16)&&([NM]&&[NM]<=3)&&(!(([XA])||([SA])))&&(ncigar==1)" results/DIT_HAP_reseq2/3_mapped/reseqYYS1328-7-1/reseqYYS1328-7-1-YES5.PBL.sam > results/DIT_HAP_reseq2/4_filtered/reseqYYS1328-7-1/reseqYYS1328-7-1-YES5.PBL.unique.sam 2> logs/DIT_HAP_reseq2/samtools_filtering/reseqYYS1328-7-1/reseqYYS1328-7-1-YES5.PBL.log
+        
+[M::process] read 829030 sequences (80000005 bp)...
+[M::mem_process_seqs] Processed 831540 reads in 30.463 CPU sec, 3.716 real sec
+[M::process] read 832096 sequences (80000118 bp)...
+[M::mem_process_seqs] Processed 829030 reads in 29.475 CPU sec, 3.509 real sec
+[Fri Jun 21 14:54:23 2024]
+Finished job 14.
+6 of 29 steps (21%) done
+Select jobs to execute...
+Execute 1 jobs...
+
+[Fri Jun 21 14:54:23 2024]
+localrule extract_insertions:
+    input: results/DIT_HAP_reseq2/4_filtered/reseqYYS1328-7-1/reseqYYS1328-7-1-YES5.PBL.unique.sam
+    output: results/DIT_HAP_reseq2/5_insertions/reseqYYS1328-7-1/reseqYYS1328-7-1-YES5.PBL.bed
+    log: logs/DIT_HAP_reseq2/extract_insertions/reseqYYS1328-7-1/reseqYYS1328-7-1-YES5.PBL.log
+    jobid: 13
+    reason: Missing output files: results/DIT_HAP_reseq2/5_insertions/reseqYYS1328-7-1/reseqYYS1328-7-1-YES5.PBL.bed; Input files updated by another job: results/DIT_HAP_reseq2/4_filtered/reseqYYS1328-7-1/reseqYYS1328-7-1-YES5.PBL.unique.sam
+    wildcards: sample=reseqYYS1328-7-1, timepoint=YES5, PBtype=PBL
+    threads: 8
+    resources: tmpdir=/tmp
+
+
+        python workflow/scripts/preprocessing/extract_insertions.py -i results/DIT_HAP_reseq2/4_filtered/reseqYYS1328-7-1/reseqYYS1328-7-1-YES5.PBL.unique.sam -o results/DIT_HAP_reseq2/5_insertions/reseqYYS1328-7-1/reseqYYS1328-7-1-YES5.PBL.bed -n 8 > logs/DIT_HAP_reseq2/extract_insertions/reseqYYS1328-7-1/reseqYYS1328-7-1-YES5.PBL.log
+        
+[M::process] read 829190 sequences (80000119 bp)...
+[M::mem_process_seqs] Processed 832096 reads in 29.932 CPU sec, 3.665 real sec
+[M::process] read 835822 sequences (80000051 bp)...
+[M::mem_process_seqs] Processed 829190 reads in 29.722 CPU sec, 3.524 real sec
+[M::process] read 836602 sequences (80000195 bp)...
+[M::mem_process_seqs] Processed 835822 reads in 31.807 CPU sec, 3.900 real sec
+[M::process] read 834872 sequences (80000167 bp)...
+[M::mem_process_seqs] Processed 836602 reads in 32.387 CPU sec, 3.882 real sec
+[M::process] read 833946 sequences (80000161 bp)...
+[M::mem_process_seqs] Processed 834872 reads in 32.956 CPU sec, 4.083 real sec
+[M::process] read 364767 sequences (35222702 bp)...
+[M::mem_process_seqs] Processed 833946 reads in 31.648 CPU sec, 3.847 real sec
+[M::mem_process_seqs] Processed 364767 reads in 13.749 CPU sec, 1.707 real sec
+[main] Version: 0.7.17-r1188
+[main] CMD: bwa mem -t 8 resources/20230701/Schizosaccharomyces_pombe_all_chromosomes.fa results/DIT_HAP_reseq2/2_dissected/reseqYYS1328-7-1/reseqYYS1328-7-1-YES5.PBR.fq.gz
+[main] Real time: 57.962 sec; CPU: 466.380 sec
+[bam_sort_core] merging from 0 files and 8 in-memory blocks...
+[Fri Jun 21 14:55:02 2024]
+Finished job 13.
+7 of 29 steps (24%) done
+[Fri Jun 21 14:55:13 2024]
+Finished job 20.
+8 of 29 steps (28%) done
+Select jobs to execute...
+Execute 1 jobs...
+
+[Fri Jun 21 14:55:13 2024]
+localrule samtools_filtering:
+    input: results/DIT_HAP_reseq2/3_mapped/reseqYYS1328-7-1/reseqYYS1328-7-1-YES5.PBR.sam
+    output: results/DIT_HAP_reseq2/4_filtered/reseqYYS1328-7-1/reseqYYS1328-7-1-YES5.PBR.unique.sam
+    log: logs/DIT_HAP_reseq2/samtools_filtering/reseqYYS1328-7-1/reseqYYS1328-7-1-YES5.PBR.log
+    jobid: 19
+    reason: Missing output files: results/DIT_HAP_reseq2/4_filtered/reseqYYS1328-7-1/reseqYYS1328-7-1-YES5.PBR.unique.sam; Input files updated by another job: results/DIT_HAP_reseq2/3_mapped/reseqYYS1328-7-1/reseqYYS1328-7-1-YES5.PBR.sam
+    wildcards: sample=reseqYYS1328-7-1, timepoint=YES5, PBtype=PBR
+    threads: 8
+    resources: tmpdir=/tmp
+
+
+        samtools view -@ 8 -h -q 1 -e "(flag==0||flag==16)&&([NM]&&[NM]<=3)&&(!(([XA])||([SA])))&&(ncigar==1)" results/DIT_HAP_reseq2/3_mapped/reseqYYS1328-7-1/reseqYYS1328-7-1-YES5.PBR.sam > results/DIT_HAP_reseq2/4_filtered/reseqYYS1328-7-1/reseqYYS1328-7-1-YES5.PBR.unique.sam 2> logs/DIT_HAP_reseq2/samtools_filtering/reseqYYS1328-7-1/reseqYYS1328-7-1-YES5.PBR.log
+        
+[Fri Jun 21 14:55:38 2024]
+Finished job 19.
+9 of 29 steps (31%) done
+Select jobs to execute...
+Execute 1 jobs...
+
+[Fri Jun 21 14:55:38 2024]
+localrule extract_insertions:
+    input: results/DIT_HAP_reseq2/4_filtered/reseqYYS1328-7-1/reseqYYS1328-7-1-YES5.PBR.unique.sam
+    output: results/DIT_HAP_reseq2/5_insertions/reseqYYS1328-7-1/reseqYYS1328-7-1-YES5.PBR.bed
+    log: logs/DIT_HAP_reseq2/extract_insertions/reseqYYS1328-7-1/reseqYYS1328-7-1-YES5.PBR.log
+    jobid: 18
+    reason: Missing output files: results/DIT_HAP_reseq2/5_insertions/reseqYYS1328-7-1/reseqYYS1328-7-1-YES5.PBR.bed; Input files updated by another job: results/DIT_HAP_reseq2/4_filtered/reseqYYS1328-7-1/reseqYYS1328-7-1-YES5.PBR.unique.sam
+    wildcards: sample=reseqYYS1328-7-1, timepoint=YES5, PBtype=PBR
+    threads: 8
+    resources: tmpdir=/tmp
+
+
+        python workflow/scripts/preprocessing/extract_insertions.py -i results/DIT_HAP_reseq2/4_filtered/reseqYYS1328-7-1/reseqYYS1328-7-1-YES5.PBR.unique.sam -o results/DIT_HAP_reseq2/5_insertions/reseqYYS1328-7-1/reseqYYS1328-7-1-YES5.PBR.bed -n 8 > logs/DIT_HAP_reseq2/extract_insertions/reseqYYS1328-7-1/reseqYYS1328-7-1-YES5.PBR.log
+        
+[Fri Jun 21 14:56:51 2024]
+Finished job 7.
+10 of 29 steps (34%) done
+Select jobs to execute...
+Execute 2 jobs...
+
+[Fri Jun 21 14:56:51 2024]
+localrule bwa_mem_mapping:
+    input: resources/20230701/Schizosaccharomyces_pombe_all_chromosomes.fa, results/DIT_HAP_reseq2/2_dissected/reseqYYS1328-7-1/reseqYYS1328-7-1-YES4.PBL.fq.gz
+    output: results/DIT_HAP_reseq2/3_mapped/reseqYYS1328-7-1/reseqYYS1328-7-1-YES4.PBL.sam
+    log: logs/DIT_HAP_reseq2/bwa_mem_mapping/reseqYYS1328-7-1/reseqYYS1328-7-1-YES4.PBL.log
+    jobid: 6
+    reason: Missing output files: results/DIT_HAP_reseq2/3_mapped/reseqYYS1328-7-1/reseqYYS1328-7-1-YES4.PBL.sam; Input files updated by another job: results/DIT_HAP_reseq2/2_dissected/reseqYYS1328-7-1/reseqYYS1328-7-1-YES4.PBL.fq.gz
+    wildcards: sample=reseqYYS1328-7-1, timepoint=YES4, PBtype=PBL
+    threads: 8
+    resources: tmpdir=/tmp
+
+
+        bwa mem -t 8 resources/20230701/Schizosaccharomyces_pombe_all_chromosomes.fa results/DIT_HAP_reseq2/2_dissected/reseqYYS1328-7-1/reseqYYS1328-7-1-YES4.PBL.fq.gz         | samtools sort -@ 8 -O SAM -o results/DIT_HAP_reseq2/3_mapped/reseqYYS1328-7-1/reseqYYS1328-7-1-YES4.PBL.sam - > logs/DIT_HAP_reseq2/bwa_mem_mapping/reseqYYS1328-7-1/reseqYYS1328-7-1-YES4.PBL.log
+        
+
+[Fri Jun 21 14:56:51 2024]
+localrule bwa_mem_mapping:
+    input: resources/20230701/Schizosaccharomyces_pombe_all_chromosomes.fa, results/DIT_HAP_reseq2/2_dissected/reseqYYS1328-7-1/reseqYYS1328-7-1-YES4.PBR.fq.gz
+    output: results/DIT_HAP_reseq2/3_mapped/reseqYYS1328-7-1/reseqYYS1328-7-1-YES4.PBR.sam
+    log: logs/DIT_HAP_reseq2/bwa_mem_mapping/reseqYYS1328-7-1/reseqYYS1328-7-1-YES4.PBR.log
+    jobid: 11
+    reason: Missing output files: results/DIT_HAP_reseq2/3_mapped/reseqYYS1328-7-1/reseqYYS1328-7-1-YES4.PBR.sam; Input files updated by another job: results/DIT_HAP_reseq2/2_dissected/reseqYYS1328-7-1/reseqYYS1328-7-1-YES4.PBR.fq.gz
+    wildcards: sample=reseqYYS1328-7-1, timepoint=YES4, PBtype=PBR
+    threads: 8
+    resources: tmpdir=/tmp
+
+
+        bwa mem -t 8 resources/20230701/Schizosaccharomyces_pombe_all_chromosomes.fa results/DIT_HAP_reseq2/2_dissected/reseqYYS1328-7-1/reseqYYS1328-7-1-YES4.PBR.fq.gz         | samtools sort -@ 8 -O SAM -o results/DIT_HAP_reseq2/3_mapped/reseqYYS1328-7-1/reseqYYS1328-7-1-YES4.PBR.sam - > logs/DIT_HAP_reseq2/bwa_mem_mapping/reseqYYS1328-7-1/reseqYYS1328-7-1-YES4.PBR.log
+        
+[M::bwa_idx_load_from_disk] read 0 ALT contigs
+[M::bwa_idx_load_from_disk] read 0 ALT contigs
+[M::process] read 745248 sequences (80000116 bp)...
+[M::process] read 836930 sequences (80000082 bp)...
+[M::process] read 741392 sequences (80000137 bp)...
+[M::process] read 834142 sequences (80000104 bp)...
+[M::mem_process_seqs] Processed 745248 reads in 32.187 CPU sec, 3.968 real sec
+[M::mem_process_seqs] Processed 836930 reads in 34.105 CPU sec, 4.255 real sec
+[M::process] read 736736 sequences (80000155 bp)...
+[M::process] read 835358 sequences (80000148 bp)...
+[M::mem_process_seqs] Processed 741392 reads in 33.832 CPU sec, 4.355 real sec
+[M::mem_process_seqs] Processed 834142 reads in 34.566 CPU sec, 4.199 real sec
+[M::process] read 737448 sequences (80000125 bp)...
+[M::process] read 827342 sequences (80000107 bp)...
+[M::mem_process_seqs] Processed 736736 reads in 32.826 CPU sec, 3.996 real sec
+[M::mem_process_seqs] Processed 835358 reads in 36.400 CPU sec, 4.430 real sec
+[M::process] read 736884 sequences (80000209 bp)...
+[M::process] read 828876 sequences (80000062 bp)...
+[M::mem_process_seqs] Processed 737448 reads in 31.677 CPU sec, 3.842 real sec
+[M::mem_process_seqs] Processed 827342 reads in 33.276 CPU sec, 4.011 real sec
+[M::process] read 742084 sequences (80000151 bp)...
+[M::process] read 826664 sequences (80000053 bp)...
+[M::mem_process_seqs] Processed 736884 reads in 32.898 CPU sec, 3.985 real sec
+[M::mem_process_seqs] Processed 828876 reads in 34.410 CPU sec, 4.225 real sec
+[M::process] read 740676 sequences (80000055 bp)...
+[M::process] read 826774 sequences (80000150 bp)...
+[M::mem_process_seqs] Processed 742084 reads in 33.482 CPU sec, 4.068 real sec
+[M::mem_process_seqs] Processed 826664 reads in 32.788 CPU sec, 3.926 real sec
+[M::process] read 272920 sequences (29696470 bp)...
+[M::process] read 828106 sequences (80000139 bp)...
+[M::mem_process_seqs] Processed 740676 reads in 36.069 CPU sec, 4.432 real sec
+[M::mem_process_seqs] Processed 826774 reads in 34.686 CPU sec, 4.255 real sec
+[M::mem_process_seqs] Processed 272920 reads in 12.449 CPU sec, 1.492 real sec
+[main] Version: 0.7.17-r1188
+[main] CMD: bwa mem -t 8 resources/20230701/Schizosaccharomyces_pombe_all_chromosomes.fa results/DIT_HAP_reseq2/2_dissected/reseqYYS1328-7-1/reseqYYS1328-7-1-YES4.PBL.fq.gz
+[main] Real time: 31.561 sec; CPU: 246.841 sec
+[bam_sort_core] merging from 0 files and 8 in-memory blocks...
+[M::process] read 824148 sequences (80000083 bp)...
+[M::mem_process_seqs] Processed 828106 reads in 30.499 CPU sec, 3.637 real sec
+[M::process] read 832490 sequences (80000015 bp)...
+[M::mem_process_seqs] Processed 824148 reads in 30.005 CPU sec, 3.645 real sec
+[M::process] read 832080 sequences (80000090 bp)...
+[M::mem_process_seqs] Processed 832490 reads in 31.582 CPU sec, 3.799 real sec
+[Fri Jun 21 14:57:33 2024]
+Finished job 6.
+11 of 29 steps (38%) done
+Select jobs to execute...
+Execute 1 jobs...
+
+[Fri Jun 21 14:57:33 2024]
+localrule samtools_filtering:
+    input: results/DIT_HAP_reseq2/3_mapped/reseqYYS1328-7-1/reseqYYS1328-7-1-YES4.PBL.sam
+    output: results/DIT_HAP_reseq2/4_filtered/reseqYYS1328-7-1/reseqYYS1328-7-1-YES4.PBL.unique.sam
+    log: logs/DIT_HAP_reseq2/samtools_filtering/reseqYYS1328-7-1/reseqYYS1328-7-1-YES4.PBL.log
+    jobid: 5
+    reason: Missing output files: results/DIT_HAP_reseq2/4_filtered/reseqYYS1328-7-1/reseqYYS1328-7-1-YES4.PBL.unique.sam; Input files updated by another job: results/DIT_HAP_reseq2/3_mapped/reseqYYS1328-7-1/reseqYYS1328-7-1-YES4.PBL.sam
+    wildcards: sample=reseqYYS1328-7-1, timepoint=YES4, PBtype=PBL
+    threads: 8
+    resources: tmpdir=/tmp
+
+
+        samtools view -@ 8 -h -q 1 -e "(flag==0||flag==16)&&([NM]&&[NM]<=3)&&(!(([XA])||([SA])))&&(ncigar==1)" results/DIT_HAP_reseq2/3_mapped/reseqYYS1328-7-1/reseqYYS1328-7-1-YES4.PBL.sam > results/DIT_HAP_reseq2/4_filtered/reseqYYS1328-7-1/reseqYYS1328-7-1-YES4.PBL.unique.sam 2> logs/DIT_HAP_reseq2/samtools_filtering/reseqYYS1328-7-1/reseqYYS1328-7-1-YES4.PBL.log
+        
+[M::process] read 830428 sequences (80000142 bp)...
+[M::mem_process_seqs] Processed 832080 reads in 32.578 CPU sec, 3.964 real sec
+[M::process] read 828778 sequences (80000080 bp)...
+[Fri Jun 21 14:57:39 2024]
+Finished job 18.
+12 of 29 steps (41%) done
+Select jobs to execute...
+Execute 1 jobs...
+
+[Fri Jun 21 14:57:39 2024]
+localrule merge_insertions:
+    input: results/DIT_HAP_reseq2/5_insertions/reseqYYS1328-7-1/reseqYYS1328-7-1-YES5.PBL.bed, results/DIT_HAP_reseq2/5_insertions/reseqYYS1328-7-1/reseqYYS1328-7-1-YES5.PBR.bed
+    output: results/DIT_HAP_reseq2/6_merged/reseqYYS1328-7-1/reseqYYS1328-7-1-YES5.bed
+    log: logs/DIT_HAP_reseq2/merge_insertions/reseqYYS1328-7-1/reseqYYS1328-7-1-YES5.log
+    jobid: 12
+    reason: Missing output files: results/DIT_HAP_reseq2/6_merged/reseqYYS1328-7-1/reseqYYS1328-7-1-YES5.bed; Input files updated by another job: results/DIT_HAP_reseq2/5_insertions/reseqYYS1328-7-1/reseqYYS1328-7-1-YES5.PBR.bed, results/DIT_HAP_reseq2/5_insertions/reseqYYS1328-7-1/reseqYYS1328-7-1-YES5.PBL.bed
+    wildcards: sample=reseqYYS1328-7-1, timepoint=YES5
+    resources: tmpdir=/tmp
+
+
+        python workflow/scripts/preprocessing/merge_insertions.py             -il results/DIT_HAP_reseq2/5_insertions/reseqYYS1328-7-1/reseqYYS1328-7-1-YES5.PBL.bed             -ir results/DIT_HAP_reseq2/5_insertions/reseqYYS1328-7-1/reseqYYS1328-7-1-YES5.PBR.bed             -o results/DIT_HAP_reseq2/6_merged/reseqYYS1328-7-1/reseqYYS1328-7-1-YES5.bed > logs/DIT_HAP_reseq2/merge_insertions/reseqYYS1328-7-1/reseqYYS1328-7-1-YES5.log
+        
+[Fri Jun 21 14:57:40 2024]
+Finished job 12.
+13 of 29 steps (45%) done
+[M::mem_process_seqs] Processed 830428 reads in 33.240 CPU sec, 4.012 real sec
+[M::process] read 237916 sequences (23044194 bp)...
+[M::mem_process_seqs] Processed 828778 reads in 30.727 CPU sec, 3.806 real sec
+[Fri Jun 21 14:57:45 2024]
+Finished job 5.
+14 of 29 steps (48%) done
+Select jobs to execute...
+Execute 1 jobs...
+
+[Fri Jun 21 14:57:45 2024]
+localrule extract_insertions:
+    input: results/DIT_HAP_reseq2/4_filtered/reseqYYS1328-7-1/reseqYYS1328-7-1-YES4.PBL.unique.sam
+    output: results/DIT_HAP_reseq2/5_insertions/reseqYYS1328-7-1/reseqYYS1328-7-1-YES4.PBL.bed
+    log: logs/DIT_HAP_reseq2/extract_insertions/reseqYYS1328-7-1/reseqYYS1328-7-1-YES4.PBL.log
+    jobid: 4
+    reason: Missing output files: results/DIT_HAP_reseq2/5_insertions/reseqYYS1328-7-1/reseqYYS1328-7-1-YES4.PBL.bed; Input files updated by another job: results/DIT_HAP_reseq2/4_filtered/reseqYYS1328-7-1/reseqYYS1328-7-1-YES4.PBL.unique.sam
+    wildcards: sample=reseqYYS1328-7-1, timepoint=YES4, PBtype=PBL
+    threads: 8
+    resources: tmpdir=/tmp
+
+
+        python workflow/scripts/preprocessing/extract_insertions.py -i results/DIT_HAP_reseq2/4_filtered/reseqYYS1328-7-1/reseqYYS1328-7-1-YES4.PBL.unique.sam -o results/DIT_HAP_reseq2/5_insertions/reseqYYS1328-7-1/reseqYYS1328-7-1-YES4.PBL.bed -n 8 > logs/DIT_HAP_reseq2/extract_insertions/reseqYYS1328-7-1/reseqYYS1328-7-1-YES4.PBL.log
+        
+[M::mem_process_seqs] Processed 237916 reads in 9.403 CPU sec, 1.134 real sec
+[main] Version: 0.7.17-r1188
+[main] CMD: bwa mem -t 8 resources/20230701/Schizosaccharomyces_pombe_all_chromosomes.fa results/DIT_HAP_reseq2/2_dissected/reseqYYS1328-7-1/reseqYYS1328-7-1-YES4.PBR.fq.gz
+[main] Real time: 54.730 sec; CPU: 439.692 sec
+[bam_sort_core] merging from 0 files and 8 in-memory blocks...
+[Fri Jun 21 14:58:04 2024]
+Finished job 11.
+15 of 29 steps (52%) done
+Select jobs to execute...
+Execute 1 jobs...
+
+[Fri Jun 21 14:58:04 2024]
+localrule samtools_filtering:
+    input: results/DIT_HAP_reseq2/3_mapped/reseqYYS1328-7-1/reseqYYS1328-7-1-YES4.PBR.sam
+    output: results/DIT_HAP_reseq2/4_filtered/reseqYYS1328-7-1/reseqYYS1328-7-1-YES4.PBR.unique.sam
+    log: logs/DIT_HAP_reseq2/samtools_filtering/reseqYYS1328-7-1/reseqYYS1328-7-1-YES4.PBR.log
+    jobid: 10
+    reason: Missing output files: results/DIT_HAP_reseq2/4_filtered/reseqYYS1328-7-1/reseqYYS1328-7-1-YES4.PBR.unique.sam; Input files updated by another job: results/DIT_HAP_reseq2/3_mapped/reseqYYS1328-7-1/reseqYYS1328-7-1-YES4.PBR.sam
+    wildcards: sample=reseqYYS1328-7-1, timepoint=YES4, PBtype=PBR
+    threads: 8
+    resources: tmpdir=/tmp
+
+
+        samtools view -@ 8 -h -q 1 -e "(flag==0||flag==16)&&([NM]&&[NM]<=3)&&(!(([XA])||([SA])))&&(ncigar==1)" results/DIT_HAP_reseq2/3_mapped/reseqYYS1328-7-1/reseqYYS1328-7-1-YES4.PBR.sam > results/DIT_HAP_reseq2/4_filtered/reseqYYS1328-7-1/reseqYYS1328-7-1-YES4.PBR.unique.sam 2> logs/DIT_HAP_reseq2/samtools_filtering/reseqYYS1328-7-1/reseqYYS1328-7-1-YES4.PBR.log
+        
+[Fri Jun 21 14:58:27 2024]
+Finished job 10.
+16 of 29 steps (55%) done
+Select jobs to execute...
+Execute 1 jobs...
+
+[Fri Jun 21 14:58:27 2024]
+localrule extract_insertions:
+    input: results/DIT_HAP_reseq2/4_filtered/reseqYYS1328-7-1/reseqYYS1328-7-1-YES4.PBR.unique.sam
+    output: results/DIT_HAP_reseq2/5_insertions/reseqYYS1328-7-1/reseqYYS1328-7-1-YES4.PBR.bed
+    log: logs/DIT_HAP_reseq2/extract_insertions/reseqYYS1328-7-1/reseqYYS1328-7-1-YES4.PBR.log
+    jobid: 9
+    reason: Missing output files: results/DIT_HAP_reseq2/5_insertions/reseqYYS1328-7-1/reseqYYS1328-7-1-YES4.PBR.bed; Input files updated by another job: results/DIT_HAP_reseq2/4_filtered/reseqYYS1328-7-1/reseqYYS1328-7-1-YES4.PBR.unique.sam
+    wildcards: sample=reseqYYS1328-7-1, timepoint=YES4, PBtype=PBR
+    threads: 8
+    resources: tmpdir=/tmp
+
+
+        python workflow/scripts/preprocessing/extract_insertions.py -i results/DIT_HAP_reseq2/4_filtered/reseqYYS1328-7-1/reseqYYS1328-7-1-YES4.PBR.unique.sam -o results/DIT_HAP_reseq2/5_insertions/reseqYYS1328-7-1/reseqYYS1328-7-1-YES4.PBR.bed -n 8 > logs/DIT_HAP_reseq2/extract_insertions/reseqYYS1328-7-1/reseqYYS1328-7-1-YES4.PBR.log
+        
+[Fri Jun 21 14:58:45 2024]
+Finished job 4.
+17 of 29 steps (59%) done
+[Fri Jun 21 15:00:15 2024]
+Finished job 9.
+18 of 29 steps (62%) done
+Select jobs to execute...
+Execute 1 jobs...
+
+[Fri Jun 21 15:00:15 2024]
+localrule merge_insertions:
+    input: results/DIT_HAP_reseq2/5_insertions/reseqYYS1328-7-1/reseqYYS1328-7-1-YES4.PBL.bed, results/DIT_HAP_reseq2/5_insertions/reseqYYS1328-7-1/reseqYYS1328-7-1-YES4.PBR.bed
+    output: results/DIT_HAP_reseq2/6_merged/reseqYYS1328-7-1/reseqYYS1328-7-1-YES4.bed
+    log: logs/DIT_HAP_reseq2/merge_insertions/reseqYYS1328-7-1/reseqYYS1328-7-1-YES4.log
+    jobid: 3
+    reason: Missing output files: results/DIT_HAP_reseq2/6_merged/reseqYYS1328-7-1/reseqYYS1328-7-1-YES4.bed; Input files updated by another job: results/DIT_HAP_reseq2/5_insertions/reseqYYS1328-7-1/reseqYYS1328-7-1-YES4.PBR.bed, results/DIT_HAP_reseq2/5_insertions/reseqYYS1328-7-1/reseqYYS1328-7-1-YES4.PBL.bed
+    wildcards: sample=reseqYYS1328-7-1, timepoint=YES4
+    resources: tmpdir=/tmp
+
+
+        python workflow/scripts/preprocessing/merge_insertions.py             -il results/DIT_HAP_reseq2/5_insertions/reseqYYS1328-7-1/reseqYYS1328-7-1-YES4.PBL.bed             -ir results/DIT_HAP_reseq2/5_insertions/reseqYYS1328-7-1/reseqYYS1328-7-1-YES4.PBR.bed             -o results/DIT_HAP_reseq2/6_merged/reseqYYS1328-7-1/reseqYYS1328-7-1-YES4.bed > logs/DIT_HAP_reseq2/merge_insertions/reseqYYS1328-7-1/reseqYYS1328-7-1-YES4.log
+        
+[Fri Jun 21 15:00:16 2024]
+Finished job 3.
+19 of 29 steps (66%) done
+[Fri Jun 21 15:09:54 2024]
+Finished job 25.
+20 of 29 steps (69%) done
+Select jobs to execute...
+Execute 2 jobs...
+
+[Fri Jun 21 15:09:54 2024]
+localrule bwa_mem_mapping:
+    input: resources/20230701/Schizosaccharomyces_pombe_all_chromosomes.fa, results/DIT_HAP_reseq2/2_dissected/reseqYYS1328-7-1/reseqYYS1328-7-1-YES6.PBL.fq.gz
+    output: results/DIT_HAP_reseq2/3_mapped/reseqYYS1328-7-1/reseqYYS1328-7-1-YES6.PBL.sam
+    log: logs/DIT_HAP_reseq2/bwa_mem_mapping/reseqYYS1328-7-1/reseqYYS1328-7-1-YES6.PBL.log
+    jobid: 24
+    reason: Missing output files: results/DIT_HAP_reseq2/3_mapped/reseqYYS1328-7-1/reseqYYS1328-7-1-YES6.PBL.sam; Input files updated by another job: results/DIT_HAP_reseq2/2_dissected/reseqYYS1328-7-1/reseqYYS1328-7-1-YES6.PBL.fq.gz
+    wildcards: sample=reseqYYS1328-7-1, timepoint=YES6, PBtype=PBL
+    threads: 8
+    resources: tmpdir=/tmp
+
+
+        bwa mem -t 8 resources/20230701/Schizosaccharomyces_pombe_all_chromosomes.fa results/DIT_HAP_reseq2/2_dissected/reseqYYS1328-7-1/reseqYYS1328-7-1-YES6.PBL.fq.gz         | samtools sort -@ 8 -O SAM -o results/DIT_HAP_reseq2/3_mapped/reseqYYS1328-7-1/reseqYYS1328-7-1-YES6.PBL.sam - > logs/DIT_HAP_reseq2/bwa_mem_mapping/reseqYYS1328-7-1/reseqYYS1328-7-1-YES6.PBL.log
+        
+
+[Fri Jun 21 15:09:54 2024]
+localrule bwa_mem_mapping:
+    input: resources/20230701/Schizosaccharomyces_pombe_all_chromosomes.fa, results/DIT_HAP_reseq2/2_dissected/reseqYYS1328-7-1/reseqYYS1328-7-1-YES6.PBR.fq.gz
+    output: results/DIT_HAP_reseq2/3_mapped/reseqYYS1328-7-1/reseqYYS1328-7-1-YES6.PBR.sam
+    log: logs/DIT_HAP_reseq2/bwa_mem_mapping/reseqYYS1328-7-1/reseqYYS1328-7-1-YES6.PBR.log
+    jobid: 29
+    reason: Missing output files: results/DIT_HAP_reseq2/3_mapped/reseqYYS1328-7-1/reseqYYS1328-7-1-YES6.PBR.sam; Input files updated by another job: results/DIT_HAP_reseq2/2_dissected/reseqYYS1328-7-1/reseqYYS1328-7-1-YES6.PBR.fq.gz
+    wildcards: sample=reseqYYS1328-7-1, timepoint=YES6, PBtype=PBR
+    threads: 8
+    resources: tmpdir=/tmp
+
+
+        bwa mem -t 8 resources/20230701/Schizosaccharomyces_pombe_all_chromosomes.fa results/DIT_HAP_reseq2/2_dissected/reseqYYS1328-7-1/reseqYYS1328-7-1-YES6.PBR.fq.gz         | samtools sort -@ 8 -O SAM -o results/DIT_HAP_reseq2/3_mapped/reseqYYS1328-7-1/reseqYYS1328-7-1-YES6.PBR.sam - > logs/DIT_HAP_reseq2/bwa_mem_mapping/reseqYYS1328-7-1/reseqYYS1328-7-1-YES6.PBR.log
+        
+[M::bwa_idx_load_from_disk] read 0 ALT contigs
+[M::bwa_idx_load_from_disk] read 0 ALT contigs
+[M::process] read 758996 sequences (80000119 bp)...
+[M::process] read 857310 sequences (80000085 bp)...
+[M::process] read 760498 sequences (80000157 bp)...
+[M::process] read 855858 sequences (80000167 bp)...
+[M::mem_process_seqs] Processed 758996 reads in 34.117 CPU sec, 4.225 real sec
+[M::mem_process_seqs] Processed 857310 reads in 35.520 CPU sec, 4.407 real sec
+[M::process] read 749996 sequences (80000131 bp)...
+[M::process] read 855874 sequences (80000156 bp)...
+[M::mem_process_seqs] Processed 760498 reads in 34.175 CPU sec, 4.164 real sec
+[M::mem_process_seqs] Processed 855858 reads in 35.819 CPU sec, 4.318 real sec
+[M::process] read 740416 sequences (80000081 bp)...
+[M::process] read 858672 sequences (80000196 bp)...
+[M::mem_process_seqs] Processed 749996 reads in 34.753 CPU sec, 4.273 real sec
+[M::mem_process_seqs] Processed 855874 reads in 38.138 CPU sec, 4.619 real sec
+[M::process] read 740468 sequences (80000204 bp)...
+[M::process] read 857260 sequences (80000044 bp)...
+[M::mem_process_seqs] Processed 740416 reads in 31.857 CPU sec, 3.866 real sec
+[M::mem_process_seqs] Processed 858672 reads in 36.369 CPU sec, 4.421 real sec
+[M::process] read 739010 sequences (80000074 bp)...
+[M::process] read 838466 sequences (80000172 bp)...
+[M::mem_process_seqs] Processed 740468 reads in 32.439 CPU sec, 3.964 real sec
+[M::mem_process_seqs] Processed 857260 reads in 36.662 CPU sec, 4.524 real sec
+[M::process] read 740760 sequences (80000132 bp)...
+[M::process] read 837068 sequences (80000033 bp)...
+[M::mem_process_seqs] Processed 739010 reads in 32.683 CPU sec, 3.920 real sec
+[M::process] read 746008 sequences (80000017 bp)...
+[M::mem_process_seqs] Processed 838466 reads in 33.766 CPU sec, 4.180 real sec
+[M::process] read 838850 sequences (80000015 bp)...
+[M::mem_process_seqs] Processed 740760 reads in 34.324 CPU sec, 4.190 real sec
+[M::process] read 743656 sequences (80000132 bp)...
+[M::mem_process_seqs] Processed 837068 reads in 33.199 CPU sec, 4.015 real sec
+[M::process] read 837762 sequences (80000014 bp)...
+[M::mem_process_seqs] Processed 746008 reads in 34.464 CPU sec, 4.166 real sec
+[M::mem_process_seqs] Processed 838850 reads in 34.277 CPU sec, 4.167 real sec
+[M::process] read 709131 sequences (76551916 bp)...
+[M::process] read 837336 sequences (80000038 bp)...
+[M::mem_process_seqs] Processed 743656 reads in 37.008 CPU sec, 4.502 real sec
+[M::mem_process_seqs] Processed 837762 reads in 34.279 CPU sec, 4.151 real sec
+[M::process] read 838052 sequences (80000171 bp)...
+[M::mem_process_seqs] Processed 709131 reads in 31.783 CPU sec, 3.992 real sec
+[main] Version: 0.7.17-r1188
+[main] CMD: bwa mem -t 8 resources/20230701/Schizosaccharomyces_pombe_all_chromosomes.fa results/DIT_HAP_reseq2/2_dissected/reseqYYS1328-7-1/reseqYYS1328-7-1-YES6.PBL.fq.gz
+[main] Real time: 42.913 sec; CPU: 339.250 sec
+[bam_sort_core] merging from 0 files and 8 in-memory blocks...
+[M::mem_process_seqs] Processed 837336 reads in 32.048 CPU sec, 3.856 real sec
+[M::process] read 835424 sequences (80000196 bp)...
+[M::mem_process_seqs] Processed 838052 reads in 30.193 CPU sec, 3.634 real sec
+[M::process] read 833984 sequences (80000076 bp)...
+[M::mem_process_seqs] Processed 835424 reads in 30.587 CPU sec, 3.670 real sec
+[M::process] read 845156 sequences (80000033 bp)...
+[M::mem_process_seqs] Processed 833984 reads in 30.293 CPU sec, 3.641 real sec
+[Fri Jun 21 15:10:51 2024]
+Finished job 24.
+21 of 29 steps (72%) done
+Select jobs to execute...
+Execute 1 jobs...
+
+[Fri Jun 21 15:10:51 2024]
+localrule samtools_filtering:
+    input: results/DIT_HAP_reseq2/3_mapped/reseqYYS1328-7-1/reseqYYS1328-7-1-YES6.PBL.sam
+    output: results/DIT_HAP_reseq2/4_filtered/reseqYYS1328-7-1/reseqYYS1328-7-1-YES6.PBL.unique.sam
+    log: logs/DIT_HAP_reseq2/samtools_filtering/reseqYYS1328-7-1/reseqYYS1328-7-1-YES6.PBL.log
+    jobid: 23
+    reason: Missing output files: results/DIT_HAP_reseq2/4_filtered/reseqYYS1328-7-1/reseqYYS1328-7-1-YES6.PBL.unique.sam; Input files updated by another job: results/DIT_HAP_reseq2/3_mapped/reseqYYS1328-7-1/reseqYYS1328-7-1-YES6.PBL.sam
+    wildcards: sample=reseqYYS1328-7-1, timepoint=YES6, PBtype=PBL
+    threads: 8
+    resources: tmpdir=/tmp
+
+
+        samtools view -@ 8 -h -q 1 -e "(flag==0||flag==16)&&([NM]&&[NM]<=3)&&(!(([XA])||([SA])))&&(ncigar==1)" results/DIT_HAP_reseq2/3_mapped/reseqYYS1328-7-1/reseqYYS1328-7-1-YES6.PBL.sam > results/DIT_HAP_reseq2/4_filtered/reseqYYS1328-7-1/reseqYYS1328-7-1-YES6.PBL.unique.sam 2> logs/DIT_HAP_reseq2/samtools_filtering/reseqYYS1328-7-1/reseqYYS1328-7-1-YES6.PBL.log
+        
+[M::process] read 844306 sequences (80000179 bp)...
+[M::mem_process_seqs] Processed 845156 reads in 31.973 CPU sec, 3.874 real sec
+[M::process] read 842458 sequences (80000093 bp)...
+[M::mem_process_seqs] Processed 844306 reads in 31.170 CPU sec, 3.773 real sec
+[M::process] read 840156 sequences (80000173 bp)...
+[M::mem_process_seqs] Processed 842458 reads in 32.702 CPU sec, 3.962 real sec
+[M::process] read 841332 sequences (80000175 bp)...
+[M::mem_process_seqs] Processed 840156 reads in 32.227 CPU sec, 3.890 real sec
+[M::process] read 702434 sequences (67293133 bp)...
+[Fri Jun 21 15:11:06 2024]
+Finished job 23.
+22 of 29 steps (76%) done
+Select jobs to execute...
+Execute 1 jobs...
+
+[Fri Jun 21 15:11:06 2024]
+localrule extract_insertions:
+    input: results/DIT_HAP_reseq2/4_filtered/reseqYYS1328-7-1/reseqYYS1328-7-1-YES6.PBL.unique.sam
+    output: results/DIT_HAP_reseq2/5_insertions/reseqYYS1328-7-1/reseqYYS1328-7-1-YES6.PBL.bed
+    log: logs/DIT_HAP_reseq2/extract_insertions/reseqYYS1328-7-1/reseqYYS1328-7-1-YES6.PBL.log
+    jobid: 22
+    reason: Missing output files: results/DIT_HAP_reseq2/5_insertions/reseqYYS1328-7-1/reseqYYS1328-7-1-YES6.PBL.bed; Input files updated by another job: results/DIT_HAP_reseq2/4_filtered/reseqYYS1328-7-1/reseqYYS1328-7-1-YES6.PBL.unique.sam
+    wildcards: sample=reseqYYS1328-7-1, timepoint=YES6, PBtype=PBL
+    threads: 8
+    resources: tmpdir=/tmp
+
+
+        python workflow/scripts/preprocessing/extract_insertions.py -i results/DIT_HAP_reseq2/4_filtered/reseqYYS1328-7-1/reseqYYS1328-7-1-YES6.PBL.unique.sam -o results/DIT_HAP_reseq2/5_insertions/reseqYYS1328-7-1/reseqYYS1328-7-1-YES6.PBL.bed -n 8 > logs/DIT_HAP_reseq2/extract_insertions/reseqYYS1328-7-1/reseqYYS1328-7-1-YES6.PBL.log
+        
+[M::mem_process_seqs] Processed 841332 reads in 31.984 CPU sec, 3.867 real sec
+[M::mem_process_seqs] Processed 702434 reads in 25.451 CPU sec, 3.143 real sec
+[main] Version: 0.7.17-r1188
+[main] CMD: bwa mem -t 8 resources/20230701/Schizosaccharomyces_pombe_all_chromosomes.fa results/DIT_HAP_reseq2/2_dissected/reseqYYS1328-7-1/reseqYYS1328-7-1-YES6.PBR.fq.gz
+[main] Real time: 77.795 sec; CPU: 628.336 sec
+[bam_sort_core] merging from 0 files and 8 in-memory blocks...
+[Fri Jun 21 15:11:53 2024]
+Finished job 29.
+23 of 29 steps (79%) done
+Select jobs to execute...
+Execute 1 jobs...
+
+[Fri Jun 21 15:11:53 2024]
+localrule samtools_filtering:
+    input: results/DIT_HAP_reseq2/3_mapped/reseqYYS1328-7-1/reseqYYS1328-7-1-YES6.PBR.sam
+    output: results/DIT_HAP_reseq2/4_filtered/reseqYYS1328-7-1/reseqYYS1328-7-1-YES6.PBR.unique.sam
+    log: logs/DIT_HAP_reseq2/samtools_filtering/reseqYYS1328-7-1/reseqYYS1328-7-1-YES6.PBR.log
+    jobid: 28
+    reason: Missing output files: results/DIT_HAP_reseq2/4_filtered/reseqYYS1328-7-1/reseqYYS1328-7-1-YES6.PBR.unique.sam; Input files updated by another job: results/DIT_HAP_reseq2/3_mapped/reseqYYS1328-7-1/reseqYYS1328-7-1-YES6.PBR.sam
+    wildcards: sample=reseqYYS1328-7-1, timepoint=YES6, PBtype=PBR
+    threads: 8
+    resources: tmpdir=/tmp
+
+
+        samtools view -@ 8 -h -q 1 -e "(flag==0||flag==16)&&([NM]&&[NM]<=3)&&(!(([XA])||([SA])))&&(ncigar==1)" results/DIT_HAP_reseq2/3_mapped/reseqYYS1328-7-1/reseqYYS1328-7-1-YES6.PBR.sam > results/DIT_HAP_reseq2/4_filtered/reseqYYS1328-7-1/reseqYYS1328-7-1-YES6.PBR.unique.sam 2> logs/DIT_HAP_reseq2/samtools_filtering/reseqYYS1328-7-1/reseqYYS1328-7-1-YES6.PBR.log
+        
+[Fri Jun 21 15:12:27 2024]
+Finished job 28.
+24 of 29 steps (83%) done
+Select jobs to execute...
+Execute 1 jobs...
+
+[Fri Jun 21 15:12:27 2024]
+localrule extract_insertions:
+    input: results/DIT_HAP_reseq2/4_filtered/reseqYYS1328-7-1/reseqYYS1328-7-1-YES6.PBR.unique.sam
+    output: results/DIT_HAP_reseq2/5_insertions/reseqYYS1328-7-1/reseqYYS1328-7-1-YES6.PBR.bed
+    log: logs/DIT_HAP_reseq2/extract_insertions/reseqYYS1328-7-1/reseqYYS1328-7-1-YES6.PBR.log
+    jobid: 27
+    reason: Missing output files: results/DIT_HAP_reseq2/5_insertions/reseqYYS1328-7-1/reseqYYS1328-7-1-YES6.PBR.bed; Input files updated by another job: results/DIT_HAP_reseq2/4_filtered/reseqYYS1328-7-1/reseqYYS1328-7-1-YES6.PBR.unique.sam
+    wildcards: sample=reseqYYS1328-7-1, timepoint=YES6, PBtype=PBR
+    threads: 8
+    resources: tmpdir=/tmp
+
+
+        python workflow/scripts/preprocessing/extract_insertions.py -i results/DIT_HAP_reseq2/4_filtered/reseqYYS1328-7-1/reseqYYS1328-7-1-YES6.PBR.unique.sam -o results/DIT_HAP_reseq2/5_insertions/reseqYYS1328-7-1/reseqYYS1328-7-1-YES6.PBR.bed -n 8 > logs/DIT_HAP_reseq2/extract_insertions/reseqYYS1328-7-1/reseqYYS1328-7-1-YES6.PBR.log
+        
+[Fri Jun 21 15:12:34 2024]
+Finished job 22.
+25 of 29 steps (86%) done
+[Fri Jun 21 15:14:40 2024]
+Finished job 27.
+26 of 29 steps (90%) done
+Select jobs to execute...
+Execute 1 jobs...
+
+[Fri Jun 21 15:14:40 2024]
+localrule merge_insertions:
+    input: results/DIT_HAP_reseq2/5_insertions/reseqYYS1328-7-1/reseqYYS1328-7-1-YES6.PBL.bed, results/DIT_HAP_reseq2/5_insertions/reseqYYS1328-7-1/reseqYYS1328-7-1-YES6.PBR.bed
+    output: results/DIT_HAP_reseq2/6_merged/reseqYYS1328-7-1/reseqYYS1328-7-1-YES6.bed
+    log: logs/DIT_HAP_reseq2/merge_insertions/reseqYYS1328-7-1/reseqYYS1328-7-1-YES6.log
+    jobid: 21
+    reason: Missing output files: results/DIT_HAP_reseq2/6_merged/reseqYYS1328-7-1/reseqYYS1328-7-1-YES6.bed; Input files updated by another job: results/DIT_HAP_reseq2/5_insertions/reseqYYS1328-7-1/reseqYYS1328-7-1-YES6.PBR.bed, results/DIT_HAP_reseq2/5_insertions/reseqYYS1328-7-1/reseqYYS1328-7-1-YES6.PBL.bed
+    wildcards: sample=reseqYYS1328-7-1, timepoint=YES6
+    resources: tmpdir=/tmp
+
+
+        python workflow/scripts/preprocessing/merge_insertions.py             -il results/DIT_HAP_reseq2/5_insertions/reseqYYS1328-7-1/reseqYYS1328-7-1-YES6.PBL.bed             -ir results/DIT_HAP_reseq2/5_insertions/reseqYYS1328-7-1/reseqYYS1328-7-1-YES6.PBR.bed             -o results/DIT_HAP_reseq2/6_merged/reseqYYS1328-7-1/reseqYYS1328-7-1-YES6.bed > logs/DIT_HAP_reseq2/merge_insertions/reseqYYS1328-7-1/reseqYYS1328-7-1-YES6.log
+        
+[Fri Jun 21 15:14:41 2024]
+Finished job 21.
+27 of 29 steps (93%) done
+Select jobs to execute...
+Execute 1 jobs...
+
+[Fri Jun 21 15:14:41 2024]
+localrule concat_timepoints:
+    input: results/DIT_HAP_reseq2/6_merged/reseqYYS1328-7-1/reseqYYS1328-7-1-YES4.bed, results/DIT_HAP_reseq2/6_merged/reseqYYS1328-7-1/reseqYYS1328-7-1-YES5.bed, results/DIT_HAP_reseq2/6_merged/reseqYYS1328-7-1/reseqYYS1328-7-1-YES6.bed, resources/20230701/Schizosaccharomyces_pombe_all_chromosomes.fa
+    output: results/DIT_HAP_reseq2/7_concated/reseqYYS1328-7-1/reseqYYS1328-7-1.PBL, results/DIT_HAP_reseq2/7_concated/reseqYYS1328-7-1/reseqYYS1328-7-1.PBR, results/DIT_HAP_reseq2/7_concated/reseqYYS1328-7-1/reseqYYS1328-7-1.Reads
+    log: logs/DIT_HAP_reseq2/concat_timepoints/reseqYYS1328-7-1.log
+    jobid: 2
+    reason: Missing output files: results/DIT_HAP_reseq2/7_concated/reseqYYS1328-7-1/reseqYYS1328-7-1.Reads; Input files updated by another job: results/DIT_HAP_reseq2/6_merged/reseqYYS1328-7-1/reseqYYS1328-7-1-YES5.bed, results/DIT_HAP_reseq2/6_merged/reseqYYS1328-7-1/reseqYYS1328-7-1-YES4.bed, results/DIT_HAP_reseq2/6_merged/reseqYYS1328-7-1/reseqYYS1328-7-1-YES6.bed
+    wildcards: sample=reseqYYS1328-7-1
+    resources: tmpdir=/tmp
+
+
+        python workflow/scripts/preprocessing/concat_timepoints.py             -s reseqYYS1328-7-1             -i results/DIT_HAP_reseq2/6_merged/reseqYYS1328-7-1/reseqYYS1328-7-1-YES4.bed results/DIT_HAP_reseq2/6_merged/reseqYYS1328-7-1/reseqYYS1328-7-1-YES5.bed results/DIT_HAP_reseq2/6_merged/reseqYYS1328-7-1/reseqYYS1328-7-1-YES6.bed             -tp YES4 YES5 YES6             -g resources/20230701/Schizosaccharomyces_pombe_all_chromosomes.fa             -ol results/DIT_HAP_reseq2/7_concated/reseqYYS1328-7-1/reseqYYS1328-7-1.PBL             -or results/DIT_HAP_reseq2/7_concated/reseqYYS1328-7-1/reseqYYS1328-7-1.PBR             -o results/DIT_HAP_reseq2/7_concated/reseqYYS1328-7-1/reseqYYS1328-7-1.Reads > logs/DIT_HAP_reseq2/concat_timepoints/reseqYYS1328-7-1.log
+        
+[Fri Jun 21 15:14:44 2024]
+Finished job 2.
+28 of 29 steps (97%) done
+Select jobs to execute...
+Execute 1 jobs...
+
+[Fri Jun 21 15:14:44 2024]
+localrule all:
+    input: results/genome_intervals/nucletides_for_each_coding_region.bed, results/DIT_HAP_reseq2/7_concated/reseqYYS1328-7-1/reseqYYS1328-7-1.Reads
+    jobid: 0
+    reason: Input files updated by another job: results/DIT_HAP_reseq2/7_concated/reseqYYS1328-7-1/reseqYYS1328-7-1.Reads
+    resources: tmpdir=/tmp
+
+[Fri Jun 21 15:14:44 2024]
+Finished job 0.
+29 of 29 steps (100%) done
+Complete log: .snakemake/log/2024-06-21T142510.329391.snakemake.log

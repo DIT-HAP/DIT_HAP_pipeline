@@ -1,0 +1,191 @@
+Assuming unrestricted shared filesystem usage.
+Building DAG of jobs...
+Using shell: /usr/bin/bash
+Provided cores: 56
+Rules claiming more threads will be scaled down.
+Job stats:
+job                            count
+---------------------------  -------
+FWHM_analysis_and_filtering        3
+all                                1
+concat_samples                     1
+data_integration                   1
+domain_level_curve_fitting         2
+gene_level_curve_fitting           2
+total                             10
+
+Select jobs to execute...
+Execute 3 jobs...
+
+[Fri Jun 14 22:41:01 2024]
+localcheckpoint FWHM_analysis_and_filtering:
+    input: results/DIT_HAP_recal/11_normalization/normalized_values/HD1328-7-1.normalized.csv
+    output: reports/DIT_HAP_recal/FWHM_analysis_and_filtering/FWHM_report/HD1328-7-1.FWHM_report.csv, reports/DIT_HAP_recal/FWHM_analysis_and_filtering/FWHM_plot/HD1328-7-1.FWHM_plot.pdf, reports/DIT_HAP_recal/FWHM_analysis_and_filtering/MA_plot/HD1328-7-1.MA_plot.pdf, results/DIT_HAP_recal/12_FWHM_filtered_reads/HD1328-7-1.normalized.csv, results/DIT_HAP_recal/12_FWHM_filtered_reads/HD1328-7-1.M.csv, results/DIT_HAP_recal/12_FWHM_filtered_reads/HD1328-7-1.A.csv
+    jobid: 59
+    reason: Missing output files: results/DIT_HAP_recal/12_FWHM_filtered_reads/HD1328-7-1.A.csv
+    wildcards: sample=HD1328-7-1
+    resources: tmpdir=/tmp
+DAG of jobs will be updated after completion.
+
+
+        python workflow/scripts/annotating_and_normalizing/FWHM_analysis_and_filtering.py         -i results/DIT_HAP_recal/11_normalization/normalized_values/HD1328-7-1.normalized.csv         -itp 0h         -or results/DIT_HAP_recal/12_FWHM_filtered_reads/HD1328-7-1.normalized.csv         -om results/DIT_HAP_recal/12_FWHM_filtered_reads/HD1328-7-1.M.csv         -oa results/DIT_HAP_recal/12_FWHM_filtered_reads/HD1328-7-1.A.csv         -r reports/DIT_HAP_recal/FWHM_analysis_and_filtering/FWHM_report/HD1328-7-1.FWHM_report.csv         -f reports/DIT_HAP_recal/FWHM_analysis_and_filtering/FWHM_plot/HD1328-7-1.FWHM_plot.pdf         -ma reports/DIT_HAP_recal/FWHM_analysis_and_filtering/MA_plot/HD1328-7-1.MA_plot.pdf
+        
+
+[Fri Jun 14 22:41:02 2024]
+localcheckpoint FWHM_analysis_and_filtering:
+    input: results/DIT_HAP_recal/11_normalization/normalized_values/HD1328-4-0.normalized.csv
+    output: reports/DIT_HAP_recal/FWHM_analysis_and_filtering/FWHM_report/HD1328-4-0.FWHM_report.csv, reports/DIT_HAP_recal/FWHM_analysis_and_filtering/FWHM_plot/HD1328-4-0.FWHM_plot.pdf, reports/DIT_HAP_recal/FWHM_analysis_and_filtering/MA_plot/HD1328-4-0.MA_plot.pdf, results/DIT_HAP_recal/12_FWHM_filtered_reads/HD1328-4-0.normalized.csv, results/DIT_HAP_recal/12_FWHM_filtered_reads/HD1328-4-0.M.csv, results/DIT_HAP_recal/12_FWHM_filtered_reads/HD1328-4-0.A.csv
+    jobid: 2
+    reason: Missing output files: results/DIT_HAP_recal/12_FWHM_filtered_reads/HD1328-4-0.A.csv
+    wildcards: sample=HD1328-4-0
+    resources: tmpdir=/tmp
+DAG of jobs will be updated after completion.
+
+
+        python workflow/scripts/annotating_and_normalizing/FWHM_analysis_and_filtering.py         -i results/DIT_HAP_recal/11_normalization/normalized_values/HD1328-4-0.normalized.csv         -itp 0h         -or results/DIT_HAP_recal/12_FWHM_filtered_reads/HD1328-4-0.normalized.csv         -om results/DIT_HAP_recal/12_FWHM_filtered_reads/HD1328-4-0.M.csv         -oa results/DIT_HAP_recal/12_FWHM_filtered_reads/HD1328-4-0.A.csv         -r reports/DIT_HAP_recal/FWHM_analysis_and_filtering/FWHM_report/HD1328-4-0.FWHM_report.csv         -f reports/DIT_HAP_recal/FWHM_analysis_and_filtering/FWHM_plot/HD1328-4-0.FWHM_plot.pdf         -ma reports/DIT_HAP_recal/FWHM_analysis_and_filtering/MA_plot/HD1328-4-0.MA_plot.pdf
+        
+
+[Fri Jun 14 22:41:02 2024]
+localcheckpoint FWHM_analysis_and_filtering:
+    input: results/DIT_HAP_recal/11_normalization/normalized_values/HD1328-8-1.normalized.csv
+    output: reports/DIT_HAP_recal/FWHM_analysis_and_filtering/FWHM_report/HD1328-8-1.FWHM_report.csv, reports/DIT_HAP_recal/FWHM_analysis_and_filtering/FWHM_plot/HD1328-8-1.FWHM_plot.pdf, reports/DIT_HAP_recal/FWHM_analysis_and_filtering/MA_plot/HD1328-8-1.MA_plot.pdf, results/DIT_HAP_recal/12_FWHM_filtered_reads/HD1328-8-1.normalized.csv, results/DIT_HAP_recal/12_FWHM_filtered_reads/HD1328-8-1.M.csv, results/DIT_HAP_recal/12_FWHM_filtered_reads/HD1328-8-1.A.csv
+    jobid: 60
+    reason: Missing output files: results/DIT_HAP_recal/12_FWHM_filtered_reads/HD1328-8-1.A.csv
+    wildcards: sample=HD1328-8-1
+    resources: tmpdir=/tmp
+DAG of jobs will be updated after completion.
+
+
+        python workflow/scripts/annotating_and_normalizing/FWHM_analysis_and_filtering.py         -i results/DIT_HAP_recal/11_normalization/normalized_values/HD1328-8-1.normalized.csv         -itp 0h         -or results/DIT_HAP_recal/12_FWHM_filtered_reads/HD1328-8-1.normalized.csv         -om results/DIT_HAP_recal/12_FWHM_filtered_reads/HD1328-8-1.M.csv         -oa results/DIT_HAP_recal/12_FWHM_filtered_reads/HD1328-8-1.A.csv         -r reports/DIT_HAP_recal/FWHM_analysis_and_filtering/FWHM_report/HD1328-8-1.FWHM_report.csv         -f reports/DIT_HAP_recal/FWHM_analysis_and_filtering/FWHM_plot/HD1328-8-1.FWHM_plot.pdf         -ma reports/DIT_HAP_recal/FWHM_analysis_and_filtering/MA_plot/HD1328-8-1.MA_plot.pdf
+        
+[Fri Jun 14 22:42:06 2024]
+Finished job 59.
+1 of 10 steps (10%) done
+[Fri Jun 14 22:42:08 2024]
+Finished job 60.
+2 of 10 steps (20%) done
+[Fri Jun 14 22:42:14 2024]
+Finished job 2.
+3 of 10 steps (30%) done
+Select jobs to execute...
+Execute 1 jobs...
+
+[Fri Jun 14 22:42:14 2024]
+localrule concat_samples:
+    input: results/DIT_HAP_recal/12_FWHM_filtered_reads/HD1328-4-0.M.csv, results/DIT_HAP_recal/12_FWHM_filtered_reads/HD1328-7-1.M.csv, results/DIT_HAP_recal/12_FWHM_filtered_reads/HD1328-8-1.M.csv, results/DIT_HAP_recal/12_FWHM_filtered_reads/HD1328-4-0.A.csv, results/DIT_HAP_recal/12_FWHM_filtered_reads/HD1328-7-1.A.csv, results/DIT_HAP_recal/12_FWHM_filtered_reads/HD1328-8-1.A.csv, results/DIT_HAP_recal/12_FWHM_filtered_reads/HD1328-4-0.normalized.csv, results/DIT_HAP_recal/12_FWHM_filtered_reads/HD1328-7-1.normalized.csv, results/DIT_HAP_recal/12_FWHM_filtered_reads/HD1328-8-1.normalized.csv
+    output: results/DIT_HAP_recal/13_concated_values/DIT_HAP_recal.normalized.csv, results/DIT_HAP_recal/13_concated_values/DIT_HAP_recal.M.csv, results/DIT_HAP_recal/13_concated_values/DIT_HAP_recal.A.csv, results/DIT_HAP_recal/13_concated_values/DIT_HAP_recal.Confidence_score.csv
+    jobid: 63
+    reason: Updated input files: results/DIT_HAP_recal/12_FWHM_filtered_reads/HD1328-8-1.normalized.csv, results/DIT_HAP_recal/12_FWHM_filtered_reads/HD1328-7-1.M.csv, results/DIT_HAP_recal/12_FWHM_filtered_reads/HD1328-4-0.normalized.csv, results/DIT_HAP_recal/12_FWHM_filtered_reads/HD1328-7-1.normalized.csv, results/DIT_HAP_recal/12_FWHM_filtered_reads/HD1328-8-1.M.csv, results/DIT_HAP_recal/12_FWHM_filtered_reads/HD1328-4-0.A.csv, results/DIT_HAP_recal/12_FWHM_filtered_reads/HD1328-4-0.M.csv, results/DIT_HAP_recal/12_FWHM_filtered_reads/HD1328-7-1.A.csv, results/DIT_HAP_recal/12_FWHM_filtered_reads/HD1328-8-1.A.csv
+    resources: tmpdir=/tmp
+
+
+        python workflow/scripts/depletion_curve_smoothing/concat_samples.py         -M results/DIT_HAP_recal/12_FWHM_filtered_reads/HD1328-4-0.M.csv results/DIT_HAP_recal/12_FWHM_filtered_reads/HD1328-7-1.M.csv results/DIT_HAP_recal/12_FWHM_filtered_reads/HD1328-8-1.M.csv         -A results/DIT_HAP_recal/12_FWHM_filtered_reads/HD1328-4-0.A.csv results/DIT_HAP_recal/12_FWHM_filtered_reads/HD1328-7-1.A.csv results/DIT_HAP_recal/12_FWHM_filtered_reads/HD1328-8-1.A.csv         -N results/DIT_HAP_recal/12_FWHM_filtered_reads/HD1328-4-0.normalized.csv results/DIT_HAP_recal/12_FWHM_filtered_reads/HD1328-7-1.normalized.csv results/DIT_HAP_recal/12_FWHM_filtered_reads/HD1328-8-1.normalized.csv         -uTP Diploid         -itp 0h         -oM results/DIT_HAP_recal/13_concated_values/DIT_HAP_recal.M.csv         -oA results/DIT_HAP_recal/13_concated_values/DIT_HAP_recal.A.csv         -oN results/DIT_HAP_recal/13_concated_values/DIT_HAP_recal.normalized.csv         -oCS results/DIT_HAP_recal/13_concated_values/DIT_HAP_recal.Confidence_score.csv
+        
+[Fri Jun 14 22:42:30 2024]
+Finished job 63.
+4 of 10 steps (40%) done
+Select jobs to execute...
+Execute 1 jobs...
+
+[Fri Jun 14 22:42:30 2024]
+localrule data_integration:
+    input: results/DIT_HAP_recal/13_concated_values/DIT_HAP_recal.M.csv, results/DIT_HAP_recal/13_concated_values/DIT_HAP_recal.Confidence_score.csv, results/DIT_HAP_recal/13_concated_values/DIT_HAP_recal.normalized.csv, results/DIT_HAP_recal/9_annotated_insertions/DIT_HAP_recal.annotated.csv, config/samples_timepoints.csv, resources/UP000002485_284812_SCHPO_v4_and_vDulab_annotated_PAE_domain_based_on_pLDDT.tsv
+    output: results/DIT_HAP_recal/14_integrated_values/DIT_HAP_recal.GMs.csv, results/DIT_HAP_recal/14_integrated_values/DIT_HAP_recal.annotated_with_domains.csv
+    jobid: 62
+    reason: Input files updated by another job: results/DIT_HAP_recal/13_concated_values/DIT_HAP_recal.normalized.csv, results/DIT_HAP_recal/13_concated_values/DIT_HAP_recal.M.csv, results/DIT_HAP_recal/13_concated_values/DIT_HAP_recal.Confidence_score.csv
+    resources: tmpdir=/tmp
+
+
+        python workflow/scripts/depletion_curve_smoothing/data_integration.py             -M results/DIT_HAP_recal/13_concated_values/DIT_HAP_recal.M.csv             -CS results/DIT_HAP_recal/13_concated_values/DIT_HAP_recal.Confidence_score.csv             -n results/DIT_HAP_recal/13_concated_values/DIT_HAP_recal.normalized.csv             -g config/samples_timepoints.csv             -itp 0h             -anno results/DIT_HAP_recal/9_annotated_insertions/DIT_HAP_recal.annotated.csv             -d resources/UP000002485_284812_SCHPO_v4_and_vDulab_annotated_PAE_domain_based_on_pLDDT.tsv             -o results/DIT_HAP_recal/14_integrated_values/DIT_HAP_recal.GMs.csv             -ao results/DIT_HAP_recal/14_integrated_values/DIT_HAP_recal.annotated_with_domains.csv
+        
+[Fri Jun 14 22:45:56 2024]
+Finished job 62.
+5 of 10 steps (50%) done
+Select jobs to execute...
+Execute 2 jobs...
+
+[Fri Jun 14 22:45:56 2024]
+localrule domain_level_curve_fitting:
+    input: results/DIT_HAP_recal/14_integrated_values/DIT_HAP_recal.annotated_with_domains.csv, results/DIT_HAP_recal/14_integrated_values/DIT_HAP_recal.GMs.csv
+    output: results/DIT_HAP_recal/15_curve_fitting/DIT_HAP_recal.fitpoints5.predpoints5.LOWESS0.fatol5e-3.domain.csv
+    jobid: 61
+    reason: Input files updated by another job: results/DIT_HAP_recal/14_integrated_values/DIT_HAP_recal.GMs.csv, results/DIT_HAP_recal/14_integrated_values/DIT_HAP_recal.annotated_with_domains.csv
+    wildcards: fitting=points5, prediction=points5, LOWESS=0, fatol=5e-3
+    threads: 8
+    resources: tmpdir=/tmp
+
+
+        python workflow/scripts/depletion_curve_smoothing/domain_level_curve_fitting.py             -C 8             -anno results/DIT_HAP_recal/14_integrated_values/DIT_HAP_recal.annotated_with_domains.csv             -GM results/DIT_HAP_recal/14_integrated_values/DIT_HAP_recal.GMs.csv             -o results/DIT_HAP_recal/15_curve_fitting/DIT_HAP_recal.fitpoints5.predpoints5.LOWESS0.fatol5e-3.domain.csv             -fatol 5e-3             --use-weighted-M 1             -f points5             -p points5             --use-LOWESS 0
+        
+
+[Fri Jun 14 22:45:56 2024]
+localrule domain_level_curve_fitting:
+    input: results/DIT_HAP_recal/14_integrated_values/DIT_HAP_recal.annotated_with_domains.csv, results/DIT_HAP_recal/14_integrated_values/DIT_HAP_recal.GMs.csv
+    output: results/DIT_HAP_recal/15_curve_fitting/DIT_HAP_recal.fitpoints5.predpoints5.LOWESS1.fatol5e-3.domain.csv
+    jobid: 65
+    reason: Input files updated by another job: results/DIT_HAP_recal/14_integrated_values/DIT_HAP_recal.GMs.csv, results/DIT_HAP_recal/14_integrated_values/DIT_HAP_recal.annotated_with_domains.csv
+    wildcards: fitting=points5, prediction=points5, LOWESS=1, fatol=5e-3
+    threads: 8
+    resources: tmpdir=/tmp
+
+
+        python workflow/scripts/depletion_curve_smoothing/domain_level_curve_fitting.py             -C 8             -anno results/DIT_HAP_recal/14_integrated_values/DIT_HAP_recal.annotated_with_domains.csv             -GM results/DIT_HAP_recal/14_integrated_values/DIT_HAP_recal.GMs.csv             -o results/DIT_HAP_recal/15_curve_fitting/DIT_HAP_recal.fitpoints5.predpoints5.LOWESS1.fatol5e-3.domain.csv             -fatol 5e-3             --use-weighted-M 1             -f points5             -p points5             --use-LOWESS 1
+        
+[Fri Jun 14 23:05:35 2024]
+Finished job 61.
+6 of 10 steps (60%) done
+Select jobs to execute...
+Execute 1 jobs...
+
+[Fri Jun 14 23:05:35 2024]
+localrule gene_level_curve_fitting:
+    input: results/DIT_HAP_recal/14_integrated_values/DIT_HAP_recal.annotated_with_domains.csv, results/DIT_HAP_recal/14_integrated_values/DIT_HAP_recal.GMs.csv, results/DIT_HAP_recal/15_curve_fitting/DIT_HAP_recal.fitpoints5.predpoints5.LOWESS0.fatol5e-3.domain.csv
+    output: results/DIT_HAP_recal/15_curve_fitting/DIT_HAP_recal.fitpoints5.predpoints5.LOWESS0.fatol5e-3.gene.csv
+    jobid: 64
+    reason: Input files updated by another job: results/DIT_HAP_recal/14_integrated_values/DIT_HAP_recal.annotated_with_domains.csv, results/DIT_HAP_recal/15_curve_fitting/DIT_HAP_recal.fitpoints5.predpoints5.LOWESS0.fatol5e-3.domain.csv, results/DIT_HAP_recal/14_integrated_values/DIT_HAP_recal.GMs.csv
+    wildcards: fitting=points5, prediction=points5, LOWESS=0, fatol=5e-3
+    threads: 8
+    resources: tmpdir=/tmp
+
+
+        python workflow/scripts/depletion_curve_smoothing/gene_level_curve_fitting.py             -C 8             -anno results/DIT_HAP_recal/14_integrated_values/DIT_HAP_recal.annotated_with_domains.csv             -GM results/DIT_HAP_recal/14_integrated_values/DIT_HAP_recal.GMs.csv             -ddr results/DIT_HAP_recal/15_curve_fitting/DIT_HAP_recal.fitpoints5.predpoints5.LOWESS0.fatol5e-3.domain.csv             -o results/DIT_HAP_recal/15_curve_fitting/DIT_HAP_recal.fitpoints5.predpoints5.LOWESS0.fatol5e-3.gene.csv             -fatol 5e-3             --use-weighted-M 1             -f points5             -p points5             --use-LOWESS 0
+        
+[Fri Jun 14 23:07:06 2024]
+Finished job 65.
+7 of 10 steps (70%) done
+Select jobs to execute...
+Execute 1 jobs...
+
+[Fri Jun 14 23:07:06 2024]
+localrule gene_level_curve_fitting:
+    input: results/DIT_HAP_recal/14_integrated_values/DIT_HAP_recal.annotated_with_domains.csv, results/DIT_HAP_recal/14_integrated_values/DIT_HAP_recal.GMs.csv, results/DIT_HAP_recal/15_curve_fitting/DIT_HAP_recal.fitpoints5.predpoints5.LOWESS1.fatol5e-3.domain.csv
+    output: results/DIT_HAP_recal/15_curve_fitting/DIT_HAP_recal.fitpoints5.predpoints5.LOWESS1.fatol5e-3.gene.csv
+    jobid: 66
+    reason: Input files updated by another job: results/DIT_HAP_recal/15_curve_fitting/DIT_HAP_recal.fitpoints5.predpoints5.LOWESS1.fatol5e-3.domain.csv, results/DIT_HAP_recal/14_integrated_values/DIT_HAP_recal.annotated_with_domains.csv, results/DIT_HAP_recal/14_integrated_values/DIT_HAP_recal.GMs.csv
+    wildcards: fitting=points5, prediction=points5, LOWESS=1, fatol=5e-3
+    threads: 8
+    resources: tmpdir=/tmp
+
+
+        python workflow/scripts/depletion_curve_smoothing/gene_level_curve_fitting.py             -C 8             -anno results/DIT_HAP_recal/14_integrated_values/DIT_HAP_recal.annotated_with_domains.csv             -GM results/DIT_HAP_recal/14_integrated_values/DIT_HAP_recal.GMs.csv             -ddr results/DIT_HAP_recal/15_curve_fitting/DIT_HAP_recal.fitpoints5.predpoints5.LOWESS1.fatol5e-3.domain.csv             -o results/DIT_HAP_recal/15_curve_fitting/DIT_HAP_recal.fitpoints5.predpoints5.LOWESS1.fatol5e-3.gene.csv             -fatol 5e-3             --use-weighted-M 1             -f points5             -p points5             --use-LOWESS 1
+        
+[Fri Jun 14 23:13:39 2024]
+Finished job 64.
+8 of 10 steps (80%) done
+[Fri Jun 14 23:18:08 2024]
+Finished job 66.
+9 of 10 steps (90%) done
+Select jobs to execute...
+Execute 1 jobs...
+
+[Fri Jun 14 23:18:08 2024]
+localrule all:
+    input: results/genome_intervals/nucletides_for_each_coding_region.bed, results/DIT_HAP_recal/12_FWHM_filtered_reads/HD1328-4-0.A.csv, results/DIT_HAP_recal/12_FWHM_filtered_reads/HD1328-7-1.A.csv, results/DIT_HAP_recal/12_FWHM_filtered_reads/HD1328-8-1.A.csv, results/DIT_HAP_recal/15_curve_fitting/DIT_HAP_recal.fitpoints5.predpoints5.LOWESS0.fatol5e-3.domain.csv, results/DIT_HAP_recal/15_curve_fitting/DIT_HAP_recal.fitpoints5.predpoints5.LOWESS0.fatol5e-3.gene.csv, results/DIT_HAP_recal/15_curve_fitting/DIT_HAP_recal.fitpoints5.predpoints5.LOWESS1.fatol5e-3.domain.csv, results/DIT_HAP_recal/15_curve_fitting/DIT_HAP_recal.fitpoints5.predpoints5.LOWESS1.fatol5e-3.gene.csv
+    jobid: 0
+    reason: Input files updated by another job: results/DIT_HAP_recal/15_curve_fitting/DIT_HAP_recal.fitpoints5.predpoints5.LOWESS0.fatol5e-3.gene.csv, results/DIT_HAP_recal/15_curve_fitting/DIT_HAP_recal.fitpoints5.predpoints5.LOWESS0.fatol5e-3.domain.csv, results/DIT_HAP_recal/15_curve_fitting/DIT_HAP_recal.fitpoints5.predpoints5.LOWESS1.fatol5e-3.domain.csv, results/DIT_HAP_recal/15_curve_fitting/DIT_HAP_recal.fitpoints5.predpoints5.LOWESS1.fatol5e-3.gene.csv
+    resources: tmpdir=/tmp
+
+[Fri Jun 14 23:18:08 2024]
+Finished job 0.
+10 of 10 steps (100%) done
+Complete log: .snakemake/log/2024-06-14T224059.229555.snakemake.log
