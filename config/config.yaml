@@ -1,16 +1,16 @@
 
-project_name: DIT_HAP_reseq2
+project_name: DIT_HAP_20241001
 # preprocessing configuration
-samples_with_timepoints: config/reseq_samples_timepoints.csv
+samples_with_timepoints: config/samples_timepoints.csv
 raw_data: /hugedata/YushengYang/20240621_resequencing_YES456/01.RawData
-genome_reference: resources/20230701/Schizosaccharomyces_pombe_all_chromosomes.fa
+genome_reference: resources/20241001/Schizosaccharomyces_pombe_all_chromosomes.fa
 
 
 # making genome intervals configuration
-pombe_gff: resources/20230701/Schizosaccharomyces_pombe_all_chromosomes.gff3
-pombe_fai: resources/20230701/Schizosaccharomyces_pombe_all_chromosomes.fa.fai
-gene_product: resources/20230701/gene_IDs_names_products.tsv
-pombe_peptide: resources/20230701/PeptideStats.tsv
+pombe_gff: resources/20241001/Schizosaccharomyces_pombe_all_chromosomes.gff3
+pombe_fai: resources/20241001/Schizosaccharomyces_pombe_all_chromosomes.fa.fai
+gene_product: resources/20241001/gene_IDs_names_products.tsv
+pombe_peptide: resources/20241001/PeptideStats.tsv
 gene_essentiality: resources/Hayles_2013_OB_merged_categories.xlsx
 
 outputfolder: results/genome_intervals
@@ -19,26 +19,25 @@ outputfolder: results/genome_intervals
 initial_time_point: 0h
 first_round_hard_filtering_cutoff: 4
 
-
-# depletion curve smoothing configuration
-level:
-  - Site
-  - Bin
-  - Domain
-  - Gene
-
 start_timepoint: YES0
 unused_timepoints:
   - Diploid
 
-domain_file: resources/UP000002485_284812_SCHPO_v4_and_vDulab_annotated_PAE_domain_based_on_pLDDT.tsv
+# domain_file: resources/UP000002485_284812_SCHPO_v4_and_vDulab_annotated_PAE_domain_based_on_pLDDT.tsv
 
-fatols:
-  # - 5e-1
-  # - 1e-1
-  # - 5e-2
-  # - 1e-2
-  - 5e-3
-  # - 1e-3
-  # - 5e-4
-  # - 1e-4
+# # depletion curve smoothing configuration
+# level:
+#   - Site
+#   - Bin
+#   - Domain
+#   - Gene
+
+# fatols:
+#   # - 5e-1
+#   # - 1e-1
+#   # - 5e-2
+#   # - 1e-2
+#   - 5e-3
+#   # - 1e-3
+#   # - 5e-4
+#   # - 1e-4

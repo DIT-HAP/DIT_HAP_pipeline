@@ -38,6 +38,8 @@ def main():
         for line in fai_file:
             chrom, length, _, _, _ = line.strip().split("\t")
             genome[chrom] = (0, int(length))
+    # sort the genome keys
+    genome = dict(sorted(genome.items()))
 
     # Find the complement (intergenic regions)
     intergenic = genes.sort().complement(g=genome)

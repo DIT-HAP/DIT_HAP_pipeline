@@ -47,6 +47,9 @@ def main():
     region_of_representative_coding_transcript = extract_representative_coding_transcript(
         GFF, args.peptide)
 
+    # sort
+    region_of_representative_coding_transcript = region_of_representative_coding_transcript.sort_values(
+        by=["#Chr", "Start", "End"])
     # Output
     region_of_representative_coding_transcript.to_csv(
         args.output, sep="\t", index=False, header=True)
