@@ -1,5 +1,5 @@
 
-project_name: DIT_HAP_20241001
+project_name: DIT_HAP_20250210_no_shrinkage
 # preprocessing configuration
 samples_with_timepoints: config/samples_timepoints.csv
 raw_data: /hugedata/YushengYang/20240621_resequencing_YES456/01.RawData
@@ -16,10 +16,10 @@ gene_essentiality: resources/Hayles_2013_OB_merged_categories.xlsx
 outputfolder: results/genome_intervals
 
 # annotating and normalizing configuration
-initial_time_point: 0h
-first_round_hard_filtering_cutoff: 4
+initial_time_point: "0h"
+first_round_hard_filtering_cutoff: 16
 
-start_timepoint: YES0
+start_timepoint: YES1
 unused_timepoints:
   - Diploid
 

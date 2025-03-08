@@ -30,6 +30,7 @@ rule all:
     input:
         # output_dir / "nucletides_for_each_coding_region.bed",
         # output_dir / "Genome_regions_CDS_intron_IGR_annotated.bed",
+        # project_dir/"12_DEseq2_analysis/insertions_LFC.csv"
         project_dir/"13_gene_level_statistics/GWMs.csv"
         # project_dir/f"9_annotated_insertions/{config['project_name']}.annotated.csv"
         # expand(project_dir/"12_FWHM_filtered_reads/{sample}.normalized.csv", sample=samples),

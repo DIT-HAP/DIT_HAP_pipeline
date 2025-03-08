@@ -45,16 +45,15 @@ def get_control_insertions(counts_annotations):
         (counts_annotations["Distance_to_region_end"] > 500)
     ].index
 
-def create_deseq_dataset(counts_df, metadata, control_insertions):
+def create_deseq_dataset(counts_df, metadata, control_insertions, initial_timepoint="0h"):
     inference = DefaultInference(n_cpus=36)
     dds = DeseqDataSet(
         counts=counts_df,
         metadata=metadata,
-        design_factors="condition",
+        design="~condition",
         refit_cooks=True,
         inference=inference,
-        ref_level=["condition", "0h"],
-        min_replicates=3,
+        min_replicates=7,
     )
     
     dds.fit_size_factors(control_genes=control_insertions)
@@ -69,18 +68,18 @@ def create_deseq_dataset(counts_df, metadata, control_insertions):
     
     return dds
 
-def perform_differential_analysis(dds, timepoints):
+def perform_differential_analysis(dds, timepoints, initial_timepoint="0h"):
     stat_res = {}
     inference = DefaultInference(n_cpus=36)
     
     for tp in timepoints:
         stat_res[tp] = DeseqStats(
-            dds, contrast=["condition", "0h", tp], inference=inference, 
+            dds, contrast=["condition", initial_timepoint, tp], inference=inference, 
             cooks_filter=True, independent_filter=True, quiet=True
         )
         stat_res[tp].summary()
         # Uncomment the following line if you want to perform LFC shrinkage
-        # stat_res[tp].lfc_shrink(coeff=f"condition_{tp}_vs_0h")
+        # stat_res[tp].lfc_shrink(coeff=f"condition[T.{tp}]")
     
     return stat_res
 
@@ -94,6 +93,13 @@ def concatenate_results(stat_res, timepoints):
     concated_results.index = pd.MultiIndex.from_tuples(
         concated_results.index.str.split("=").tolist())
     return concated_results
+
+def transform_index_to_multiindex(dds, layer_name):
+    df = pd.DataFrame(dds.layers[layer_name], index=dds.obs.index.tolist(), columns=dds.var.index.tolist()).T
+    df.index = pd.MultiIndex.from_tuples(df.index.str.split("=").tolist())
+    df.columns = pd.MultiIndex.from_tuples(df.columns.str.split("_").tolist())
+
+    return df
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Perform differential expression analysis on insertion counts.")
@@ -113,10 +119,25 @@ def main():
     timepoints = metadata["condition"].unique().tolist()
     timepoints.remove(args.initial_timepoint)
     
-    dds = create_deseq_dataset(counts_df, metadata, control_insertions)
+    dds = create_deseq_dataset(counts_df, metadata, control_insertions, args.initial_timepoint)
     dds.plot_dispersions()
+
+    normalized_counts = transform_index_to_multiindex(dds, "normed_counts")
+    normalized_counts.to_csv(Path(args.output.parent) / "normed_counts.csv", index=True, float_format="%.3f")
+
+    count_X = pd.DataFrame(dds.X, index=dds.obs.index.tolist(), columns=dds.var.index.tolist()).T
+    count_X.index = pd.MultiIndex.from_tuples(count_X.index.str.split("=").tolist())
+    count_X.columns = pd.MultiIndex.from_tuples(count_X.columns.str.split("_").tolist())
+    count_X.to_csv(Path(args.output.parent) / "count_X.csv", index=True, float_format="%.3f")
+
+    # refit_count_norm = transform_index_to_multiindex(dds.filtered_genes, "normed_counts")
+    # dds.filtered_genes.to_csv(Path(args.output.parent) / "refit_count_norm.csv", index=True, float_format="%.3f")
+    print(dds.filtered_genes)
+
+    cooks_df = transform_index_to_multiindex(dds, "cooks")
+    cooks_df.to_csv(Path(args.output.parent) / "cooks.csv", index=True, float_format="%.3f")
     
-    stat_res = perform_differential_analysis(dds, timepoints)
+    stat_res = perform_differential_analysis(dds, timepoints, args.initial_timepoint)
     plot_ma(stat_res, args.output.parent)
     
     concated_results = concatenate_results(stat_res, timepoints)
