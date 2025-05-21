@@ -74,7 +74,7 @@ def perform_differential_analysis(dds, timepoints, initial_timepoint="0h"):
     
     for tp in timepoints:
         stat_res[tp] = DeseqStats(
-            dds, contrast=["condition", initial_timepoint, tp], inference=inference, 
+            dds, contrast=["condition", tp, initial_timepoint], inference=inference, 
             cooks_filter=True, independent_filter=True, quiet=True
         )
         stat_res[tp].summary()
@@ -88,15 +88,44 @@ def plot_ma(stat_res, output_dir):
         res.plot_MA(save_path=Path(output_dir) / f"MA_{tp}.png")
 
 def concatenate_results(stat_res, timepoints):
-    result_df = {tp: stat_res[tp].results_df for tp in timepoints}
+    result_df = {}
+    for tp in timepoints:
+        result_df[tp] = stat_res[tp].results_df
+        result_df[tp]["log2FoldChange"] = -result_df[tp]["log2FoldChange"]
+        result_df[tp]["stat"] = -result_df[tp]["stat"]
     concated_results = pd.concat(result_df, axis=1)
     concated_results.index = pd.MultiIndex.from_tuples(
         concated_results.index.str.split("=").tolist())
+    # Convert string format numbers to numeric values in the MultiIndex
+    new_index = []
+    for idx in concated_results.index:
+        chr_name = idx[0]
+        # Convert coordinate from string to integer
+        coordinate = int(idx[1]) if idx[1].isdigit() else idx[1]
+        strand = idx[2]
+        target = idx[3]
+        new_index.append((chr_name, coordinate, strand, target))
+    
+    # Create a new MultiIndex with the converted values
+    concated_results.index = pd.MultiIndex.from_tuples(
+        new_index, names=concated_results.index.names)
     return concated_results
 
 def transform_index_to_multiindex(dds, layer_name):
     df = pd.DataFrame(dds.layers[layer_name], index=dds.obs.index.tolist(), columns=dds.var.index.tolist()).T
     df.index = pd.MultiIndex.from_tuples(df.index.str.split("=").tolist())
+    new_index = []
+    for idx in df.index:
+        chr_name = idx[0]
+        # Convert coordinate from string to integer
+        coordinate = int(idx[1]) if idx[1].isdigit() else idx[1]
+        strand = idx[2]
+        target = idx[3]
+        new_index.append((chr_name, coordinate, strand, target))
+    
+    # Create a new MultiIndex with the converted values
+    df.index = pd.MultiIndex.from_tuples(
+        new_index, names=df.index.names)
     df.columns = pd.MultiIndex.from_tuples(df.columns.str.split("_").tolist())
 
     return df
