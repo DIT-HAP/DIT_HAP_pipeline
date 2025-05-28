@@ -1,0 +1,15 @@
+use_filename_as_sample_name:
+  - fastp
+  - cutadapt
+  - fastqc
+  - samtools
+
+table_sample_merge:
+  "PBL":
+    - ".PBL"
+    - type: regex
+      pattern: ".PBL.*"
+  "PBR":
+    - ".PBR"
+    - type: regex
+      pattern: ".PBR.*"

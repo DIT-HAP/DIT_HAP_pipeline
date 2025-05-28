@@ -1,19 +1,23 @@
+workdir: /data/c/yangyusheng_optimized/DIT_HAP_pipeline
 
-project_name: DIT_HAP_merging_0h_YES0
-# preprocessing configuration
-samples_with_timepoints: config/samples_timepoints.csv
-raw_data: /hugedata/YushengYang/20240621_resequencing_YES456/01.RawData
-genome_reference: resources/20241001/Schizosaccharomyces_pombe_all_chromosomes.fa
+project_name: test_project
 
+# Preparation configuration
+# -----------------------------------------------------
+Pombase_release_version: 2025-05-01
 
-# making genome intervals configuration
-pombe_gff: resources/20241001/Schizosaccharomyces_pombe_all_chromosomes.gff3
-pombe_fai: resources/20241001/Schizosaccharomyces_pombe_all_chromosomes.fa.fai
-gene_product: resources/20241001/gene_IDs_names_products.tsv
-pombe_peptide: resources/20241001/PeptideStats.tsv
-gene_essentiality: resources/Hayles_2013_OB_merged_categories.xlsx
+# Preprocessing configuration
+# -----------------------------------------------------
+sample_sheet: config/sample_sheet_LD.tsv
 
-outputfolder: results/genome_intervals
+adapter_sequence: CTGTCTCTTATACACATCT
+adapter_sequence_r2: AGATGTGTATAAGAGACAG
+PBL_adapter: CATGCGTCAATTTTACGCAGACTATCTTTCTAGGG
+PBL_reverseComplement_adapter: CCCTAGAAAGATAGTCTGCGTAAAATTGACGCATG
+PBR_adapter: ACGCATGATTATCTTTAACGTACGTCACAATATGATTATCTTTCTAGGG
+PBR_reverseComplement_adapter: CCCTAGAAAGATAATCATATTGTGACGTACGTTAAAGATAATCATGCGT
+minimum_length: 30
+
 
 # annotating and normalizing configuration
 initial_time_point: "YES0"
@@ -22,22 +26,3 @@ first_round_hard_filtering_cutoff: 16
 start_timepoint: YES1
 unused_timepoints:
   - Diploid
-
-# domain_file: resources/UP000002485_284812_SCHPO_v4_and_vDulab_annotated_PAE_domain_based_on_pLDDT.tsv
-
-# # depletion curve smoothing configuration
-# level:
-#   - Site
-#   - Bin
-#   - Domain
-#   - Gene
-
-# fatols:
-#   # - 5e-1
-#   # - 1e-1
-#   # - 5e-2
-#   # - 1e-2
-#   - 5e-3
-#   # - 1e-3
-#   # - 5e-4
-#   # - 1e-4

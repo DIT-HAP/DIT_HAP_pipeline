@@ -1,6 +1,17 @@
 results/**
 resources/**
+reports/**
 logs/**
+*log
 .snakemake
 .snakemake/**
+.test/results/*
+workflow/notebooks/.ipynb_checkpoints/**
+**/.Rhistory
+**/*.Rproj
+**/.Rproj.user/**
+**/.RData
+**/Rplots.pdf
 tmp
+
+
