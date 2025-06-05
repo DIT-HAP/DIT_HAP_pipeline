@@ -11,12 +11,15 @@ from pybedtools import BedTool
 
 
 def main(args):
-    # args.output.parent.mkdir(parents=True, exist_ok=True)
-    # args.vv_sites.parent.mkdir(parents=True, exist_ok=True)
 
     # read file
-    insertions = pd.read_csv(args.input, header=0, usecols=[0, 1, 2, 3, 4])
-    genome_region = pd.read_csv(args.genome_region, sep="\t", header=0)
+    insertions = pd.read_csv(args.input, header=0, usecols=[0, 1, 2, 3], sep="\t").rename(columns={"Coordinate": "End"})
+    insertions.insert(1, "Start", insertions["End"])
+    print("*** For the insertions, the start and end are the same for bed processing")
+    print(insertions.head())
+    genome_region = pd.read_csv(args.genome_region, sep="\t", header=0).rename(columns={"#Chr": "Chr"})
+    print("*** Loaded genome region file")
+    print(genome_region.head())
 
     # transform the dataframe to bedtools
     insertions_bed = BedTool.from_dataframe(insertions)
@@ -24,38 +27,46 @@ def main(args):
 
     # intersect the insertions with genome regions
     insertion_names = insertions.columns.tolist()
+    print("*** Insertion names:")
+    print(insertion_names)
     genome_region_names = add_suffix(
         genome_region.columns.tolist(), insertion_names, "_Interval"
     )
+    print("*** Genome region names:")
+    print(genome_region_names)
     insertions_with_annotation = insertions_bed.intersect(
         genome_region_bed, wa=True, wb=True)
 
     insertions_with_annotation = insertions_with_annotation.to_dataframe(
         names=insertion_names + genome_region_names)
-
-    insertions_with_annotation.rename(
-        columns={"#Chr_Interval": "Chr_Interval"}, inplace=True
-    )
+    
+    insertions_with_annotation.drop(columns=["Start"], inplace=True)
+    insertions_with_annotation.rename(columns={"End": "Coordinate"}, inplace=True)
+    print("*** Insertions with annotation:")
 
     # replace the cell of "." with np.nan
+    print("After pybedtools, the NaN values are '.'")
+    print(insertions_with_annotation.head())
     insertions_with_annotation.replace(
         r"^\.$", np.nan, inplace=True, regex=True)
-
+    print("After replacing the '.' with np.nan, the NaN values are np.nan")
+    print(insertions_with_annotation.head())
+    print("*** Calculating the distance to the region start and end")
     insertions_with_annotation["Distance_to_region_start"] = (
-        insertions_with_annotation["Start"] -
-        insertions_with_annotation["Start_Region"]
+        insertions_with_annotation["Coordinate"] -
+        insertions_with_annotation["ParentalRegion_start"]
     )
     insertions_with_annotation["Distance_to_region_end"] = (
-        insertions_with_annotation["End_Region"] -
-        insertions_with_annotation["End"]
+        insertions_with_annotation["ParentalRegion_end"] -
+        insertions_with_annotation["Coordinate"]
     )
     insertions_with_annotation["Fraction_to_region_start"] = (
         insertions_with_annotation["Distance_to_region_start"]
-        / insertions_with_annotation["Length_Region"]
+        / insertions_with_annotation["ParentalRegion_length"]
     )
     insertions_with_annotation["Fraction_to_region_end"] = (
         insertions_with_annotation["Distance_to_region_end"]
-        / insertions_with_annotation["Length_Region"]
+        / insertions_with_annotation["ParentalRegion_length"]
     )
 
     name_distance = [
@@ -68,30 +79,30 @@ def main(args):
     insertions_with_annotation[name_distance] = insertions_with_annotation.apply(
         calculate_distance_to_start_stop_codon, name_distance=name_distance, axis=1
     )
-
+    print("*** Calculated the distance to the start and stop codon")
+    print(insertions_with_annotation.head())
+    print("*** Calculating the residues affected")
     residue_stat = ["Residue_affected", "Residue_frame"]
     insertions_with_annotation[residue_stat] = insertions_with_annotation.apply(
         cal_residues_affected, residue_stat=residue_stat, axis=1
     )
+
+    print("*** Assigning the insertion direction for insertions in the coding region")
     insertions_with_annotation[
         "Insertion_direction"
     ] = insertions_with_annotation.apply(assign_insertion_direction, axis=1)
 
+    print("*** Dropping the duplicated insertions around boundary")
     insertions_with_annotation_no_duplicates = (
-        insertions_with_annotation.groupby(["#Chr", "Start", "Strand"])
+        insertions_with_annotation.groupby(["Chr", "Coordinate", "Strand"])
         .apply(drop_duplicated_insertions_around_boundary)
         .reset_index(drop=True)
     )
 
+    print("*** Saving the annotated insertions")
     insertions_with_annotation_no_duplicates.to_csv(
-        args.output, index=False, header=True, float_format="%.3f"
+        args.output, index=False, header=True, float_format="%.3f", sep="\t"
     )
-
-    # VV_sites = insertions_with_annotation_no_duplicates[
-    #     insertions_with_annotation_no_duplicates["Essentiality"] == "V|V"
-    # ][["#Chr", "Start", "End", "Strand", "Target"]]
-    # VV_sites.to_csv(args.vv_sites, index=False, header=True)
-
 
 def calculate_distance_to_start_stop_codon(row, name_distance):
     if row["Type"] != "Intergenic region":
@@ -121,11 +132,11 @@ def cal_residues_affected(row, residue_stat):
         Residue_frame = np.nan
     else:
         CDS_base = float(row["Accumulated_CDS_bases"])
-        if (row["Type"] == "CDS") and (row["Strand_Interval"] == "+"):
+        if (row["Feature"] == "CDS") and (row["Strand_Interval"] == "+"):
             CDS_base = CDS_base + \
-                int(row["Start"]) - int(row["Start_Interval"])
-        elif (row["Type"] == "CDS") and (row["Strand_Interval"] == "-"):
-            CDS_base = CDS_base + int(row["End_Interval"] - row["End"])
+                int(row["Coordinate"]) - int(row["Start_Interval"])
+        elif (row["Feature"] == "CDS") and (row["Strand_Interval"] == "-"):
+            CDS_base = CDS_base + int(row["End_Interval"] - row["Coordinate"])
         Residue_affected = CDS_base // 3 + 1
         Residue_frame = CDS_base % 3
     return pd.Series([Residue_affected, Residue_frame], index=residue_stat)
@@ -190,13 +201,6 @@ if __name__ == "__main__":
     )
     parser.add_argument("-o", "--output", dest="output",
                         type=Path, help="output file")
-    # parser.add_argument(
-    #     "-v",
-    #     "--vv-sites",
-    #     dest="vv_sites",
-    #     type=Path,
-    #     help="vv sites file",
-    # )
     args = parser.parse_args()
 
     main(args)

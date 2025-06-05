@@ -4,6 +4,6 @@ channels:
   - defaults
 dependencies:
   - python=3.12
+  - pandas=2.2.3
+  - biopython=1.85
   - openpyxl
-  - pybedtools
-  - snakemake

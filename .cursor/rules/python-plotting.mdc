@@ -1,0 +1,173 @@
+---
+description: 
+globs: *.py,*.ipynb
+alwaysApply: false
+---
+# Python Figure Plotting Cursor Rules
+
+## Color Palette Organization
+
+### Organized Color Families
+Colors are grouped by hue families for better visual harmony:
+
+**Purple/Magenta Family** (4 colors)
+- `#962955` - Deep pink-purple (primary choice)
+- `#8c397b` - Medium purple  
+- `#b684d5` - Light purple
+- `#eb85c0` - Pink-purple
+
+**Green Family** (7 colors)
+- `#7fb775` - Medium green (primary choice)
+- `#9ab25d` - Yellow-green
+- `#33510c` - Dark olive green
+- `#006c48` - Dark teal-green
+- `#008a77` - Teal
+- `#72b797` - Light blue-green
+- `#25522c` - Forest green
+
+**Blue Family** (5 colors)
+- `#6479cc` - Medium blue (primary choice)
+- `#26b1fd` - Bright blue
+- `#48b7cd` - Blue-cyan
+- `#0181a1` - Dark cyan
+- `#89afba` - Light blue-gray
+
+**Orange/Brown Family** (5 colors)
+- `#ad933c` - Golden brown (primary choice)
+- `#a28a33` - Dark gold
+- `#be6940` - Orange-brown
+- `#723916` - Dark brown
+- `#d59e67` - Light orange
+
+**Red Family** (2 colors)
+- `#d3616e` - Rose red
+- `#e77b6d` - Coral red
+
+**Neutral Family** (7 colors)
+- For backgrounds, annotations, and secondary elements
+- Range from dark purple-gray to light tan
+
+### Recommended Color Combinations
+- **Primary trio**: Purple (`#962955`), Green (`#7fb775`), Blue (`#6479cc`)
+- **4-category plots**: Add Golden brown (`#ad933c`)
+- **6-category plots**: Add Bright blue (`#26b1fd`) and Medium purple (`#8c397b`)
+- **Sequential plots**: Use colors within same family (e.g., light to dark blues)
+- **Diverging plots**: Use opposite families (e.g., purple-to-blue gradient)
+
+## Plotting Priority Order
+
+### 1. Matplotlib (Primary Choice)
+**When to use**: Publication figures, precise control, complex layouts
+**Advantages**: Maximum customization, vector output, publication standard
+
+**Key principles**:
+- Always remove top and right spines for cleaner look
+- Use 300 DPI for publication quality
+- Set font family to sans-serif (Arial preferred)
+- Apply subtle grid with low alpha (0.3) for better data reading
+- Use consistent line widths: 1.2 for axes, 2.0 for data lines
+- Scatter points: size 50, alpha 0.8, with subtle white edges
+- Place legends outside plot area when data might be obscured
+
+**Standard workflow**:
+1. Create figure with appropriate size (4x3 for small, 6x4.5 for medium, 8x6 for large)
+2. Apply clean styling (no top/right spines, grid on)
+3. Add data with colors from primary palette
+4. Include statistical annotations when relevant
+5. Position legend appropriately (outside if needed)
+6. Use tight_layout() before saving
+
+### 2. Altair (Secondary Choice)
+**When to use**: Interactive plots, web dashboards, exploratory analysis
+**Advantages**: Grammar of graphics, interactive by default, web-friendly
+
+**Key principles**:
+- Leverage Altair's built-in interactivity (zoom, pan, hover)
+- Use your custom color scales consistently across charts
+- Set reasonable default sizes (400x300 for standard charts)
+- Combine multiple charts with composition operators when needed
+- Export as HTML for interactive use, PNG/SVG for static needs
+
+**Best practices**:
+- Define custom color scales using your palette
+- Use consistent mark sizes and opacity across related charts
+- Enable data transformers for large datasets
+- Combine charts horizontally/vertically for multi-panel figures
+
+### 3. Seaborn (Third Choice)
+**When to use**: Statistical relationships, quick exploration, distribution plots
+**Advantages**: Statistical focus, automatic plot types, pandas integration
+
+**Key principles**:
+- Set your custom palette as default with `sns.set_palette()`
+- Use whitegrid style but remove top/right spines
+- Leverage built-in statistical functions (regression lines, confidence intervals)
+- Good for categorical data visualization and distribution comparisons
+
+**Common use cases**:
+- Box plots, violin plots for distributions
+- Regression plots with confidence intervals  
+- Heatmaps for correlation matrices
+- Pair plots for multi-variable exploration
+
+## Professional Styling Guidelines
+
+### Figure Dimensions
+Choose sizes based on intended use:
+- **Small figures** (4x3): Single plots, supplements
+- **Medium figures** (6x4.5): Standard journal figures
+- **Large figures** (8x6): Complex plots with multiple elements
+- **Wide figures** (10x4): Time series, genomic data
+- **Square figures** (4x4): Correlation plots, heatmaps
+
+### Typography
+- **Title**: 14pt, bold, with adequate padding above plot
+- **Axis labels**: 12pt, semi-bold for emphasis
+- **Tick labels**: 10pt, regular weight
+- **Legend**: 10pt, no frame, positioned to not obscure data
+- **Annotations**: 9pt, with subtle background box
+
+### Visual Elements
+- **Line weights**: Data lines 2.0pt, axes 1.2pt, grid 0.8pt
+- **Point sizes**: 50 for scatter plots, 40 for line plot markers
+- **Transparency**: 0.8 for points, 0.9 for lines, 0.3 for grids
+- **Edges**: Subtle white edges on points and bars for definition
+
+### Statistical Annotations
+Always include relevant statistics on plots:
+- **Correlation plots**: Include r-value, p-value, and sample size
+- **Regression plots**: Show R² value and equation if relevant
+- **Group comparisons**: Add significance indicators
+- **Position**: Top-left corner (0.05, 0.95 in axes coordinates)
+- **Style**: Small text in rounded white box with transparency
+
+## Layout and Composition
+
+### Legend Placement
+- **Inside plot**: Use when legend is small and doesn't obscure data
+- **Outside plot**: Default choice - use `bbox_to_anchor=(1.05, 1)` 
+- **Below plot**: For horizontal legends with many categories
+- **No legend**: When colors are self-explanatory or described in caption
+
+### Multi-panel Figures
+- Use consistent color schemes across panels
+- Align axes when comparing similar data
+- Share legends when possible to reduce clutter
+- Label panels clearly (A, B, C, etc.)
+
+### Export Guidelines
+- **For publications**: Save as both PNG (300 DPI) and SVG
+- **For presentations**: PNG at 200 DPI is sufficient
+- **For web**: Consider Altair HTML export for interactivity
+- Always use `bbox_inches='tight'` to prevent clipping
+
+## Common Workflow Template
+
+1. **Start with matplotlib** for most publication figures
+2. **Consider Altair** if interactivity adds value
+3. **Use seaborn** for quick statistical exploration
+4. **Choose colors** from appropriate family based on data categories
+5. **Apply consistent styling** across related figures
+6. **Add statistical annotations** when they enhance understanding
+7. **Position legends** to maximize data visibility
+8. **Export in appropriate formats** for intended use

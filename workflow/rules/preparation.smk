@@ -1,20 +1,20 @@
-# rule all:
-#     input:
-#         "resources/pombase_data/2025-05-01/fasta/Schizosaccharomyces_pombe_all_chromosomes.fa.fai",
-#         "resources/pombase_data/2025-05-01/fasta/Schizosaccharomyces_pombe_all_chromosomes.fa.amb"
-
 # download pombase data from ftp server
 # -----------------------------------------------------
-checkpoint download_pombase_data:
+rule download_pombase_data:
     output:
-        fasta = "resources/pombase_data/{release_version}/fasta/Schizosaccharomyces_pombe_all_chromosomes.fa"
+        fasta = "resources/pombase_data/{release_version}/fasta/Schizosaccharomyces_pombe_all_chromosomes.fa",
+        gff = "resources/pombase_data/{release_version}/gff/Schizosaccharomyces_pombe_all_chromosomes.gff3",
+        fai = "resources/pombase_data/{release_version}/fasta/Schizosaccharomyces_pombe_all_chromosomes.fa.fai",
+        peptide_stats = "resources/pombase_data/{release_version}/Protein_features/PeptideStats.tsv",
+        gene_IDs_names_products = "resources/pombase_data/{release_version}/Gene_metadata/gene_IDs_names_products.tsv",
+        FYPOviability = "resources/pombase_data/{release_version}/Gene_metadata/FYPOviability.tsv"
     params:
         release_version="{release_version}",
         download_dir="resources/pombase_data/{release_version}"
     log:
         "logs/preparation/download_pombase_data_{release_version}.log"
     message:
-        "Downloading pombase data from ftp server"
+        "*** Downloading pombase data from ftp server"
     shell:
         "workflow/scripts/preparation/download_file_from_pombaseFTP.sh {params.release_version} {params.download_dir} &> {log}"
 
@@ -28,7 +28,7 @@ rule samtools_faidx:
     log:
         "logs/preparation/samtools_faidx_{release_version}.log"
     message:
-        "Indexing genome fasta file with samtools faidx"
+        "*** Indexing genome fasta file with samtools faidx"
     wrapper:
         "v6.2.0/bio/samtools/faidx"
 
@@ -42,9 +42,32 @@ rule bwa_index:
     log:
         "logs/preparation/bwa_index_{release_version}.log"
     message:
-        "Indexing genome fasta file with bwa"
+        "*** Indexing genome fasta file with bwa"
     wrapper:
         "v6.2.0/bio/bwa/index"
 
-# extract coding region from gff3 file
+# extract genome region from gff3 file
 # -----------------------------------------------------
+rule extract_genome_region:
+    input:
+        rules.download_pombase_data.output.gff,
+        rules.download_pombase_data.output.fai,
+        rules.download_pombase_data.output.peptide_stats,
+        rules.download_pombase_data.output.gene_IDs_names_products,
+        rules.download_pombase_data.output.FYPOviability,
+    output:
+        primary_transcripts_bed = "resources/pombase_data/{release_version}/genome_region/coding_gene_primary_transcripts.bed",
+        intergenic_regions_bed = "resources/pombase_data/{release_version}/genome_region/intergenic_regions.bed",
+        non_coding_rna_bed = "resources/pombase_data/{release_version}/genome_region/non_coding_rna.bed",
+        genome_intervals_bed = "resources/pombase_data/{release_version}/genome_region/Genome_intervals.bed",
+        overlapped_region_bed = "resources/pombase_data/{release_version}/genome_region/overlapped_region.bed"
+    log:
+        "logs/preparation/extract_genome_region_{release_version}.log"
+    params:
+        hayles_viability_path = "resources/Hayles_2013_OB_merged_categories.xlsx"
+    message:
+        "*** Extracting genome region from gff3 file"
+    conda:
+        "../envs/pybedtools.yml"
+    notebook:
+        "workflow/notebooks/gff_processing_and_annotation.ipynb"

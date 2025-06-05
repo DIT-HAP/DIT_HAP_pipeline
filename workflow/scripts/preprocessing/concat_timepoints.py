@@ -2,9 +2,6 @@
 """
 This script concatenates the timepoints of the same subject into one file.
 """
-from email.parser import Parser
-import sys
-import re
 import argparse
 import pandas as pd
 from pathlib import Path
@@ -67,7 +64,7 @@ def concat_timepoints(input, timepoints, outputPBL, outputPBR, outputReads, ref)
     concated_files = (
         pd.concat(
             [
-                pd.read_csv(file, header=0, index_col=[0, 1, 2, 3])
+                pd.read_csv(file, header=0, index_col=[0, 1, 2], sep="\t")
                 for file in input
             ],
             axis=1,
@@ -82,7 +79,7 @@ def concat_timepoints(input, timepoints, outputPBL, outputPBR, outputReads, ref)
         ref[chr].seq[coordinate - 4: coordinate]
     )
     target = concated_files.index.to_frame().apply(
-        lambda row: get_target(row["#Chr"], row["Start"], ref), axis=1
+        lambda row: get_target(row["Chr"], row["Coordinate"], ref), axis=1
     )
 
     # insert target sequence
@@ -91,13 +88,13 @@ def concat_timepoints(input, timepoints, outputPBL, outputPBR, outputReads, ref)
 
     # save concatenated files
     concated_files.xs("PBL", level=1, axis=1).fillna(0).astype(int).to_csv(
-        outputPBL, index=True
+        outputPBL, index=True, sep="\t"
     )
     concated_files.xs("PBR", level=1, axis=1).fillna(0).astype(int).to_csv(
-        outputPBR, index=True
+        outputPBR, index=True, sep="\t"
     )
     concated_files.xs("Reads", level=1, axis=1).fillna(0).astype(int).to_csv(
-        outputReads, index=True
+        outputReads, index=True, sep="\t"
     )
 
 

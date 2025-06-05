@@ -1,0 +1,101 @@
+---
+description: 
+globs: *smk,*.py,*.ipynb
+alwaysApply: false
+---
+# Bioinformatics Python Script Rules
+
+## Code Structure & Organization
+- Always start with a comprehensive module docstring describing the script's purpose, input/output, and usage
+- Use clear function organization with type hints for all parameters and return values
+- Include a main() function that orchestrates the script execution
+- Group related functionality into logical functions with descriptive names
+
+## Modern Python Standards
+- Use `pathlib.Path` instead of `os.path` for all file and directory operations
+- Use `logging` module instead of print statements for all output except final results
+- Use `argparse` for command-line argument parsing with clear help messages
+- Prefer f-strings for string formatting
+- Use context managers (`with` statements) for file operations
+- **Leverage scientific library functions over manual loops**: Use numpy, pandas, scipy, sklearn built-in functions instead of writing for loops when possible
+- Prefer vectorized operations (numpy arrays, pandas operations) over iterative approaches
+- Use list/dict comprehensions for simple data transformations, but prefer library functions for complex operations
+- Choose pandas methods (groupby, apply, agg) over manual iteration through DataFrames
+- Use scipy/sklearn functions for statistical and machine learning operations rather than implementing from scratch
+
+## Function Design
+- Each function should have a clear docstring with Args, Returns, and brief description
+- Use type hints: `from typing import List, Dict, Tuple, Optional, Union` as needed
+- Keep functions focused on single responsibilities
+- Use descriptive parameter and variable names relevant to bioinformatics
+
+## Logging & Statistics
+- Set up logging with appropriate levels (INFO, DEBUG, WARNING, ERROR)
+- Log key processing steps and intermediate results
+- Collect meaningful statistics throughout processing (counts, percentages, processing times)
+- Store statistics in a structured format (dict or dataclass)
+- Present final statistics as a formatted table using tabulate or similar
+
+## Error Handling
+- Use basic try/except blocks only for critical operations
+- Log errors appropriately but keep error handling simple since inputs are stable
+- Don't over-engineer with extensive validation
+
+## Code Style
+- Keep code simple and readable - avoid unnecessary complexity
+- Use meaningful variable names that reflect biological/computational concepts
+- Group imports: standard library, third-party, local imports
+- Follow PEP 8 naming conventions
+
+## Example Template Structure:
+```python
+#!/usr/bin/env python3
+"""
+Brief description of the bioinformatics script.
+
+This script processes [input type] and generates [output type].
+Typical usage: python script.py -i input.file -o output.file
+
+Author: [Your name]
+Date: [Date]
+"""
+
+import logging
+from pathlib import Path
+from typing import List, Dict, Optional
+import argparse
+from collections import defaultdict
+import time
+
+def setup_logging(verbose: bool = False) -> None:
+    """Set up logging configuration."""
+    
+def parse_arguments() -> argparse.Namespace:
+    """Parse command line arguments."""
+    
+def process_data(input_file: Path) -> Dict[str, int]:
+    """Main data processing function."""
+    
+def generate_statistics(data: Dict) -> Dict[str, Union[int, float]]:
+    """Generate summary statistics."""
+    
+def display_summary_table(stats: Dict[str, Union[int, float]]) -> None:
+    """Display statistics in table format."""
+    
+def main() -> None:
+    """Main execution function."""
+    
+if __name__ == "__main__":
+    main()
+```
+
+## Statistics Guidelines
+- Track processing time, record counts, success/failure rates
+- Include biologically relevant metrics (GC content, read lengths, alignment rates, etc.)
+- Use tabulate library for clean table formatting
+- Log statistics during processing and display summary table at the end
+
+## Snakemake Integration
+- When writing scripts for Snakemake workflows, ensure proper exit codes
+- Use snakemake.input and snakemake.output when applicable
+- Keep logging compatible with Snakemake's log capture

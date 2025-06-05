@@ -1,0 +1,26 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Current File",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "python": "/data/a/yangyusheng/miniforge3/envs/pydeseq2/bin/python",
+            "args": [
+                "-i",
+                "results/test_project/14_imputed_missing_values_using_FR/imputed_raw_reads.tsv",
+                "-a",
+                "results/test_project/13_concatenated/annotations.tsv",
+                "-t",
+                "YES0",
+                "-o",
+                "results/test_project/15_insertion_level_depletion_analysis/insertions_LFC.tsv"
+            ]
+        }
+    ]
+}

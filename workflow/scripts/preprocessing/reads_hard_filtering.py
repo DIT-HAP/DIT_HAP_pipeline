@@ -49,11 +49,26 @@ def main():
 
     args = parse_args()
     # read insertion reads file
-    raw_reads = pd.read_csv(args.input, header=0, index_col=[0, 1, 2, 3, 4])
+    raw_reads = pd.read_csv(args.input, header=0, index_col=[0, 1, 2, 3], sep="\t")
+    shape_before_filtering = raw_reads.shape[0]
+    print("*** Before filtering")
+    print(raw_reads.head())
+    print(raw_reads.columns)
+    print("*** Init timepoint: ", args.init_timepoint)
+    print("*** Cutoff: ", args.cutoff)
     # filtering
-    filtered_reads = raw_reads[raw_reads[args.init_timepoint] > args.cutoff].copy()
+    filtered_reads = raw_reads[raw_reads[args.init_timepoint] >= args.cutoff].copy()
+    shape_after_filtering = filtered_reads.shape[0]
+    print("*** After filtering")
+    print(filtered_reads.head())
+    print(filtered_reads.columns)
     # write to file
-    filtered_reads.to_csv(args.output, sep=",", header=True, index=True)
+    filtered_reads.to_csv(args.output, sep="\t", header=True, index=True)
+
+    print("### Hard filtering completed ###")
+    print("*** Shape before filtering: ", shape_before_filtering)
+    print("*** Shape after filtering: ", shape_after_filtering)
+    print("*** Retention rate: ", round(shape_after_filtering / shape_before_filtering * 100, 4), "%")
 
 
 if __name__ == "__main__":
