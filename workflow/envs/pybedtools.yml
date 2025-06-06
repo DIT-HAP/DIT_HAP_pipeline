@@ -4,6 +4,8 @@ channels:
   - defaults
 dependencies:
   - python=3.12
-  - openpyxl
   - pybedtools
+  - openpyxl
   - snakemake
+  - ipykernel
+  - notebook

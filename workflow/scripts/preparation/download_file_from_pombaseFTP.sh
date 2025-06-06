@@ -17,7 +17,7 @@
 #
 # The script will download files into the specified directory structure.
 # It uses `wget -nc` to avoid re-downloading files if they already exist and
-# `gunzip -n` to avoid overwriting uncompressed files if they exist.
+# `gunzip -f` to avoid overwriting uncompressed files if they exist.
 # ---
 
 set -e
@@ -90,13 +90,13 @@ mkdir -p "${download_dir}/fasta"
 
 # Chromosomes
 wget -nc -P "${download_dir}/fasta" "https://www.pombase.org/data/releases/pombase-${release_version}/fasta/chromosomes/Schizosaccharomyces_pombe_all_chromosomes.fa.gz"
-gunzip -n "${download_dir}/fasta/Schizosaccharomyces_pombe_all_chromosomes.fa.gz"
+gunzip -f "${download_dir}/fasta/Schizosaccharomyces_pombe_all_chromosomes.fa.gz"
 
 # Feature sequences (peptides)
 wget -nc -P "${download_dir}/fasta" "https://www.pombase.org/data/releases/pombase-${release_version}/fasta/feature_sequences/peptide.fa.gz"
-gunzip -n "${download_dir}/fasta/peptide.fa.gz"
+gunzip -f "${download_dir}/fasta/peptide.fa.gz"
 
-# --- Download GFF file ---
+# --- Download yGFF file ---
 echo "[INFO] Downloading GFF file..."
 # Create GFF subfolder
 mkdir -p "${download_dir}/gff"
@@ -179,16 +179,16 @@ echo "[INFO] Downloading export files..."
 mkdir -p "${download_dir}/exports"
 
 wget -nc -P "${download_dir}/exports" "https://www.pombase.org/data/releases/pombase-${release_version}/exports/pombase-go-physical-interactions.tsv.gz"
-gunzip -n "${download_dir}/exports/pombase-go-physical-interactions.tsv.gz"
+gunzip -f "${download_dir}/exports/pombase-go-physical-interactions.tsv.gz"
 
 wget -nc -P "${download_dir}/exports" "https://www.pombase.org/data/releases/pombase-${release_version}/exports/pombase-interactions-since-v62-2017-01-30.gz"
-gunzip -n "${download_dir}/exports/pombase-interactions-since-v62-2017-01-30.gz" # Note: Filename indicates 'since-v62', might not align with release_version
+gunzip -f "${download_dir}/exports/pombase-interactions-since-v62-2017-01-30.gz" # Note: Filename indicates 'since-v62', might not align with release_version
 
 wget -nc -P "${download_dir}/exports" "https://www.pombase.org/data/releases/pombase-${release_version}/pombase-${release_version}.gaf.gz"
-gunzip -n "${download_dir}/exports/pombase-${release_version}.gaf.gz"
+gunzip -f "${download_dir}/exports/pombase-${release_version}.gaf.gz"
 
 wget -nc -P "${download_dir}/exports" "https://www.pombase.org/data/releases/pombase-${release_version}/pombase-${release_version}.phaf.gz"
-gunzip -n "${download_dir}/exports/pombase-${release_version}.phaf.gz"
+gunzip -f "${download_dir}/exports/pombase-${release_version}.phaf.gz"
 
 echo "--- PomBase data download finished successfully for release: ${release_version} ---"
 echo "Files are organized in subfolders under: ${download_dir}"

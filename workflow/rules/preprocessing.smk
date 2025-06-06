@@ -64,6 +64,8 @@ rule demultiplexing:
     shell:
         """
         cutadapt --cores {threads} \
+                 -q 15 \
+                 --overlap 15 \
                  -g PBL={params.PBL_adapter} \
                  -g PBR={params.PBR_adapter} \
                  -A PBL={params.PBL_reverseComplement_adapter} \
@@ -123,6 +125,7 @@ rule fastqc_demultiplexed:
 rule bwa_mem_mapping:
     input:
         ref=rules.download_pombase_data.output.fasta.format(release_version=config["Pombase_release_version"]),
+        ref_index=expand(rules.bwa_index.output, release_version=config["Pombase_release_version"]),
         PBL_fq1=rules.demultiplexing.output.PBL_r1,
         PBL_fq2=rules.demultiplexing.output.PBL_r2,
         PBR_fq1=rules.demultiplexing.output.PBR_r1,
@@ -154,7 +157,8 @@ rule bwa_mem_mapping:
 rule samtools_sorting_and_indexing:
     input:
         PBL=rules.bwa_mem_mapping.output.PBL,
-        PBR=rules.bwa_mem_mapping.output.PBR
+        PBR=rules.bwa_mem_mapping.output.PBR,
+        ref_index=rules.samtools_faidx.output[0].format(release_version=config["Pombase_release_version"])
     output:
         PBL_sorted=f"results/{project_name}/4_sorted/{{sample}}_{{timepoint}}_{{condition}}.PBL.sorted.bam",
         PBR_sorted=f"results/{project_name}/4_sorted/{{sample}}_{{timepoint}}_{{condition}}.PBR.sorted.bam",
@@ -260,8 +264,8 @@ rule read_pair_filtering:
         r1_no_sa=config["r1_no_sa"],
         r1_no_xa=config["r1_no_xa"],
         r2_mapq_threshold=config["r2_mapq_threshold"],
-        r2_ncigar_value = config["r2_ncigar_value"],
-        r2_nm_threshold = config["r2_nm_threshold"],
+        r2_disable_ncigar = config["r2_disable_ncigar"],
+        r2_disable_nm = config["r2_disable_nm"],
         r2_no_sa=config["r2_no_sa"],
         r2_no_xa=config["r2_no_xa"],
         require_proper_pair=config["require_proper_pair"],
@@ -277,8 +281,8 @@ rule read_pair_filtering:
                                                                              {params.r1_no_sa} \
                                                                              {params.r1_no_xa} \
                                                                              --r2-mapq-threshold {params.r2_mapq_threshold} \
-                                                                             {params.r2_ncigar_value} \
-                                                                             {params.r2_nm_threshold} \
+                                                                             {params.r2_disable_ncigar} \
+                                                                             {params.r2_disable_nm} \
                                                                              {params.r2_no_sa} \
                                                                              {params.r2_no_xa} \
                                                                              {params.require_proper_pair} &> {log}
@@ -291,8 +295,8 @@ rule read_pair_filtering:
                                                                              {params.r1_no_sa} \
                                                                              {params.r1_no_xa} \
                                                                              --r2-mapq-threshold {params.r2_mapq_threshold} \
-                                                                             {params.r2_ncigar_value} \
-                                                                             {params.r2_nm_threshold} \
+                                                                             {params.r2_disable_ncigar} \
+                                                                             {params.r2_disable_nm} \
                                                                              {params.r2_no_sa} \
                                                                              {params.r2_no_xa} \
                                                                              {params.require_proper_pair} &>> {log}

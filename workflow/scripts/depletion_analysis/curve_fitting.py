@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Gompertz Curve Fitting for Depletion Analysis
 
@@ -147,14 +146,14 @@ def constraint_function2(params: List[float]) -> float:
 
 
 def fit_single_curve(x_values: np.ndarray, y_values: np.ndarray, 
-                    gene_name: str, t_last: float) -> Dict[str, Union[str, float]]:
+                    ID: str, t_last: float) -> Dict[str, Union[str, float]]:
     """
     Fit Gompertz curve to a single dataset.
     
     Args:
         x_values: Time points
         y_values: Depletion measurements
-        gene_name: Gene/insertion identifier
+        ID: Gene/insertion identifier
         t_last: Last time point for constraints
         
     Returns:
@@ -184,24 +183,24 @@ def fit_single_curve(x_values: np.ndarray, y_values: np.ndarray,
             rmse = np.sqrt(ss_res / len(y_values))
 
             return {
-                'gene': gene_name,
+                'ID': ID,
                 'Status': 'Success',
                 'A': A, 'um': um, 'lam': lam,
                 'R2': r_squared, 'RMSE': rmse
             }
         else:
-            logging.warning(f"Optimization failed for {gene_name}")
+            logging.warning(f"Optimization failed for {ID}")
             return {
-                'gene': gene_name,
+                'ID': ID,
                 'Status': 'Optimization failed',
                 'A': np.nan, 'um': np.nan, 'lam': np.nan,
                 'R2': np.nan, 'RMSE': np.nan
             }
     
     except Exception as e:
-        logging.error(f"Error fitting {gene_name}: {e}")
+        logging.error(f"Error fitting {ID}: {e}")
         return {
-            'gene': gene_name,
+            'ID': ID,
             'Status': 'Fitting error',
             'A': np.nan, 'um': np.nan, 'lam': np.nan,
             'R2': np.nan, 'RMSE': np.nan
@@ -209,7 +208,7 @@ def fit_single_curve(x_values: np.ndarray, y_values: np.ndarray,
 
 
 def create_fitted_plot(ax: plt.Axes, x_values: np.ndarray, y_values: np.ndarray, 
-                      params: Dict[str, Union[str, float]], gene_name: str) -> None:
+                      params: Dict[str, Union[str, float]], ID: str) -> None:
     """
     Create a publication-quality plot for fitted curve.
     
@@ -218,7 +217,7 @@ def create_fitted_plot(ax: plt.Axes, x_values: np.ndarray, y_values: np.ndarray,
         x_values: Time points
         y_values: Depletion measurements
         params: Fitted parameters
-        gene_name: Gene identifier
+        ID: Gene/insertion identifier
     """
     ax.grid(True, alpha=0.3)
     
@@ -246,11 +245,10 @@ def create_fitted_plot(ax: plt.Axes, x_values: np.ndarray, y_values: np.ndarray,
                   linestyle='--', alpha=0.3, linewidth=1.0)
         
         # Add parameter text
-        param_text = f'A={A:.2f}, μₘ={um:.2f}, λ={lam:.2f}\nR²={params["R2"]:.3f}'
+        param_text = f'A={A:.2f}\num={um:.2f}\nlam={lam:.2f}\nR²={params["R2"]:.3f}\nRMSE={params["RMSE"]:.3f}'
         ax.text(0.05, 0.95, param_text, 
                transform=ax.transAxes, fontsize=8,
-               verticalalignment='top', 
-               bbox=dict(boxstyle='round,pad=0.3', facecolor='white', alpha=0.8))
+               verticalalignment='top')
     else:
         # Plot failed fit
         ax.scatter(x_values, y_values, 
@@ -260,7 +258,7 @@ def create_fitted_plot(ax: plt.Axes, x_values: np.ndarray, y_values: np.ndarray,
                horizontalalignment='center', color='red')
     
     ax.set_ylim(-2, 10)
-    ax.set_title(gene_name, fontsize=9, pad=5)
+    ax.set_title(" ".join(ID.split("=")), fontsize=9, pad=5)
     ax.tick_params(labelsize=8)
 
 
@@ -282,7 +280,7 @@ def generate_fitting_plots(results_df: pd.DataFrame, x_values: np.ndarray,
     
     with PdfPages(output_plot) as pdf:
         for page in range(num_pages):
-            fig, axes = plt.subplots(8, 4, figsize=(11.69, 8.27))  # A4 landscape
+            fig, axes = plt.subplots(8, 4, figsize=(8.27, 11.69))  # A4 landscape
             axes = axes.flatten()
             
             start_idx = page * plots_per_page
@@ -297,7 +295,7 @@ def generate_fitting_plots(results_df: pd.DataFrame, x_values: np.ndarray,
                     x_values, 
                     y_values[idx], 
                     row.to_dict(),
-                    row['gene']
+                    row['ID']
                 )
             
             # Hide unused subplots
@@ -330,15 +328,17 @@ def process_depletion_data(input_file: Path, time_points: List[float]) -> Tuple[
     timepoint_columns = data.columns.tolist()[index_column_num:]
     data.set_index(index_columns, inplace=True)
 
+    index_names = data.index.names
+
     # Create gene identifiers
-    gene_names = ["_".join(map(str, idx)) for idx in data.index.tolist()]
+    IDs = ["=".join(map(str, idx)) for idx in data.index.tolist()]
     
     x_values = time_points
     y_values = data.values
     
-    logging.info(f"Loaded {len(gene_names)} datasets with {len(x_values)} time points")
+    logging.info(f"Loaded {len(IDs)} datasets with {len(x_values)} time points")
     
-    return x_values, y_values, gene_names
+    return x_values, y_values, IDs, index_names
 
 
 def generate_summary_statistics(results_df: pd.DataFrame) -> Dict[str, Union[int, float]]:
@@ -439,7 +439,7 @@ def main() -> None:
     output_plot = args.output.with_suffix('.pdf').with_name(args.output.stem + '_fitted_curves.pdf')
     
     # Process data
-    x_values, y_values, gene_names = process_depletion_data(args.input, args.time_points)
+    x_values, y_values, IDs, index_names = process_depletion_data(args.input, args.time_points)
     t_last = x_values[-1]
     
     # Fit curves with progress tracking
@@ -447,8 +447,8 @@ def main() -> None:
     all_results = []
     
     with tqdm(total=len(y_values), desc="Fitting progress") as pbar:
-        for i, (y_data, gene_name) in enumerate(zip(y_values, gene_names)):
-            result = fit_single_curve(x_values, y_data, gene_name, t_last)
+        for i, (y_data, ID) in enumerate(zip(y_values, IDs)):
+            result = fit_single_curve(x_values, y_data, ID, t_last)
             
             # Add time series data to result
             for j, time_val in enumerate(x_values):
@@ -464,9 +464,6 @@ def main() -> None:
     # Round numeric columns
     numeric_columns = ['A', 'um', 'lam', 'R2', 'RMSE']
     results_df[numeric_columns] = results_df[numeric_columns].round(3)
-
-    # Save results
-    results_df.to_csv(args.output, index=False)
     
     # Generate plots
     generate_fitting_plots(results_df, x_values, y_values, output_plot)
@@ -474,6 +471,14 @@ def main() -> None:
     # Calculate and display statistics
     stats = generate_summary_statistics(results_df)
     display_summary_table(stats)
+
+    results_df.set_index("ID", inplace=True)
+    multiple_index = pd.MultiIndex.from_tuples([ idx.split("=") for idx in results_df.index.tolist()])
+    results_df.index = multiple_index
+    results_df.rename_axis(index_names, inplace=True)
+
+    # Save results
+    results_df.to_csv(args.output, index=True)
     
     # Final summary
     elapsed_time = time.time() - start_time

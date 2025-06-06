@@ -48,6 +48,8 @@ rule insertion_level_depletion_analysis:
         -o {output.all_statistics} &> {log}
         """
 
+# insertion-level curve fitting
+# -----------------------------------------------------
 rule insertion_level_curve_fitting:
     input:
         rules.insertion_level_depletion_analysis.output.LFC,
@@ -69,18 +71,38 @@ rule insertion_level_curve_fitting:
         -o {output} &> {log}
         """
 
-# 
+# gene-level depletion analysis
+# -----------------------------------------------------
+rule gene_level_depletion_analysis:
+    input:
+        lfc_path = rules.insertion_level_depletion_analysis.output.all_statistics,
+        annotations_path = rules.concat_counts_and_annotations.output.annotations
+    output:
+        all_statistics = f"results/{project_name}/17_gene_level_depletion_analysis/Gene_level_statistics.csv",
+        LFC = f"results/{project_name}/17_gene_level_depletion_analysis/LFC.csv"
+    log:
+        "logs/depletion_analysis/gene_level_depletion_analysis.log"
+    conda:
+        "../envs/statistics_and_figure_plotting.yml"
+    message:
+        "*** Running gene-level depletion analysis..."
+    params:
+        method = "fisher"
+    shell:
+        """
+        python workflow/scripts/depletion_analysis/gene_level_depletion_analysis.py \
+        -l {input.lfc_path} \
+        -a {input.annotations_path} \
+        -o {output.all_statistics} \
+        -m {params.method} &> {log}
+        """
 
-# rule calculate_gene_level_statistics:
-#     input:
-#         lfc_path = rules.DEseq2_analysis.output,
-#         annotations_path = rules.merge_annotation.output
-#     output:
-#         project_dir/"13_gene_level_statistics/GWMs.csv"
-#     shell:
-#         """
-#         python workflow/scripts/annotating_and_DEseq2_analysis/calculate_gene_level_statistic.py \
-#         -l {input.lfc_path} \
-#         -a {input.annotations_path} \
-#         -o {output}
-#         """
+use rule insertion_level_curve_fitting as gene_level_curve_fitting with:
+    input:
+        rules.gene_level_depletion_analysis.output.LFC,
+    output:
+        f"results/{project_name}/18_gene_level_curve_fitting/Gene_level_statistics_fitted.csv"
+    log:
+        "logs/depletion_analysis/gene_level_curve_fitting.log"
+    message:
+        "*** Running gene-level curve fitting..."

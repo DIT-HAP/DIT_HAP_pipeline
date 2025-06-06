@@ -5,11 +5,5 @@ use_filename_as_sample_name:
   - samtools
 
 table_sample_merge:
-  "PBL":
-    - ".PBL"
-    - type: regex
-      pattern: ".PBL.*"
-  "PBR":
-    - ".PBR"
-    - type: regex
-      pattern: ".PBR.*"
+  "R1": "_1"
+  "R2": "_2"

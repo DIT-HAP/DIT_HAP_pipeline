@@ -4,7 +4,6 @@ rule download_pombase_data:
     output:
         fasta = "resources/pombase_data/{release_version}/fasta/Schizosaccharomyces_pombe_all_chromosomes.fa",
         gff = "resources/pombase_data/{release_version}/gff/Schizosaccharomyces_pombe_all_chromosomes.gff3",
-        fai = "resources/pombase_data/{release_version}/fasta/Schizosaccharomyces_pombe_all_chromosomes.fa.fai",
         peptide_stats = "resources/pombase_data/{release_version}/Protein_features/PeptideStats.tsv",
         gene_IDs_names_products = "resources/pombase_data/{release_version}/Gene_metadata/gene_IDs_names_products.tsv",
         FYPOviability = "resources/pombase_data/{release_version}/Gene_metadata/FYPOviability.tsv"
@@ -24,7 +23,7 @@ rule samtools_faidx:
     input:
         rules.download_pombase_data.output.fasta
     output:
-        f"{rules.download_pombase_data.output.fasta}.fai"
+        "resources/pombase_data/{release_version}/fasta/Schizosaccharomyces_pombe_all_chromosomes.fa.fai"
     log:
         "logs/preparation/samtools_faidx_{release_version}.log"
     message:
@@ -51,10 +50,11 @@ rule bwa_index:
 rule extract_genome_region:
     input:
         rules.download_pombase_data.output.gff,
-        rules.download_pombase_data.output.fai,
+        rules.samtools_faidx.output,
         rules.download_pombase_data.output.peptide_stats,
         rules.download_pombase_data.output.gene_IDs_names_products,
         rules.download_pombase_data.output.FYPOviability,
+        rules.bwa_index.output
     output:
         primary_transcripts_bed = "resources/pombase_data/{release_version}/genome_region/coding_gene_primary_transcripts.bed",
         intergenic_regions_bed = "resources/pombase_data/{release_version}/genome_region/intergenic_regions.bed",
@@ -62,7 +62,7 @@ rule extract_genome_region:
         genome_intervals_bed = "resources/pombase_data/{release_version}/genome_region/Genome_intervals.bed",
         overlapped_region_bed = "resources/pombase_data/{release_version}/genome_region/overlapped_region.bed"
     log:
-        "logs/preparation/extract_genome_region_{release_version}.log"
+        notebook="logs/preparation/gff_processing_and_annotation_{release_version}.ipynb"
     params:
         hayles_viability_path = "resources/Hayles_2013_OB_merged_categories.xlsx"
     message:
@@ -70,4 +70,4 @@ rule extract_genome_region:
     conda:
         "../envs/pybedtools.yml"
     notebook:
-        "workflow/notebooks/gff_processing_and_annotation.ipynb"
+        "../notebooks/gff_processing_and_annotation.ipynb"

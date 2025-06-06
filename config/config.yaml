@@ -1,10 +1,14 @@
 workdir: /data/c/yangyusheng_optimized/DIT_HAP_pipeline
 
-project_name: test_project
+project_name: LD_DIT_HAP
+
+# MultiQC configuration
+# -----------------------------------------------------
+multiqc_config: config/multiqc_config.yml
 
 # Preparation configuration
 # -----------------------------------------------------
-Pombase_release_version: 2025-05-01
+Pombase_release_version: 2025-06-01
 
 # Preprocessing configuration
 # -----------------------------------------------------
@@ -13,12 +17,11 @@ sample_sheet: config/sample_sheet_LD.tsv
 # Adapter sequences and PBL/PBR sequences for adapter trimming and demultiplexing
 # -----------------------------------------------------
 adapter_sequence: CTGTCTCTTATACACATCT
-adapter_sequence_r2: AGATGTGTATAAGAGACAG
+adapter_sequence_r2: AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT
 PBL_adapter: CATGCGTCAATTTTACGCAGACTATCTTTCTAGGG
 PBL_reverseComplement_adapter: CCCTAGAAAGATAGTCTGCGTAAAATTGACGCATG
 PBR_adapter: ACGCATGATTATCTTTAACGTACGTCACAATATGATTATCTTTCTAGGG
 PBR_reverseComplement_adapter: CCCTAGAAAGATAATCATATTGTGACGTACGTTAAAGATAATCATGCGT
-minimum_length: 30
 
 # Pair read filtering configuration
 # -----------------------------------------------------
@@ -27,11 +30,19 @@ r1_ncigar_value: 1
 r1_nm_threshold: 3
 r1_no_sa: "--r1-require-no-supplementary"
 r1_no_xa: "--r1-require-no-secondary"
+# r1_disable_mapq: "--r1-disable-mapq"
+# r1_disable_ncigar: "--r1-disable-ncigar"
+# r1_disable_nm: "--r1-disable-nm"
+
 r2_mapq_threshold: 20
-r2_ncigar_value: "--r2-disable-ncigar"
-r2_nm_threshold: "--r2-disable-nm"
+# r2_ncigar_value: 1
+# r2_nm_threshold: 3
 r2_no_sa: "--r2-require-no-supplementary"
 r2_no_xa: "--r2-require-no-secondary"
+# r2_disable_mapq: "--r2-disable-mapq"
+r2_disable_ncigar: "--r2-disable-ncigar"
+r2_disable_nm: "--r2-disable-nm"
+
 require_proper_pair: "--require-proper-pair"
 
 # Chunk size for parallel processing
