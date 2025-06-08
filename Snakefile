@@ -13,7 +13,6 @@ min_version("8.0")
 # -----------------------------------------------------
 configfile: "config/config.yaml"
 workdir: "/data/c/yangyusheng_optimized/DIT_HAP_pipeline"
-report: "workflow/report"
 
 # optional messages, log and error handling
 # -----------------------------------------------------
@@ -68,7 +67,8 @@ rule all:
         f"reports/{project_name}/PBL_PBR_correlation_analysis/{project_name}_PBL_PBR_correlation_analysis.pdf",
         f"reports/{project_name}/read_count_distribution_analysis/{project_name}_read_count_distribution_analysis.pdf",
         f"reports/{project_name}/insertion_orientation_analysis/{project_name}_insertion_orientation_analysis.pdf",
-        f"reports/{project_name}/insertion_density_analysis/{project_name}_insertion_density_analysis_histograms.pdf"
+        f"reports/{project_name}/insertion_density_analysis/{project_name}_insertion_density_analysis_histograms.pdf",
+        f"reports/{project_name}/mapping_filtering_statistics/{project_name}_mapping_filtering_statistics.tsv"
 
 # load rules
 # -----------------------------------------------------
