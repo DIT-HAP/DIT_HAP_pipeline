@@ -110,11 +110,12 @@ def load_data(lfc_path: Path, annotations_path: Path) -> Tuple[pd.DataFrame, pd.
         
         # Filter for in-gene insertions
         in_gene_insertions = insertion_annotations.query(
-            "Type != 'Intergenic region' & Distance_to_stop_codon > 4"
+            "(Type != 'Intergenic region') and (Distance_to_stop_codon > 4)"
         ).index
+        in_gene_insertion_count = results[results.index.isin(in_gene_insertions)].shape[0]
         
-        logging.info(f"Loaded {len(results)} total insertions")
-        logging.info(f"Found {len(in_gene_insertions)} in-gene insertions")
+        logging.info(f"Loaded {results.shape[0]} total insertions")
+        logging.info(f"Found {in_gene_insertion_count} in-gene insertions")
         logging.info(f"Time points in data: {results.columns.get_level_values(0).unique().tolist()}")
         
         return results, insertion_annotations, in_gene_insertions
@@ -147,15 +148,18 @@ def process_lfc_data(results: pd.DataFrame, in_gene_insertions: pd.Index) -> Tup
     in_gene_pvalues = pvalues[pvalues.index.isin(in_gene_insertions)].copy()
     
     # Data quality checks
-    lfc_nan_count = in_gene_LFCs.isna().sum().sum()
-    pval_nan_count = in_gene_pvalues.isna().sum().sum()
+    lfc_nan_count = in_gene_LFCs.isna().any(axis=1).sum()
+    pval_nan_count = in_gene_pvalues.isna().any(axis=1).sum()
     
     if lfc_nan_count > 0:
-        logging.warning(f"Found {lfc_nan_count} NaN values in LFC data")
+        logging.warning(f"Found {lfc_nan_count} rows with NaN values in LFC data")
     if pval_nan_count > 0:
-        logging.warning(f"Found {pval_nan_count} NaN values in p-value data")
+        logging.warning(f"Found {pval_nan_count} rows with NaN values in p-value data")
+        logging.warning(f"Fill NaN values in p-value data with 1 since they are mainly due to the large cooks distance")
+        logging.warning(f"Note on p-values set to NA: https://bioconductor.org/packages/devel/bioc/vignettes/DESeq2/inst/doc/DESeq2.html#more-information-on-results-columns")
+        in_gene_pvalues = in_gene_pvalues.fillna(1)
     
-    logging.info(f"Processed {len(in_gene_LFCs)} in-gene LFC measurements")
+    logging.info(f"Processed {in_gene_LFCs.shape[0]} in-gene LFC measurements")
     
     return in_gene_LFCs, in_gene_pvalues
 
@@ -174,6 +178,7 @@ def calculate_statistical_weights(GMs: pd.DataFrame, min_pvalue: float = 1e-10) 
     logging.info("Calculating statistical weights from p-values")
     
     # Clip p-values to prevent infinite weights
+    logging.info(f"Clipping p-values to prevent infinite weights, min_pvalue={min_pvalue}, max_pvalue={1-min_pvalue}")
     clipped_pvalues = GMs["Padj"].clip(lower=min_pvalue, upper=1-min_pvalue)
     
     # Calculate -log10 weights
@@ -207,12 +212,12 @@ def merge_and_normalize_weights(GMs: pd.DataFrame, insertion_annotations: pd.Dat
     )
     
     # Remove rows with missing weights
-    initial_count = len(GMs_annotated)
+    initial_count = GMs_annotated.shape[0]
     GMs_annotated = GMs_annotated[GMs_annotated["Weights"].notna()].copy()
-    final_count = len(GMs_annotated)
+    final_count = GMs_annotated.shape[0]
     
     if initial_count != final_count:
-        logging.warning(f"Removed {initial_count - final_count} rows with missing weights")
+        logging.warning(f"GMs_annotated: Removed {initial_count - final_count} rows with missing weights")
     
     # Normalize weights within each gene and timepoint
     GMs_annotated["Normalized_weights"] = GMs_annotated.groupby(
@@ -224,7 +229,7 @@ def merge_and_normalize_weights(GMs: pd.DataFrame, insertion_annotations: pd.Dat
     if not np.allclose(weight_sums, 1.0, rtol=1e-10):
         logging.warning("Weight normalization may have numerical issues")
     
-    logging.info(f"Successfully annotated {len(GMs_annotated)} insertions")
+    logging.info(f"GMs_annotated: Successfully annotated {GMs_annotated.shape[0]} insertions")
     
     return GMs_annotated
 
@@ -542,8 +547,10 @@ def generate_summary_statistics(Gene_level_statistics: pd.DataFrame) -> Dict[str
     
     stats = {
         'Total genes analyzed': len(Gene_level_statistics),
-        'Essential genes': len(Gene_level_statistics[Gene_level_statistics['FYPOviability'] == 'Essential']),
-        'Non-essential genes': len(Gene_level_statistics[Gene_level_statistics['FYPOviability'] == 'Non-essential'])
+        'FYPOviability: Essential genes': len(Gene_level_statistics[Gene_level_statistics['FYPOviability'] == 'inviable']),
+        'FYPOviability: Non-essential genes': len(Gene_level_statistics[Gene_level_statistics['FYPOviability'] == 'viable']),
+        'DeletionLibrary_essentiality: Essential genes': len(Gene_level_statistics[Gene_level_statistics['DeletionLibrary_essentiality'] == 'E']),
+        'DeletionLibrary_essentiality: Non-essential genes': len(Gene_level_statistics[Gene_level_statistics['DeletionLibrary_essentiality'] == 'V'])
     }
     
     return stats

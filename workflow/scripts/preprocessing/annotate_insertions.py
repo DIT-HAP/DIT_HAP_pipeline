@@ -13,7 +13,12 @@ from pybedtools import BedTool
 def main(args):
 
     # read file
-    insertions = pd.read_csv(args.input, header=0, usecols=[0, 1, 2, 3], sep="\t").rename(columns={"Coordinate": "End"})
+    if str(args.input).endswith(".tsv"):
+        insertions = pd.read_csv(args.input, header=0, usecols=[0, 1, 2, 3], sep="\t").rename(columns={"Coordinate": "End"})
+    elif str(args.input).endswith(".csv"):
+        insertions = pd.read_csv(args.input, header=0, usecols=[0, 1, 2, 3]).rename(columns={"Coordinate": "End"})
+    else:
+        raise ValueError("The input file must be a tsv or csv file")
     insertions.insert(1, "Start", insertions["End"])
     print("*** For the insertions, the start and end are the same for bed processing")
     print(insertions.head())
@@ -127,7 +132,7 @@ def calculate_distance_to_start_stop_codon(row, name_distance):
 
 
 def cal_residues_affected(row, residue_stat):
-    if row["Type"] == "Intergenic region":
+    if row["Type"] == "Intergenic region" or row["Type"] == "Non-coding gene":
         Residue_affected = np.nan
         Residue_frame = np.nan
     else:

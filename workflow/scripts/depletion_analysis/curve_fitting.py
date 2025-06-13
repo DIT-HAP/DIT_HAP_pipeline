@@ -18,9 +18,6 @@ Typical usage:
 
 Input: CSV file with gene/insertion data as rows and time points as columns
 Output: CSV file with fitted parameters and PDF with visualization plots
-
-Author: Bioinformatics Pipeline
-Date: 2024
 """
 
 import logging
@@ -105,12 +102,13 @@ def gompertz_derivative(x: np.ndarray, A: float, um: float, lam: float) -> np.nd
     Returns:
         Derivative values at input points
     """
+    # avoid overflow
     alpha = (um * np.e) / A
     u = alpha * (lam - x) + 1
     return A * alpha * np.exp(u - np.exp(u))
 
 
-def objective_function(params: List[float], x: np.ndarray, y: np.ndarray) -> float:
+def objective_function(params: List[float], x: np.ndarray, y: np.ndarray, weight_values: np.ndarray) -> float:
     """
     Objective function for curve fitting using Huber loss.
     
@@ -118,6 +116,7 @@ def objective_function(params: List[float], x: np.ndarray, y: np.ndarray) -> flo
         params: Gompertz parameters [A, um, lam]
         x: Time point values
         y: Depletion measurements
+        weight_values: Weight values
         
     Returns:
         Huber loss value
@@ -125,7 +124,7 @@ def objective_function(params: List[float], x: np.ndarray, y: np.ndarray) -> flo
     A, um, lam = params
     y_fit = gompertz_function(x, A, um, lam)
     residuals = y - y_fit
-    z = residuals**2
+    z = (residuals*weight_values)**2
     # Huber loss for robustness to outliers
     rho_z = np.where(z <= 1, z, 2*np.sqrt(z) - 1)
     return np.sum(rho_z)
@@ -146,13 +145,14 @@ def constraint_function2(params: List[float]) -> float:
 
 
 def fit_single_curve(x_values: np.ndarray, y_values: np.ndarray, 
-                    ID: str, t_last: float) -> Dict[str, Union[str, float]]:
+                    weight_values: np.ndarray, ID: str, t_last: float) -> Dict[str, Union[str, float]]:
     """
     Fit Gompertz curve to a single dataset.
     
     Args:
         x_values: Time points
         y_values: Depletion measurements
+        weight_values: Weight values
         ID: Gene/insertion identifier
         t_last: Last time point for constraints
         
@@ -165,10 +165,11 @@ def fit_single_curve(x_values: np.ndarray, y_values: np.ndarray,
     )
     
     try:
+
         result = minimize(
             objective_function,
             x0=[1, 1, 1],
-            args=(x_values, y_values),
+            args=(x_values, y_values, weight_values),
             bounds=((-1, t_last), (-1, np.inf), (-1e-6, t_last)),
             constraints=constraints,
             options={'maxiter': 3000, 'disp': False}
@@ -181,12 +182,13 @@ def fit_single_curve(x_values: np.ndarray, y_values: np.ndarray,
             ss_tot = np.sum((y_values - np.mean(y_values))**2)
             r_squared = 1 - (ss_res / ss_tot) if ss_tot > 0 else 0
             rmse = np.sqrt(ss_res / len(y_values))
+            normalized_rmse = rmse / (y_values.max() - y_values.min())
 
             return {
                 'ID': ID,
                 'Status': 'Success',
                 'A': A, 'um': um, 'lam': lam,
-                'R2': r_squared, 'RMSE': rmse
+                'R2': r_squared, 'RMSE': rmse, 'normalized_RMSE': normalized_rmse
             }
         else:
             logging.warning(f"Optimization failed for {ID}")
@@ -194,7 +196,7 @@ def fit_single_curve(x_values: np.ndarray, y_values: np.ndarray,
                 'ID': ID,
                 'Status': 'Optimization failed',
                 'A': np.nan, 'um': np.nan, 'lam': np.nan,
-                'R2': np.nan, 'RMSE': np.nan
+                'R2': np.nan, 'RMSE': np.nan, 'normalized_RMSE': np.nan
             }
     
     except Exception as e:
@@ -203,7 +205,7 @@ def fit_single_curve(x_values: np.ndarray, y_values: np.ndarray,
             'ID': ID,
             'Status': 'Fitting error',
             'A': np.nan, 'um': np.nan, 'lam': np.nan,
-            'R2': np.nan, 'RMSE': np.nan
+            'R2': np.nan, 'RMSE': np.nan, 'normalized_RMSE': np.nan
         }
 
 
@@ -243,9 +245,13 @@ def create_fitted_plot(ax: plt.Axes, x_values: np.ndarray, y_values: np.ndarray,
                   linestyle='--', alpha=0.3, linewidth=1.0)
         ax.axvline(x=lam, color=COLOR_PALETTE['constraint_lines'], 
                   linestyle='--', alpha=0.3, linewidth=1.0)
+        # add the straight line that crosses with the x axis at x=lam, and with the slope of um
+        x_line = np.linspace(lam-1, 14, 100)
+        y_line = um * (x_line - lam)
+        ax.plot(x_line, y_line, color=COLOR_PALETTE['constraint_lines'], linestyle='--', alpha=0.3, linewidth=1.0)
         
         # Add parameter text
-        param_text = f'A={A:.2f}\num={um:.2f}\nlam={lam:.2f}\nR²={params["R2"]:.3f}\nRMSE={params["RMSE"]:.3f}'
+        param_text = f'A={A:.2f}    R²={params["R2"]:.3f}\num={um:.2f}  RMSE={params["RMSE"]:.3f}\nlam={lam:.2f}    NRMSE={params["normalized_RMSE"]:.3f}'
         ax.text(0.05, 0.95, param_text, 
                transform=ax.transAxes, fontsize=8,
                verticalalignment='top')
@@ -257,7 +263,7 @@ def create_fitted_plot(ax: plt.Axes, x_values: np.ndarray, y_values: np.ndarray,
                transform=ax.transAxes, fontsize=10,
                horizontalalignment='center', color='red')
     
-    ax.set_ylim(-2, 10)
+    ax.set_ylim(-1.5, 8.5)
     ax.set_title(" ".join(ID.split("=")), fontsize=9, pad=5)
     ax.tick_params(labelsize=8)
 
@@ -282,6 +288,10 @@ def generate_fitting_plots(results_df: pd.DataFrame, x_values: np.ndarray,
         for page in range(num_pages):
             fig, axes = plt.subplots(8, 4, figsize=(8.27, 11.69))  # A4 landscape
             axes = axes.flatten()
+
+            # progress bar
+            if page % 10 == 0:
+                logging.info(f"Generating page {page+1} of {num_pages}...")
             
             start_idx = page * plots_per_page
             end_idx = min((page + 1) * plots_per_page, len(results_df))
@@ -289,13 +299,14 @@ def generate_fitting_plots(results_df: pd.DataFrame, x_values: np.ndarray,
             for idx in range(start_idx, end_idx):
                 ax_idx = idx % plots_per_page
                 row = results_df.iloc[idx]
+                ID = " ".join(map(str, row.name))
                 
                 create_fitted_plot(
                     axes[ax_idx], 
                     x_values, 
                     y_values[idx], 
                     row.to_dict(),
-                    row['ID']
+                    ID
                 )
             
             # Hide unused subplots
@@ -307,13 +318,14 @@ def generate_fitting_plots(results_df: pd.DataFrame, x_values: np.ndarray,
             plt.close(fig)
 
 
-def process_depletion_data(input_file: Path, time_points: List[float]) -> Tuple[np.ndarray, np.ndarray, List[str]]:
+def process_depletion_data(input_file: Path, time_points: List[float], weight_file: Optional[Path] = None) -> Tuple[np.ndarray, np.ndarray, List[str]]:
     """
     Load and process depletion data from CSV file.
     
     Args:
         input_file: Path to input CSV file
         time_points: List of time point values
+        weight_file: Path to weight CSV file
         
     Returns:
         Tuple of (x_values, y_values, gene_names)
@@ -335,10 +347,21 @@ def process_depletion_data(input_file: Path, time_points: List[float]) -> Tuple[
     
     x_values = time_points
     y_values = data.values
+
+    if weight_file is not None:
+        weight_data = pd.read_csv(weight_file, header=0)
+        weight_data.set_index(index_columns, inplace=True)
+        weight_data = weight_data.loc[data.index].fillna(0.01)
+        # if weights are lfcSE, then convert to 1/lfcSE^2
+        if "lfcSE" in Path(weight_file).stem:
+            weight_data = 1/(weight_data**2)
+        weight_values = weight_data.values
+    else:
+        weight_values = np.ones(shape=(len(IDs), len(x_values)))
     
     logging.info(f"Loaded {len(IDs)} datasets with {len(x_values)} time points")
     
-    return x_values, y_values, IDs, index_names
+    return x_values, y_values, weight_values, IDs, index_names
 
 
 def generate_summary_statistics(results_df: pd.DataFrame) -> Dict[str, Union[int, float]]:
@@ -371,7 +394,8 @@ def generate_summary_statistics(results_df: pd.DataFrame) -> Dict[str, Union[int
             'Median R²': successful_fits['R2'].median(),
             'Mean RMSE': successful_fits['RMSE'].mean(),
             'Mean A parameter': successful_fits['A'].mean(),
-            'Mean um parameter': successful_fits['um'].mean()
+            'Mean um parameter': successful_fits['um'].mean(),
+            'Mean normalized RMSE': successful_fits['normalized_RMSE'].mean()
         })
     
     return stats
@@ -412,6 +436,8 @@ def parse_arguments() -> argparse.Namespace:
     
     parser.add_argument('-i', '--input', type=Path, required=True,
                        help='Input CSV file with depletion data')
+    parser.add_argument('-w', '--weight', type=Path, required=False, default=None,
+                       help='Input CSV file with weight data, if provided, the weight data will be used to calculate the normalized RMSE')
     parser.add_argument('-t', '--time_points', required=True, nargs='+', 
                        type=float, help='Time points for the experiment')
     parser.add_argument('-o', '--output', type=Path, required=True,
@@ -439,7 +465,10 @@ def main() -> None:
     output_plot = args.output.with_suffix('.pdf').with_name(args.output.stem + '_fitted_curves.pdf')
     
     # Process data
-    x_values, y_values, IDs, index_names = process_depletion_data(args.input, args.time_points)
+    if args.weight is not None:
+        x_values, y_values, weight_values, IDs, index_names = process_depletion_data(args.input, args.time_points, args.weight)
+    else:
+        x_values, y_values, weight_values, IDs, index_names = process_depletion_data(args.input, args.time_points)
     t_last = x_values[-1]
     
     # Fit curves with progress tracking
@@ -448,11 +477,16 @@ def main() -> None:
     
     with tqdm(total=len(y_values), desc="Fitting progress") as pbar:
         for i, (y_data, ID) in enumerate(zip(y_values, IDs)):
-            result = fit_single_curve(x_values, y_data, ID, t_last)
+            result = fit_single_curve(x_values, y_data, weight_values[i], ID, t_last)
             
             # Add time series data to result
             for j, time_val in enumerate(x_values):
                 result[f't{j}'] = y_data[j]
+            # Add the fitted time series data to the result
+            for j, time_val in enumerate(x_values):
+                result[f't{j}_fitted'] = round(gompertz_function(time_val, result['A'], result['um'], result['lam']), 3)
+            for j, time_val in enumerate(x_values):
+                result[f't{j}_residual'] = round(result[f't{j}'] - result[f't{j}_fitted'], 3)
             
             all_results.append(result)
             pbar.update(1)
@@ -462,15 +496,8 @@ def main() -> None:
     results_df.insert(1, 'time_points', [list(x_values)] * len(results_df))
     
     # Round numeric columns
-    numeric_columns = ['A', 'um', 'lam', 'R2', 'RMSE']
+    numeric_columns = ['A', 'um', 'lam', 'R2', 'RMSE', 'normalized_RMSE']
     results_df[numeric_columns] = results_df[numeric_columns].round(3)
-    
-    # Generate plots
-    generate_fitting_plots(results_df, x_values, y_values, output_plot)
-    
-    # Calculate and display statistics
-    stats = generate_summary_statistics(results_df)
-    display_summary_table(stats)
 
     results_df.set_index("ID", inplace=True)
     multiple_index = pd.MultiIndex.from_tuples([ idx.split("=") for idx in results_df.index.tolist()])
@@ -478,8 +505,14 @@ def main() -> None:
     results_df.rename_axis(index_names, inplace=True)
 
     # Save results
-    results_df.to_csv(args.output, index=True)
+    results_df.to_csv(args.output, index=True, float_format='%.3f')
     
+    # Generate plots
+    generate_fitting_plots(results_df, x_values, y_values, output_plot)
+    
+    # Calculate and display statistics
+    stats = generate_summary_statistics(results_df)
+    display_summary_table(stats)
     # Final summary
     elapsed_time = time.time() - start_time
     logging.info(f"\nAnalysis completed in {elapsed_time:.1f} seconds")

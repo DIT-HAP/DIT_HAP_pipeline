@@ -232,3 +232,35 @@ rule insertion_density_analysis:
                                                                               -t {params.initial_time_point} \
                                                                               -o {output.table} &> {log}
         """
+
+# Insertion-level depletion LFC and curve features analysis
+# -----------------------------------------------------
+rule insertion_level_depletion_LFC_and_curve_features_analysis:
+    input:
+        rules.insertion_level_curve_fitting.output
+    output:
+        report(
+            f"reports/{project_name}/depletion_LFC_and_curve_features_analysis/{project_name}_insertion_level_depletion_LFC_and_curve_features_analysis.pdf"
+        )
+    log:
+        f"logs/quality_control/insertion_level_depletion_LFC_and_curve_features_analysis.log"
+    conda:
+        "../envs/statistics_and_figure_plotting.yml"
+    message:
+        "*** Performing insertion level depletion LFC and curve features analysis..."
+    shell:
+        """
+        python workflow/scripts/quality_control/distribution_of_curve_fitting_results.py -i {input} -o {output} &> {log}
+        """
+
+# Gene-level depletion analysis and curve features analysis
+# -----------------------------------------------------
+use rule insertion_level_depletion_LFC_and_curve_features_analysis as gene_level_depletion_and_curve_features_analysis with:
+    input:
+        rules.gene_level_curve_fitting.output
+    output:
+        report(
+            f"reports/{project_name}/depletion_LFC_and_curve_features_analysis/{project_name}_gene_level_depletion_and_curve_features_analysis.pdf"
+        )
+    log:
+        f"logs/quality_control/gene_level_depletion_and_curve_features_analysis.log"

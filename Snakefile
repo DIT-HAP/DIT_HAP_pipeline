@@ -59,16 +59,24 @@ wildcard_constraints:
 # -----------------------------------------------------
 rule all:
     input:
-        f"resources/pombase_data/{config['Pombase_release_version']}/genome_region/Genome_intervals.bed",
-        f"results/{project_name}/16_insertion_level_curve_fitting/insertions_LFC_fitted.csv",
-        f"results/{project_name}/18_gene_level_curve_fitting/Gene_level_statistics_fitted.csv",
-        f"reports/{project_name}/multiqc/{project_name}_quality_control_multiqc_report.html",
-        f"reports/{project_name}/insertion_density_analysis/{project_name}_insertion_density_analysis.csv",
-        f"reports/{project_name}/PBL_PBR_correlation_analysis/{project_name}_PBL_PBR_correlation_analysis.pdf",
-        f"reports/{project_name}/read_count_distribution_analysis/{project_name}_read_count_distribution_analysis.pdf",
-        f"reports/{project_name}/insertion_orientation_analysis/{project_name}_insertion_orientation_analysis.pdf",
-        f"reports/{project_name}/insertion_density_analysis/{project_name}_insertion_density_analysis_histograms.pdf",
-        f"reports/{project_name}/mapping_filtering_statistics/{project_name}_mapping_filtering_statistics.tsv"
+        # f"resources/pombase_data/{config['Pombase_release_version']}/genome_region/Genome_intervals.bed",
+        # f"results/{project_name}/15_insertion_level_depletion_analysis/lfcSE.csv"
+        # f"results/{project_name}/16_insertion_level_curve_fitting/insertions_LFC_fitted.csv",
+        # f"results/{project_name}/17_gene_level_depletion_analysis/Gene_level_statistics.csv",
+        # f"results/{project_name}/18_gene_level_curve_fitting/Gene_level_statistics_fitted.csv"
+        # f"results/{project_name}/18_gene_level_curve_fitting/Gene_level_statistics_fitted.csv",
+        # f"reports/{project_name}/multiqc/{project_name}_quality_control_multiqc_report.html",
+        # f"reports/{project_name}/insertion_density_analysis/{project_name}_insertion_density_analysis.csv",
+        # f"reports/{project_name}/PBL_PBR_correlation_analysis/{project_name}_PBL_PBR_correlation_analysis.pdf",
+        # f"reports/{project_name}/read_count_distribution_analysis/{project_name}_read_count_distribution_analysis.pdf",
+        # f"reports/{project_name}/insertion_orientation_analysis/{project_name}_insertion_orientation_analysis.pdf",
+        # f"reports/{project_name}/insertion_density_analysis/{project_name}_insertion_density_analysis_histograms.pdf",
+        # f"reports/{project_name}/mapping_filtering_statistics/{project_name}_mapping_filtering_statistics.tsv"
+        # f"results/{project_name}/19_insertion_annotation_with_non_coding_genes/insertions_with_non_coding_genes.tsv"
+        # f"results/{project_name}/19_insertion_in_non_coding_genes/LFC.csv"
+        # f"reports/{project_name}/depletion_LFC_and_curve_features_analysis/{project_name}_insertion_level_depletion_LFC_and_curve_features_analysis.pdf",
+        # f"reports/{project_name}/depletion_LFC_and_curve_features_analysis/{project_name}_gene_level_depletion_and_curve_features_analysis.pdf"
+        f"results/{project_name}/19_insertion_in_non_coding_genes/Non_coding_genes_Gene_level_statistics_fitted.csv"
 
 # load rules
 # -----------------------------------------------------
@@ -76,5 +84,6 @@ include: "workflow/rules/preparation.smk"
 include: "workflow/rules/preprocessing.smk"
 include: "workflow/rules/depletion_analysis.smk"
 include: "workflow/rules/quality_control.smk"
+include: "workflow/rules/misc.smk"
 
 

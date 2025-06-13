@@ -30,6 +30,7 @@ rule insertion_level_depletion_analysis:
     output:
         all_statistics = f"results/{project_name}/15_insertion_level_depletion_analysis/insertions_LFC.csv",
         LFC = f"results/{project_name}/15_insertion_level_depletion_analysis/LFC.csv",
+        lfcSE = f"results/{project_name}/15_insertion_level_depletion_analysis/lfcSE.csv",
         padj = f"results/{project_name}/15_insertion_level_depletion_analysis/padj.csv"
     log:
         "logs/depletion_analysis/insertion_level_depletion_analysis.log"
@@ -52,7 +53,7 @@ rule insertion_level_depletion_analysis:
 # -----------------------------------------------------
 rule insertion_level_curve_fitting:
     input:
-        rules.insertion_level_depletion_analysis.output.LFC,
+        LFC = rules.insertion_level_depletion_analysis.output.LFC
     output:
         f"results/{project_name}/16_insertion_level_curve_fitting/insertions_LFC_fitted.csv"
     log:
@@ -66,7 +67,7 @@ rule insertion_level_curve_fitting:
     shell:
         """
         python workflow/scripts/depletion_analysis/curve_fitting.py \
-        -i {input} \
+        -i {input.LFC} \
         -t {params.time_points} \
         -o {output} &> {log}
         """
@@ -97,12 +98,23 @@ rule gene_level_depletion_analysis:
         -m {params.method} &> {log}
         """
 
-use rule insertion_level_curve_fitting as gene_level_curve_fitting with:
+rule gene_level_curve_fitting:
     input:
-        rules.gene_level_depletion_analysis.output.LFC,
+        LFC = rules.gene_level_depletion_analysis.output.LFC
     output:
         f"results/{project_name}/18_gene_level_curve_fitting/Gene_level_statistics_fitted.csv"
     log:
         "logs/depletion_analysis/gene_level_curve_fitting.log"
+    params:
+        time_points = " ".join(map(str, config["time_points"]))
+    conda:
+        "../envs/statistics_and_figure_plotting.yml"
     message:
         "*** Running gene-level curve fitting..."
+    shell:
+        """
+        python workflow/scripts/depletion_analysis/curve_fitting.py \
+        -i {input.LFC} \
+        -t {params.time_points} \
+        -o {output} &> {log}
+        """
