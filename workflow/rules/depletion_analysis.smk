@@ -9,6 +9,9 @@ rule impute_missing_values_using_FR:
         f"results/{project_name}/14_imputed_missing_values_using_FR/imputed_raw_reads.tsv"
     log:
         "logs/depletion_analysis/impute_missing_values_using_FR.log"
+    params:
+        initial_time_point=config["initial_time_point"],
+        cutoff = config["hard_filtering_cutoff"]
     conda:
         "../envs/tabular_operations.yml"
     message:
@@ -18,6 +21,8 @@ rule impute_missing_values_using_FR:
         python workflow/scripts/depletion_analysis/impute_missing_values_using_FR.py \
         -i {input.raw_reads} \
         -a {input.annotation} \
+        -t {params.initial_time_point} \
+        -c {params.cutoff} \
         -o {output} &> {log}
         """
 

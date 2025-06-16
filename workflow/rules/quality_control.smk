@@ -159,32 +159,32 @@ rule read_count_distribution_analysis:
 
 # Insertion orientation analysis
 # -----------------------------------------------------
-rule insertion_orientation_analysis:
-    input:
-        expand(rules.hard_filtering.output, sample=samples, condition=conditions)
-    output:
-        report(
-            f"reports/{project_name}/insertion_orientation_analysis/{project_name}_insertion_orientation_analysis.pdf",
-            caption="../report/insertion_orientation.rst",
-            category="Quality Control",
-            subcategory="Insertion Analysis",
-            labels={
-                "type": "Orientation Plot",
-                "stage": "Insertion Analysis",
-                "format": "PDF",
-                "metric": "Insertion Orientation"
-            }
-        )
-    log:
-        f"logs/quality_control/insertion_orientation_analysis.log"
-    conda:
-        "../envs/statistics_and_figure_plotting.yml"
-    message:
-        "*** Performing insertion orientation analysis..."
-    shell:
-        """
-        python workflow/scripts/quality_control/insertion_orientation_analysis.py -i {input} -o {output} &> {log}
-        """
+# rule insertion_orientation_analysis:
+#     input:
+#         expand(rules.hard_filtering.output, sample=samples, condition=conditions)
+#     output:
+#         report(
+#             f"reports/{project_name}/insertion_orientation_analysis/{project_name}_insertion_orientation_analysis.pdf",
+#             caption="../report/insertion_orientation.rst",
+#             category="Quality Control",
+#             subcategory="Insertion Analysis",
+#             labels={
+#                 "type": "Orientation Plot",
+#                 "stage": "Insertion Analysis",
+#                 "format": "PDF",
+#                 "metric": "Insertion Orientation"
+#             }
+#         )
+#     log:
+#         f"logs/quality_control/insertion_orientation_analysis.log"
+#     conda:
+#         "../envs/statistics_and_figure_plotting.yml"
+#     message:
+#         "*** Performing insertion orientation analysis..."
+#     shell:
+#         """
+#         python workflow/scripts/quality_control/insertion_orientation_analysis.py -i {input} -o {output} &> {log}
+#         """
 
 # Insertion density analysis
 # -----------------------------------------------------

@@ -63,7 +63,7 @@ rule all:
         # f"results/{project_name}/15_insertion_level_depletion_analysis/lfcSE.csv"
         # f"results/{project_name}/16_insertion_level_curve_fitting/insertions_LFC_fitted.csv",
         # f"results/{project_name}/17_gene_level_depletion_analysis/Gene_level_statistics.csv",
-        # f"results/{project_name}/18_gene_level_curve_fitting/Gene_level_statistics_fitted.csv"
+        f"results/{project_name}/18_gene_level_curve_fitting/Gene_level_statistics_fitted.csv"
         # f"results/{project_name}/18_gene_level_curve_fitting/Gene_level_statistics_fitted.csv",
         # f"reports/{project_name}/multiqc/{project_name}_quality_control_multiqc_report.html",
         # f"reports/{project_name}/insertion_density_analysis/{project_name}_insertion_density_analysis.csv",
@@ -76,7 +76,8 @@ rule all:
         # f"results/{project_name}/19_insertion_in_non_coding_genes/LFC.csv"
         # f"reports/{project_name}/depletion_LFC_and_curve_features_analysis/{project_name}_insertion_level_depletion_LFC_and_curve_features_analysis.pdf",
         # f"reports/{project_name}/depletion_LFC_and_curve_features_analysis/{project_name}_gene_level_depletion_and_curve_features_analysis.pdf"
-        f"results/{project_name}/19_insertion_in_non_coding_genes/Non_coding_genes_Gene_level_statistics_fitted.csv"
+        # f"results/{project_name}/19_insertion_in_non_coding_genes/Non_coding_genes_Gene_level_statistics_fitted.csv"
+        # f"results/{project_name}/14_imputed_missing_values_using_FR/imputed_raw_reads.tsv"
 
 # load rules
 # -----------------------------------------------------

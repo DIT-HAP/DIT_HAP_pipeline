@@ -432,33 +432,11 @@ rule merge_similar_timepoints:
         print(df.columns)
         df.to_csv(output[0], sep="\t", index=True)
 
-
-# hard filtering the insertions
-# -----------------------------------------------------
-rule hard_filtering:
-    input:
-        rules.merge_similar_timepoints.output
-    output:
-        f"results/{project_name}/12_filtered/{{sample}}_{{condition}}.filtered.tsv"
-    log:
-        "logs/preprocessing/hard_filtering/{sample}_{condition}.log"
-    conda:
-        "../envs/tabular_operations.yml"
-    params:
-        cutoff = config["hard_filtering_cutoff"],
-        init_timepoint = config["initial_time_point"]
-    message:
-        "*** Hard filtering the insertions for {wildcards.sample}_{wildcards.condition}..."
-    shell:
-        """
-        python workflow/scripts/preprocessing/reads_hard_filtering.py -i {input} -o {output} -c {params.cutoff} -itp {params.init_timepoint} &> {log}
-        """
-
 # concat the sample counts and annotations
 # -----------------------------------------------------
 rule concat_counts_and_annotations:
     input:
-        counts = expand(rules.hard_filtering.output, sample=samples, condition=conditions),
+        counts = expand(rules.merge_similar_timepoints.output, sample=samples, condition=conditions),
         annotations = expand(rules.annotate_insertions.output, sample=samples, condition=conditions)
     output:
         counts = f"results/{project_name}/13_concatenated/raw_reads.tsv",
@@ -499,6 +477,30 @@ rule concat_counts_and_annotations:
         print("*** Concatenated counts and annotations completed")
         print("*** Counts dataframe shape: ", counts_df.shape[0])
         print("*** Annotations dataframe shape: ", annotations_df.shape[0])
+
+
+# hard filtering the insertions
+# -----------------------------------------------------
+# rule hard_filtering:
+#     input:
+#         rules.merge_similar_timepoints.output
+#     output:
+#         f"results/{project_name}/12_filtered/{{sample}}_{{condition}}.filtered.tsv"
+#     log:
+#         "logs/preprocessing/hard_filtering/{sample}_{condition}.log"
+#     conda:
+#         "../envs/tabular_operations.yml"
+#     params:
+#         cutoff = config["hard_filtering_cutoff"],
+#         init_timepoint = config["initial_time_point"]
+#     message:
+#         "*** Hard filtering the insertions for {wildcards.sample}_{wildcards.condition}..."
+#     shell:
+#         """
+#         python workflow/scripts/preprocessing/reads_hard_filtering.py -i {input} -o {output} -c {params.cutoff} -itp {params.init_timepoint} &> {log}
+#         """
+
+
 
         
         
