@@ -1,0 +1,379 @@
+---
+title: "Combined Heatmap Analysis"
+author: "Generated Analysis"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+# Combined Heatmap Analysis
+
+## Load required libraries
+
+```{r libraries}
+library(tidyverse)
+library(ComplexHeatmap)
+library(circlize)
+library(RColorBrewer)
+library(grid)
+```
+
+## Load and prepare data
+
+```{r load_data}
+# Load the data
+data <- read_tsv("../../results/HD_DIT_HAP/20_gene_level_clustering/manual_cluster_labels_based_on_kmeans36.tsv")
+
+# Display basic info about the data
+cat("Data dimensions:", dim(data), "\n")
+cat("Columns:", colnames(data), "\n")
+```
+
+## Sort data according to specifications
+
+```{r sort_data}
+# Sort by cluster (numeric), then RevisedDeletion_essentiality, then A, um, lam
+data_sorted <- data %>%
+  arrange(as.numeric(cluster), RevisedDeletion_essentiality, A, um, lam) %>%
+  mutate(gene_order = row_number())
+
+# Display sorted data summary
+cat("Sorted data dimensions:", dim(data_sorted), "\n")
+cat("Cluster distribution:\n")
+print(table(data_sorted$cluster))
+cat("\nEssentiality distribution:\n")
+print(table(data_sorted$RevisedDeletion_essentiality))
+```
+
+## Prepare matrices for heatmap
+
+```{r prepare_matrices}
+# Get gene names for column names (since we're rotating 90 degrees)
+gene_names <- data_sorted$`Systematic ID`
+
+# 1. Raw values matrix (t0-t4) - transposed for rotation
+raw_values <- data_sorted %>%
+  select(t0, t1, t2, t3, t4) %>%
+  as.matrix() %>%
+  t()  # Transpose to rotate 90 degrees
+colnames(raw_values) <- gene_names
+
+# 2. Fitted values matrix (t0_fitted-t4_fitted) - transposed for rotation
+fitted_values <- data_sorted %>%
+  select(t0_fitted, t1_fitted, t2_fitted, t3_fitted, t4_fitted) %>%
+  as.matrix() %>%
+  t()  # Transpose to rotate 90 degrees
+colnames(fitted_values) <- gene_names
+
+# 3. Features matrix (A, um, lam) - transposed for rotation
+features <- data_sorted %>%
+  select(A, um, lam) %>%
+  as.matrix() %>%
+  t()  # Transpose to rotate 90 degrees
+colnames(features) <- gene_names
+
+# 4. Create annotation data (ensure numeric cluster ordering)
+cluster_data <- factor(data_sorted$cluster, levels = sort(as.numeric(unique(data_sorted$cluster))))
+essentiality_data <- as.character(data_sorted$RevisedDeletion_essentiality)
+
+# Check unique values
+cat("Unique clusters:", levels(cluster_data), "\n")
+cat("Unique essentiality:", unique(essentiality_data), "\n")
+```
+
+## Create color mappings
+
+```{r create_colors}
+# Define cluster colors - ensure we have enough colors
+cluster_colors <- c(
+  "1" = "#be9435",
+  "2" = "#8d7dd9", 
+  "3" = "#81a92d",
+  "4" = "#cf6fbe",
+  "5" = "#49ac50",
+  "6" = "#df5584",
+  "7" = "#45a77a",
+  "8" = "#d5695c",
+  "9" = "#47a3dc",
+  "10" = "#d37338",
+  "11" = "#859947",
+  "12" = "#FF9999",
+  "13" = "#66B2FF",
+  "14" = "#99FF99",
+  "15" = "#FFCC99",
+  "16" = "#FF99CC",
+  "17" = "#99CCFF",
+  "18" = "#CCF99",
+  "19" = "#FFFF99",
+  "20" = "#CC99FF"
+)
+
+# Get unique clusters and create proper color mapping (sort numerically)
+unique_clusters <- levels(cluster_data)  # This already has the correct numeric order
+cluster_color_map <- cluster_colors[unique_clusters]
+# Remove any NA values and ensure all clusters have colors
+cluster_color_map <- cluster_color_map[!is.na(cluster_color_map)]
+
+# If we have more clusters than colors, generate additional colors
+if(length(unique_clusters) > length(cluster_color_map)) {
+  additional_colors <- rainbow(length(unique_clusters) - length(cluster_color_map))
+  names(additional_colors) <- unique_clusters[!unique_clusters %in% names(cluster_color_map)]
+  cluster_color_map <- c(cluster_color_map, additional_colors)
+}
+
+# Define essentiality colors
+essentiality_colors <- c(
+  "E" = "#FF6B6B",
+  "V" = "#4ECDC4", 
+  "Not_determined" = "#95A5A6"
+)
+
+# Get unique essentiality values and create proper color mapping
+unique_essentiality <- sort(unique(essentiality_data))
+essentiality_color_map <- essentiality_colors[unique_essentiality]
+# Remove any NA values
+essentiality_color_map <- essentiality_color_map[!is.na(essentiality_color_map)]
+
+# Print color mappings for verification
+cat("Cluster color mapping:\n")
+print(cluster_color_map)
+cat("\nEssentiality color mapping:\n")
+print(essentiality_color_map)
+```
+
+## Create color functions
+
+```{r color_functions}
+# Create color function for raw values with high contrast (quantile-based)
+raw_quantiles <- quantile(raw_values, c(0.05, 0.5, 0.95), na.rm = TRUE)
+col_fun_raw <- colorRamp2(
+  c(-1, 0, 8), 
+  c("#fff5f0", "#fb6a4a", "#cb181d")
+)
+# Create color function for fitted values with high contrast (quantile-based)
+fitted_quantiles <- quantile(fitted_values, c(0.05, 0.5, 0.95), na.rm = TRUE)
+col_fun_fitted <- colorRamp2(
+  c(-1, 0, 8), 
+  c("#f7fcf0", "#41ab5d", "#238b45")
+)
+
+# Create individual color functions for each feature with high contrast
+A_quantiles <- quantile(features[1,], c(0.05, 0.5, 0.95), na.rm = TRUE)
+col_fun_A <- colorRamp2(
+  c(-1, 0, 8), 
+  c("#fff7ec", "#fd8d3c", "#d94801")
+)
+
+um_quantiles <- quantile(features[2,], c(0.05, 0.5, 0.95), na.rm = TRUE)
+col_fun_um <- colorRamp2(
+  c(-0.5, 0, 2), 
+  c("#fcfbfd", "#9e9ac8", "#6a51a3")
+)
+
+lam_quantiles <- quantile(features[3,], c(0.05, 0.5, 0.95), na.rm = TRUE)
+col_fun_lam <- colorRamp2(
+  c(0, 6, 12), 
+  c("#f7fbff", "#6baed6", "#2171b5")
+)
+
+# Print quantile information for verification
+cat("Raw values quantiles (5%, 50%, 95%):", raw_quantiles, "\n")
+cat("Fitted values quantiles (5%, 50%, 95%):", fitted_quantiles, "\n")
+cat("A quantiles (5%, 50%, 95%):", A_quantiles, "\n")
+cat("um quantiles (5%, 50%, 95%):", um_quantiles, "\n")
+cat("lam quantiles (5%, 50%, 95%):", lam_quantiles, "\n")
+```
+
+## Create annotation
+
+```{r create_annotation}
+# Create column annotation for cluster and essentiality (rotated 90 degrees)
+col_annotation <- columnAnnotation(
+  Cluster = cluster_data,
+  Essentiality = essentiality_data,
+  col = list(
+    Cluster = cluster_color_map,
+    Essentiality = essentiality_color_map
+  ),
+  annotation_name_gp = gpar(fontsize = 10),
+  annotation_legend_param = list(
+    Cluster = list(title = "Cluster", title_gp = gpar(fontsize = 12)),
+    Essentiality = list(title = "Essentiality", title_gp = gpar(fontsize = 12))
+  ),
+  gap = unit(2, "mm")
+)
+```
+
+
+
+## Create combined heatmap
+
+```{r combined_heatmap, fig.width=16, fig.height=6}
+# Create individual feature heatmaps (no gaps between A, um, lam) with cluster separations
+h_A <- Heatmap(
+  matrix(features[1,], nrow = 1),
+  name = "A",
+  col = col_fun_A,
+  show_row_names = TRUE,
+  show_column_names = FALSE,
+  row_title = "A",
+  row_title_gp = gpar(fontsize = 12, fontface = "bold"),
+  heatmap_legend_param = list(title = "A", title_gp = gpar(fontsize = 10)),
+  cluster_rows = FALSE,
+  cluster_columns = FALSE,
+  row_title_rot = 0,
+  row_names_gp = gpar(fontsize = 10),
+  height = unit(0.5, "cm"),
+  column_split = cluster_data,
+  column_gap = unit(2, "mm"),
+  show_column_dend = FALSE
+)
+
+h_um <- Heatmap(
+  matrix(features[2,], nrow = 1),
+  name = "um",
+  col = col_fun_um,
+  show_row_names = TRUE,
+  show_column_names = FALSE,
+  row_title = "um",
+  row_title_gp = gpar(fontsize = 12, fontface = "bold"),
+  heatmap_legend_param = list(title = "um", title_gp = gpar(fontsize = 10)),
+  cluster_rows = FALSE,
+  cluster_columns = FALSE,
+  row_title_rot = 0,
+  row_names_gp = gpar(fontsize = 10),
+  height = unit(0.5, "cm"),
+  column_split = cluster_data,
+  column_gap = unit(2, "mm"),
+  show_column_dend = FALSE
+)
+
+h_lam <- Heatmap(
+  matrix(features[3,], nrow = 1),
+  name = "lam",
+  col = col_fun_lam,
+  show_row_names = TRUE,
+  show_column_names = FALSE,
+  row_title = "lam",
+  row_title_gp = gpar(fontsize = 12, fontface = "bold"),
+  heatmap_legend_param = list(title = "lam", title_gp = gpar(fontsize = 10)),
+  cluster_rows = FALSE,
+  cluster_columns = FALSE,
+  row_title_rot = 0,
+  row_names_gp = gpar(fontsize = 10),
+  height = unit(0.5, "cm"),
+  column_split = cluster_data,
+  column_gap = unit(2, "mm"),
+  show_column_dend = FALSE
+)
+
+# Group features together (no spacing between A, um, lam)
+features_combined <- h_A %v% h_um %v% h_lam
+
+# Create main heatmaps with cluster separations
+h_raw <- Heatmap(
+  raw_values,
+  name = "Raw Values",
+  col = col_fun_raw,
+  show_row_names = TRUE,
+  show_column_names = FALSE,
+  row_title = "Raw Values (t0-t4)",
+  row_title_gp = gpar(fontsize = 12, fontface = "bold"),
+  heatmap_legend_param = list(title = "Raw LFC", title_gp = gpar(fontsize = 10)),
+  cluster_rows = FALSE,
+  cluster_columns = FALSE,
+  row_title_rot = 0,
+  row_names_gp = gpar(fontsize = 10),
+  top_annotation = col_annotation,
+  column_split = cluster_data,
+  column_gap = unit(2, "mm"),
+  show_column_dend = FALSE
+)
+
+h_fitted <- Heatmap(
+  fitted_values,
+  name = "Fitted Values",
+  col = col_fun_fitted,
+  show_row_names = TRUE,
+  show_column_names = FALSE,
+  row_title = "Fitted Values (t0_fitted-t4_fitted)",
+  row_title_gp = gpar(fontsize = 12, fontface = "bold"),
+  heatmap_legend_param = list(title = "Fitted LFC", title_gp = gpar(fontsize = 10)),
+  cluster_rows = FALSE,
+  cluster_columns = FALSE,
+  row_title_rot = 0,
+  row_names_gp = gpar(fontsize = 10),
+  column_split = cluster_data,
+  column_gap = unit(2, "mm"),
+  show_column_dend = FALSE
+)
+
+# Create heatmap list with gaps between main sections
+heatmap_list <- h_raw %v% h_fitted %v% features_combined
+
+# Draw the combined heatmap with gaps between main sections
+draw(heatmap_list, 
+     main_heatmap = "Raw Values",
+     heatmap_legend_side = "right",
+     annotation_legend_side = "right",
+     merge_legend = FALSE,
+     ht_gap = unit(5, "mm"))
+```
+
+## Summary statistics
+
+```{r summary_stats}
+# Print summary statistics
+cat("Summary Statistics:\n")
+cat("===================\n\n")
+
+cat("Raw Values Summary:\n")
+print(summary(raw_values))
+
+cat("\nFitted Values Summary:\n")
+print(summary(fitted_values))
+
+cat("\nFeatures Summary:\n")
+print(summary(features))
+
+cat("\nCluster counts:\n")
+print(table(cluster_data))
+
+cat("\nEssentiality counts:\n")
+print(table(essentiality_data))
+```
+
+## Save high-resolution version
+
+```{r save_heatmap}
+# Save as PDF for high quality
+pdf("combined_heatmap.pdf", width = 16, height = 6)
+draw(heatmap_list, 
+     main_heatmap = "Raw Values",
+     heatmap_legend_side = "right",
+     annotation_legend_side = "right",
+     merge_legend = FALSE,
+     ht_gap = unit(5, "mm"))
+dev.off()
+
+# Save as PNG for web display
+png("combined_heatmap.png", width = 1600, height = 600, res = 100)
+draw(heatmap_list, 
+     main_heatmap = "Raw Values",
+     heatmap_legend_side = "right",
+     annotation_legend_side = "right",
+     merge_legend = FALSE,
+     ht_gap = unit(5, "mm"))
+dev.off()
+
+cat("Heatmap saved as 'combined_heatmap.pdf' and 'combined_heatmap.png'\n")
+```
+
+## Session Information
+
+```{r session_info}
+sessionInfo()
+```
