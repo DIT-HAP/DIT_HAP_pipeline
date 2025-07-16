@@ -3,15 +3,12 @@
 # -----------------------------------------------------
 rule impute_missing_values_using_FR:
     input:
-        raw_reads = rules.concat_counts_and_annotations.output.counts,
+        filtered_reads = rules.hard_filtering.output,
         annotation = rules.concat_counts_and_annotations.output.annotations
     output:
         f"results/{project_name}/14_imputed_missing_values_using_FR/imputed_raw_reads.tsv"
     log:
         "logs/depletion_analysis/impute_missing_values_using_FR.log"
-    params:
-        initial_time_point=config["initial_time_point"],
-        cutoff = config["hard_filtering_cutoff"]
     conda:
         "../envs/tabular_operations.yml"
     message:
@@ -19,10 +16,8 @@ rule impute_missing_values_using_FR:
     shell:
         """
         python workflow/scripts/depletion_analysis/impute_missing_values_using_FR.py \
-        -i {input.raw_reads} \
+        -i {input.filtered_reads} \
         -a {input.annotation} \
-        -t {params.initial_time_point} \
-        -c {params.cutoff} \
         -o {output} &> {log}
         """
 
@@ -33,10 +28,10 @@ rule insertion_level_depletion_analysis:
         counts_df = rules.impute_missing_values_using_FR.output,
         annotations_df = rules.concat_counts_and_annotations.output.annotations
     output:
-        all_statistics = f"results/{project_name}/15_insertion_level_depletion_analysis/insertions_LFC.csv",
-        LFC = f"results/{project_name}/15_insertion_level_depletion_analysis/LFC.csv",
-        lfcSE = f"results/{project_name}/15_insertion_level_depletion_analysis/lfcSE.csv",
-        padj = f"results/{project_name}/15_insertion_level_depletion_analysis/padj.csv"
+        all_statistics = f"results/{project_name}/15_insertion_level_depletion_analysis/insertions_LFC.tsv",
+        LFC = f"results/{project_name}/15_insertion_level_depletion_analysis/LFC.tsv",
+        lfcSE = f"results/{project_name}/15_insertion_level_depletion_analysis/lfcSE.tsv",
+        padj = f"results/{project_name}/15_insertion_level_depletion_analysis/padj.tsv"
     log:
         "logs/depletion_analysis/insertion_level_depletion_analysis.log"
     params:
@@ -60,7 +55,7 @@ rule insertion_level_curve_fitting:
     input:
         LFC = rules.insertion_level_depletion_analysis.output.LFC
     output:
-        f"results/{project_name}/16_insertion_level_curve_fitting/insertions_LFC_fitted.csv"
+        f"results/{project_name}/16_insertion_level_curve_fitting/insertions_LFC_fitted.tsv"
     log:
         "logs/depletion_analysis/insertion_level_curve_fitting.log"
     conda:
@@ -84,8 +79,8 @@ rule gene_level_depletion_analysis:
         lfc_path = rules.insertion_level_depletion_analysis.output.all_statistics,
         annotations_path = rules.concat_counts_and_annotations.output.annotations
     output:
-        all_statistics = f"results/{project_name}/17_gene_level_depletion_analysis/Gene_level_statistics.csv",
-        LFC = f"results/{project_name}/17_gene_level_depletion_analysis/LFC.csv"
+        all_statistics = f"results/{project_name}/17_gene_level_depletion_analysis/Gene_level_statistics.tsv",
+        LFC = f"results/{project_name}/17_gene_level_depletion_analysis/LFC.tsv"
     log:
         "logs/depletion_analysis/gene_level_depletion_analysis.log"
     conda:
@@ -107,7 +102,7 @@ rule gene_level_curve_fitting:
     input:
         LFC = rules.gene_level_depletion_analysis.output.LFC
     output:
-        f"results/{project_name}/18_gene_level_curve_fitting/Gene_level_statistics_fitted.csv"
+        f"results/{project_name}/18_gene_level_curve_fitting/Gene_level_statistics_fitted.tsv"
     log:
         "logs/depletion_analysis/gene_level_curve_fitting.log"
     params:

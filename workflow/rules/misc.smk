@@ -24,8 +24,8 @@ use rule gene_level_depletion_analysis as gene_level_depletion_analysis_non_codi
         lfc_path = rules.insertion_level_depletion_analysis.output.all_statistics,
         annotations_path = rules.insertion_annotation_with_non_coding_genes.output
     output:
-        all_statistics = f"results/{project_name}/19_insertion_in_non_coding_genes/Gene_level_statistics.csv",
-        LFC = f"results/{project_name}/19_insertion_in_non_coding_genes/LFC.csv"
+        all_statistics = f"results/{project_name}/19_insertion_in_non_coding_genes/Gene_level_statistics.tsv",
+        LFC = f"results/{project_name}/19_insertion_in_non_coding_genes/LFC.tsv"
     log:
         "logs/misc/gene_level_depletion_analysis_non_coding_genes.log"
     message:
@@ -37,6 +37,6 @@ use rule gene_level_curve_fitting as gene_level_curve_fitting_non_coding_genes w
     input:
         LFC = rules.gene_level_depletion_analysis_non_coding_genes.output.LFC
     output:
-        f"results/{project_name}/19_insertion_in_non_coding_genes/Non_coding_genes_Gene_level_statistics_fitted.csv"
+        f"results/{project_name}/19_insertion_in_non_coding_genes/Non_coding_genes_Gene_level_statistics_fitted.tsv"
     log:
         "logs/misc/gene_level_curve_fitting_non_coding_genes.log"

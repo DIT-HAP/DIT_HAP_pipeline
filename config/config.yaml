@@ -60,7 +60,7 @@ drop_columns:
 
 # Hard filtering configuration and DEseq2 configuration
 # -----------------------------------------------------
-hard_filtering_cutoff: 16
+hard_filtering_cutoff: 8
 initial_time_point: "YES0"
 
 # Depletion analysis configuration

@@ -333,7 +333,7 @@ def process_depletion_data(input_file: Path, time_points: List[float], weight_fi
     logging.info(f"Loading data from {input_file}")
     
     # Load data with multi-level index for insertions
-    data = pd.read_csv(input_file, header=0)
+    data = pd.read_csv(input_file, header=0, sep="\t")
     len_columns = len(data.columns)
     index_column_num = len_columns - len(time_points)
     index_columns = data.columns.tolist()[:index_column_num]
@@ -505,7 +505,7 @@ def main() -> None:
     results_df.rename_axis(index_names, inplace=True)
 
     # Save results
-    results_df.to_csv(args.output, index=True, float_format='%.3f')
+    results_df.to_csv(args.output, index=True, float_format='%.3f', sep="\t")
     
     # Generate plots
     generate_fitting_plots(results_df, x_values, y_values, output_plot)

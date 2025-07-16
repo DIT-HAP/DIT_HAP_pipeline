@@ -171,21 +171,21 @@ def main():
     print("*** Transforming index to multiindex...")
     normalized_counts = transform_index_to_multiindex(dds, "normed_counts")
     normalized_counts = normalized_counts.rename_axis(counts_df_index_names, axis=0).rename_axis(counts_df_columns_names, axis=1)
-    normalized_counts.to_csv(Path(args.output.parent) / "normed_counts.csv", index=True, float_format="%.3f")
+    normalized_counts.to_csv(Path(args.output.parent) / "normed_counts.tsv", index=True, float_format="%.3f", sep="\t")
 
     print("*** Transforming count_X to multiindex...")
     count_X = pd.DataFrame(dds.X, index=dds.obs.index.tolist(), columns=dds.var.index.tolist()).T
     count_X.index = pd.MultiIndex.from_tuples(count_X.index.str.split("=").tolist())
     count_X.columns = pd.MultiIndex.from_tuples(count_X.columns.str.split("#").tolist())
     count_X = count_X.rename_axis(counts_df_index_names, axis=0).rename_axis(counts_df_columns_names, axis=1)
-    count_X.to_csv(Path(args.output.parent) / "count_X.csv", index=True, float_format="%.3f")
+    count_X.to_csv(Path(args.output.parent) / "count_X.tsv", index=True, float_format="%.3f", sep="\t")
 
     # refit_count_norm = transform_index_to_multiindex(dds.filtered_genes, "normed_counts")
     # dds.filtered_genes.to_csv(Path(args.output.parent) / "refit_count_norm.csv", index=True, float_format="%.3f")
 
     cooks_df = transform_index_to_multiindex(dds, "cooks")
     cooks_df = cooks_df.rename_axis(counts_df_index_names, axis=0).rename_axis(counts_df_columns_names, axis=1)
-    cooks_df.to_csv(Path(args.output.parent) / "cooks.csv", index=True, float_format="%.3f")
+    cooks_df.to_csv(Path(args.output.parent) / "cooks.tsv", index=True, float_format="%.3f", sep="\t")
 
     print("*** Performing differential analysis...")
     stat_res = perform_differential_analysis(dds, timepoints, args.initial_timepoint)
@@ -219,27 +219,27 @@ def main():
 
     concated_results = concated_results.round(3)
     print("*** Saving results...")
-    concated_results.to_csv(Path(args.output))
+    concated_results.to_csv(Path(args.output), sep="\t")
 
     # baseMean,log2FoldChange,lfcSE,stat,pvalue,padj
 
     baseMean_df = concated_results.xs("baseMean", axis=1, level="Statistic")
-    baseMean_df.to_csv(Path(args.output.parent) / "baseMean.csv", index=True)
+    baseMean_df.to_csv(Path(args.output.parent) / "baseMean.tsv", index=True, sep="\t")
 
     LFC_df = concated_results.xs("log2FoldChange", axis=1, level="Statistic")
-    LFC_df.to_csv(Path(args.output.parent) / "LFC.csv", index=True)
+    LFC_df.to_csv(Path(args.output.parent) / "LFC.tsv", index=True, sep="\t")
 
     lfcSE_df = concated_results.xs("lfcSE", axis=1, level="Statistic")
-    lfcSE_df.to_csv(Path(args.output.parent) / "lfcSE.csv", index=True)
+    lfcSE_df.to_csv(Path(args.output.parent) / "lfcSE.tsv", index=True, sep="\t")
 
     stat_df = concated_results.xs("stat", axis=1, level="Statistic")
-    stat_df.to_csv(Path(args.output.parent) / "stat.csv", index=True)
+    stat_df.to_csv(Path(args.output.parent) / "stat.tsv", index=True, sep="\t")
 
     pvalue_df = concated_results.xs("pvalue", axis=1, level="Statistic")
-    pvalue_df.to_csv(Path(args.output.parent) / "pvalue.csv", index=True)
+    pvalue_df.to_csv(Path(args.output.parent) / "pvalue.tsv", index=True, sep="\t")
 
     padj_df = concated_results.xs("padj", axis=1, level="Statistic")
-    padj_df.to_csv(Path(args.output.parent) / "padj.csv", index=True)
+    padj_df.to_csv(Path(args.output.parent) / "padj.tsv", index=True, sep="\t")
 
 if __name__ == "__main__":
     main()

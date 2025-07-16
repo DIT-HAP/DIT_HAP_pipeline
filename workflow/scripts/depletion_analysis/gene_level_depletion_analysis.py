@@ -97,7 +97,7 @@ def load_data(lfc_path: Path, annotations_path: Path) -> Tuple[pd.DataFrame, pd.
     
     try:
         # Load results with multi-level columns and index
-        results = pd.read_csv(lfc_path, index_col=[0, 1, 2, 3], header=[0, 1])
+        results = pd.read_csv(lfc_path, index_col=[0, 1, 2, 3], header=[0, 1], sep="\t")
         insertion_annotations = pd.read_csv(annotations_path, index_col=[0, 1, 2, 3], sep="\t")
         
         # Validate required columns exist
@@ -645,8 +645,8 @@ def main() -> None:
         
         # Save results
         Gene_level_statistics = Gene_level_statistics.rename_axis("Systematic ID")
-        Gene_level_statistics.to_csv(args.output_path.parent/"LFC.csv", index=True)
-        Gene_level_statistics.to_csv(args.output_path, index=True)
+        Gene_level_statistics.to_csv(args.output_path.parent/"LFC.tsv", index=True, sep="\t")
+        Gene_level_statistics.to_csv(args.output_path, index=True, sep="\t")
         
         # Final summary
         elapsed_time = time.time() - start_time

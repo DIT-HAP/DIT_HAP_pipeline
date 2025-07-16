@@ -264,3 +264,20 @@ use rule insertion_level_depletion_LFC_and_curve_features_analysis as gene_level
         )
     log:
         f"logs/quality_control/gene_level_depletion_and_curve_features_analysis.log"
+
+rule gene_coverage_analysis:
+    input:
+        covered_genes = rules.gene_level_curve_fitting.output,
+        all_genes = rules.download_pombase_data.output.gene_IDs_names_products.format(release_version=config["Pombase_release_version"])
+    output:
+        directory(f"reports/{project_name}/gene_coverage_analysis")
+    log:
+        f"logs/quality_control/gene_coverage_analysis.log"
+    conda:
+        "../envs/statistics_and_figure_plotting.yml"
+    message:
+        "*** Performing gene coverage analysis..."
+    shell:
+        """
+        python workflow/scripts/quality_control/gene_coverage_analysis.py -c {input.covered_genes} -a {input.all_genes} -o {output} &> {log}
+        """

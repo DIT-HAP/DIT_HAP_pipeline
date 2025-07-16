@@ -49,7 +49,7 @@ def main():
 
     args = parse_args()
     # read insertion reads file
-    raw_reads = pd.read_csv(args.input, header=0, index_col=[0, 1, 2, 3], sep="\t")
+    raw_reads = pd.read_csv(args.input, index_col=[0, 1, 2, 3], sep="\t", header=[0,1])
     shape_before_filtering = raw_reads.shape[0]
     print("*** Before filtering")
     print(raw_reads.head())
@@ -57,7 +57,11 @@ def main():
     print("*** Init timepoint: ", args.init_timepoint)
     print("*** Cutoff: ", args.cutoff)
     # filtering
-    filtered_reads = raw_reads[raw_reads[args.init_timepoint] >= args.cutoff].copy()
+    filtered_reads = {}
+    for sample, sample_reads in raw_reads.groupby(level="Sample", axis=1):
+        filtered_reads[sample] = sample_reads[sample_reads[sample][args.init_timepoint] >= args.cutoff].copy()
+    
+    filtered_reads = pd.concat(list(filtered_reads.values()), axis=1)
     shape_after_filtering = filtered_reads.shape[0]
     print("*** After filtering")
     print(filtered_reads.head())
