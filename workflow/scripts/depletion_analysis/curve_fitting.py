@@ -127,7 +127,10 @@ def objective_function(params: List[float], x: np.ndarray, y: np.ndarray, weight
     z = (residuals*weight_values)**2
     # Huber loss for robustness to outliers
     rho_z = np.where(z <= 1, z, 2*np.sqrt(z) - 1)
-    return np.sum(rho_z)
+
+    # add L1 regularization to lam
+    lam_penalty = 5e-3 * abs(lam)
+    return np.sum(rho_z) + lam_penalty
 
 
 def constraint_function1(params: List[float], t_last: float) -> float:
