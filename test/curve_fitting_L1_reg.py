@@ -128,7 +128,7 @@ def objective_function(params: List[float], x: np.ndarray, y: np.ndarray, weight
     # Huber loss for robustness to outliers
     rho_z = np.where(z <= 1, z, 2*np.sqrt(z) - 1)
 
-    lam_penalty = 5e-3 * abs(lam)
+    lam_penalty = 4e-3 * abs(lam)
 
     return np.sum(rho_z) + lam_penalty
 

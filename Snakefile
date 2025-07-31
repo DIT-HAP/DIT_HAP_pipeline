@@ -59,18 +59,18 @@ wildcard_constraints:
 # -----------------------------------------------------
 rule all:
     input:
-        # f"results/{project_name}/16_insertion_level_curve_fitting/insertions_LFC_fitted.tsv",
-        # f"results/{project_name}/18_gene_level_curve_fitting/Gene_level_statistics_fitted.tsv",
+        f"results/{project_name}/16_insertion_level_curve_fitting/insertions_LFC_fitted.tsv",
+        f"results/{project_name}/18_gene_level_curve_fitting/Gene_level_statistics_fitted.tsv",
         # f"results/{project_name}/19_insertion_in_non_coding_genes/Non_coding_genes_Gene_level_statistics_fitted.tsv",
         # f"results/{project_name}/12_concatenated/annotations.tsv"
-        directory(f"reports/{project_name}/gene_coverage_analysis")
+        # directory(f"reports/{project_name}/gene_coverage_analysis")
 
 # load rules
 # -----------------------------------------------------
 include: "workflow/rules/preparation.smk"
 include: "workflow/rules/preprocessing.smk"
 include: "workflow/rules/depletion_analysis.smk"
-include: "workflow/rules/quality_control.smk"
-include: "workflow/rules/misc.smk"
+# include: "workflow/rules/quality_control.smk"
+# include: "workflow/rules/misc.smk"
 
 

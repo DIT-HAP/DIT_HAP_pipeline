@@ -25,7 +25,8 @@ library(grid)
 
 ```{r load_data}
 # Load the data
-data <- read_tsv("../../results/HD_DIT_HAP/20_gene_level_clustering/manual_cluster_labels_based_on_kmeans36.tsv")
+data <- read_tsv("../../results/HD_DIT_HAP/20_gene_level_clustering/gene_level_clustering_results_64.tsv")
+data$cluster <- data$reorder_reformat_cluster + 1
 
 # Display basic info about the data
 cat("Data dimensions:", dim(data), "\n")
@@ -37,7 +38,7 @@ cat("Columns:", colnames(data), "\n")
 ```{r sort_data}
 # Sort by cluster (numeric), then RevisedDeletion_essentiality, then A, um, lam
 data_sorted <- data %>%
-  arrange(as.numeric(cluster), RevisedDeletion_essentiality, A, um, lam) %>%
+  arrange(as.numeric(cluster), RevisedDeletion_essentiality, um, lam) %>%
   mutate(gene_order = row_number())
 
 # Display sorted data summary
@@ -77,7 +78,7 @@ colnames(features) <- gene_names
 
 # 4. Create annotation data (ensure numeric cluster ordering)
 cluster_data <- factor(data_sorted$cluster, levels = sort(as.numeric(unique(data_sorted$cluster))))
-essentiality_data <- as.character(data_sorted$RevisedDeletion_essentiality)
+essentiality_data <- as.character(data_sorted$DeletionLibrary_essentiality)
 
 # Check unique values
 cat("Unique clusters:", levels(cluster_data), "\n")
@@ -96,19 +97,7 @@ cluster_colors <- c(
   "5" = "#49ac50",
   "6" = "#df5584",
   "7" = "#45a77a",
-  "8" = "#d5695c",
-  "9" = "#47a3dc",
-  "10" = "#d37338",
-  "11" = "#859947",
-  "12" = "#FF9999",
-  "13" = "#66B2FF",
-  "14" = "#99FF99",
-  "15" = "#FFCC99",
-  "16" = "#FF99CC",
-  "17" = "#99CCFF",
-  "18" = "#CCF99",
-  "19" = "#FFFF99",
-  "20" = "#CC99FF"
+  "8" = "#d5695c"
 )
 
 # Get unique clusters and create proper color mapping (sort numerically)
@@ -151,38 +140,30 @@ print(essentiality_color_map)
 raw_quantiles <- quantile(raw_values, c(0.05, 0.5, 0.95), na.rm = TRUE)
 col_fun_raw <- colorRamp2(
   c(-1, 0, 8), 
-  c("#fff5f0", "#fb6a4a", "#cb181d")
+  c("#ffdccf", "#ec886d", "#cb181d")
 )
 # Create color function for fitted values with high contrast (quantile-based)
 fitted_quantiles <- quantile(fitted_values, c(0.05, 0.5, 0.95), na.rm = TRUE)
 col_fun_fitted <- colorRamp2(
   c(-1, 0, 8), 
-  c("#f7fcf0", "#41ab5d", "#238b45")
-)
-
-# Create individual color functions for each feature with high contrast
-A_quantiles <- quantile(features[1,], c(0.05, 0.5, 0.95), na.rm = TRUE)
-col_fun_A <- colorRamp2(
-  c(-1, 0, 8), 
-  c("#fff7ec", "#fd8d3c", "#d94801")
+  c("#c9f6cf", "#7bc088", "#238b45")
 )
 
 um_quantiles <- quantile(features[2,], c(0.05, 0.5, 0.95), na.rm = TRUE)
 col_fun_um <- colorRamp2(
   c(-0.5, 0, 2), 
-  c("#fcfbfd", "#9e9ac8", "#6a51a3")
+  c("#f5e3ff", "#b296cf", "#6a51a3")
 )
 
 lam_quantiles <- quantile(features[3,], c(0.05, 0.5, 0.95), na.rm = TRUE)
 col_fun_lam <- colorRamp2(
   c(0, 6, 12), 
-  c("#f7fbff", "#6baed6", "#2171b5")
+  c("#cfedff", "#79afda", "#2171b5")
 )
 
 # Print quantile information for verification
 cat("Raw values quantiles (5%, 50%, 95%):", raw_quantiles, "\n")
 cat("Fitted values quantiles (5%, 50%, 95%):", fitted_quantiles, "\n")
-cat("A quantiles (5%, 50%, 95%):", A_quantiles, "\n")
 cat("um quantiles (5%, 50%, 95%):", um_quantiles, "\n")
 cat("lam quantiles (5%, 50%, 95%):", lam_quantiles, "\n")
 ```
@@ -213,24 +194,6 @@ col_annotation <- columnAnnotation(
 
 ```{r combined_heatmap, fig.width=16, fig.height=6}
 # Create individual feature heatmaps (no gaps between A, um, lam) with cluster separations
-h_A <- Heatmap(
-  matrix(features[1,], nrow = 1),
-  name = "A",
-  col = col_fun_A,
-  show_row_names = TRUE,
-  show_column_names = FALSE,
-  row_title = "A",
-  row_title_gp = gpar(fontsize = 12, fontface = "bold"),
-  heatmap_legend_param = list(title = "A", title_gp = gpar(fontsize = 10)),
-  cluster_rows = FALSE,
-  cluster_columns = FALSE,
-  row_title_rot = 0,
-  row_names_gp = gpar(fontsize = 10),
-  height = unit(0.5, "cm"),
-  column_split = cluster_data,
-  column_gap = unit(2, "mm"),
-  show_column_dend = FALSE
-)
 
 h_um <- Heatmap(
   matrix(features[2,], nrow = 1),
@@ -271,7 +234,7 @@ h_lam <- Heatmap(
 )
 
 # Group features together (no spacing between A, um, lam)
-features_combined <- h_A %v% h_um %v% h_lam
+features_combined <- h_um %v% h_lam
 
 # Create main heatmaps with cluster separations
 h_raw <- Heatmap(
