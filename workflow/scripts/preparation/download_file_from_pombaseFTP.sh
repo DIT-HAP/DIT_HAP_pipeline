@@ -68,6 +68,7 @@ fi
 
 # Set parameters
 release_version="$1"
+year=$(echo "${release_version}" | cut -d'-' -f1)
 download_dir="${2:-./release/${release_version}}"
 
 # Validate release_version is not empty
@@ -86,58 +87,43 @@ mkdir -p "${download_dir}"
 # --- Download FASTA files ---
 echo "[INFO] Downloading FASTA files..."
 # Create FASTA subfolder
-mkdir -p "${download_dir}/fasta"
-
+mkdir -p "${download_dir}/genome_sequence_and_features"
 # Chromosomes
-wget -nc -P "${download_dir}/fasta" "https://www.pombase.org/data/releases/pombase-${release_version}/fasta/chromosomes/Schizosaccharomyces_pombe_all_chromosomes.fa.gz"
-gunzip -f "${download_dir}/fasta/Schizosaccharomyces_pombe_all_chromosomes.fa.gz"
-
+wget -nc -P "${download_dir}/genome_sequence_and_features" "https://www.pombase.org/monthly_releases/${year}/pombase-${release_version}/genome_sequence_and_features/fasta_format/chromosomes/Schizosaccharomyces_pombe_all_chromosomes.fa"
 # Feature sequences (peptides)
-wget -nc -P "${download_dir}/fasta" "https://www.pombase.org/data/releases/pombase-${release_version}/fasta/feature_sequences/peptide.fa.gz"
-gunzip -f "${download_dir}/fasta/peptide.fa.gz"
+wget -nc -P "${download_dir}/genome_sequence_and_features" "https://www.pombase.org/monthly_releases/${year}/pombase-${release_version}/genome_sequence_and_features/fasta_format/feature_sequences/peptide.fa"
 
 # --- Download yGFF file ---
 echo "[INFO] Downloading GFF file..."
-# Create GFF subfolder
-mkdir -p "${download_dir}/gff"
-wget -nc -P "${download_dir}/gff" "https://www.pombase.org/data/releases/pombase-${release_version}/gff/Schizosaccharomyces_pombe_all_chromosomes.gff3"
+wget -nc -P "${download_dir}/genome_sequence_and_features" "https://www.pombase.org/monthly_releases/${year}/pombase-${release_version}/genome_sequence_and_features/gff_format/Schizosaccharomyces_pombe_all_chromosomes.gff3"
 
-# --- Download Miscellaneous metadata files ---
-echo "[INFO] Downloading miscellaneous metadata files..."
-
+# --- Download metadata files ---
+echo "[INFO] Downloading metadata files..."
 ## Basic gene information
 mkdir -p "${download_dir}/Gene_metadata"
-wget -nc -P "${download_dir}/Gene_metadata" "https://www.pombase.org/data/releases/pombase-${release_version}/misc/gene_IDs_names.tsv"
-wget -nc -P "${download_dir}/Gene_metadata" "https://www.pombase.org/data/releases/pombase-${release_version}/misc/gene_IDs_names_products.tsv"
-wget -nc -P "${download_dir}/Gene_metadata" "https://www.pombase.org/data/releases/pombase-${release_version}/misc/sysID2product.tsv"
-wget -nc -P "${download_dir}/Gene_metadata" "https://www.pombase.org/data/releases/pombase-${release_version}/misc/sysID2product.rna.tsv"
-wget -nc -P "${download_dir}/Gene_metadata" "https://www.pombase.org/data/releases/pombase-${release_version}/misc/uniprot_id_mapping.tsv"
-wget -nc -P "${download_dir}/Gene_metadata" "https://www.pombase.org/data/releases/pombase-${release_version}/misc/pseudogeneIDs.tsv"
-wget -nc -P "${download_dir}/Gene_metadata" "https://www.pombase.org/data/releases/pombase-${release_version}/misc/FYPOviability.tsv"
+wget -nc -P "${download_dir}/Gene_metadata" "https://www.pombase.org/monthly_releases/${year}/pombase-${release_version}/gene_names_and_identifiers/gene_IDs_names_products.tsv"
+wget -nc -P "${download_dir}/Gene_metadata" "https://www.pombase.org/monthly_releases/${year}/pombase-${release_version}/phenotypes_and_genotypes/gene_viability.tsv"
 
 ## Gene expression
 mkdir -p "${download_dir}/RNA_metadata"
-wget -nc -P "${download_dir}/RNA_metadata" "https://www.pombase.org/data/releases/pombase-${release_version}/misc/full_gene_expression_table.tsv"
-wget -nc -P "${download_dir}/RNA_metadata" "https://www.pombase.org/data/releases/pombase-${release_version}/misc/qualitative_gene_expression.tsv"
-wget -nc -P "${download_dir}/RNA_metadata" "https://www.pombase.org/data/releases/pombase-${release_version}/misc/htp_gene_expression_table.tsv"
+wget -nc -P "${download_dir}/RNA_metadata" "https://www.pombase.org/monthly_releases/${year}/pombase-${release_version}/gene_expression/qualitative_gene_expression.tsv"
+wget -nc -P "${download_dir}/RNA_metadata" "https://www.pombase.org/monthly_releases/${year}/pombase-${release_version}/gene_expression/quantitative_gene_expression.tsv"
 
 ## Protein features
 mkdir -p "${download_dir}/Protein_features"
-wget -nc -P "${download_dir}/Protein_features" "https://www.pombase.org/data/releases/pombase-${release_version}/misc/PeptideStats.tsv"
-wget -nc -P "${download_dir}/Protein_features" "https://www.pombase.org/data/releases/pombase-${release_version}/misc/ProteinFeatures.tsv"
-wget -nc -P "${download_dir}/Protein_features" "https://www.pombase.org/data/releases/pombase-${release_version}/misc/disordered_regions.tsv"
-wget -nc -P "${download_dir}/Protein_features" "https://www.pombase.org/data/releases/pombase-${release_version}/misc/interactions.tsv"
-wget -nc -P "${download_dir}/Protein_features" "https://www.pombase.org/data/releases/pombase-${release_version}/misc/modifications.tsv"
-wget -nc -P "${download_dir}/Protein_features" "https://www.pombase.org/data/releases/pombase-${release_version}/misc/transmembrane_domain_coords_and_seqs.tsv"
+wget -nc -P "${download_dir}/Protein_features" "https://www.pombase.org/monthly_releases/${year}/pombase-${release_version}/protein_features/peptide_stats.tsv"
+wget -nc -P "${download_dir}/Protein_features" "https://www.pombase.org/monthly_releases/${year}/pombase-${release_version}/protein_features/protein_families_and_domains.tsv"
+wget -nc -P "${download_dir}/Protein_features" "https://www.pombase.org/monthly_releases/${year}/pombase-${release_version}/protein_features/disordered_regions.tsv"
+wget -nc -P "${download_dir}/Protein_features" "https://www.pombase.org/monthly_releases/${year}/pombase-${release_version}/protein_features/protein_modifications.tsv"
 
 # --- Download Ontology files ---
 echo "[INFO] Downloading ontology files..."
 # Create ontologies subfolder
 mkdir -p "${download_dir}/ontologies_and_associations"
 
-# Download PomBase ontology files (tied to release version)
-wget -nc -P "${download_dir}/ontologies_and_associations" "https://www.pombase.org/data/releases/pombase-${release_version}/ontologies/go-basic.obo"
-
+# Download GO basic ontology
+wget -nc -P "${download_dir}/ontologies_and_associations" "https://purl.obolibrary.org/obo/go/go-basic.obo"
+wget -nc -P "${download_dir}/ontologies_and_associations" "https://purl.obolibrary.org/obo/mondo.obo"
 # Get latest FYPO version from GitHub API
 echo "[INFO] Getting latest FYPO version from GitHub..."
 latest_fypo_version=$(curl -s https://api.github.com/repos/pombase/fypo/releases/latest | grep '"tag_name"' | cut -d'"' -f4)
@@ -146,49 +132,25 @@ if [[ -z "$latest_fypo_version" ]]; then
     latest_fypo_version="v2025-05-09"
 fi
 echo "Latest FYPO version detected: ${latest_fypo_version}"
-
 # Download FYPO files using detected version
 wget -nc -P "${download_dir}/ontologies_and_associations" "https://github.com/pombase/fypo/releases/download/${latest_fypo_version}/fypo-base.obo"
-wget -nc -P "${download_dir}/ontologies_and_associations" "https://github.com/pombase/fypo/releases/download/${latest_fypo_version}/fypo-full.obo"
-
-# Download other ontology files (not version-specific)
-wget -nc -P "${download_dir}/ontologies_and_associations" "http://purl.obolibrary.org/obo/mondo.obo"
 
 ## Slim ontologies
 wget -nc -P "${download_dir}/ontologies_and_associations" "https://current.geneontology.org/ontology/subsets/goslim_pombe.obo" # Note: This downloads current GO slim
-wget -nc -P "${download_dir}/ontologies_and_associations" "https://www.pombase.org/data/releases/pombase-${release_version}/ontologies/fypo-simple.obo"
 
-# Download slim ontology metadata to misc folder
-wget -nc -P "${download_dir}/ontologies_and_associations" "https://www.pombase.org/data/releases/pombase-${release_version}/misc/bp_goslim_pombe_ids_and_names.tsv"
-wget -nc -P "${download_dir}/ontologies_and_associations" "https://www.pombase.org/data/releases/pombase-${release_version}/misc/cc_goslim_pombe_ids_and_names.tsv"
-wget -nc -P "${download_dir}/ontologies_and_associations" "https://www.pombase.org/data/releases/pombase-${release_version}/misc/mf_goslim_pombe_ids_and_names.tsv"
-wget -nc -P "${download_dir}/ontologies_and_associations" "https://www.pombase.org/data/releases/pombase-${release_version}/misc/fypo_slim_ids_and_names.tsv"
-wget -nc -P "${download_dir}/ontologies_and_associations" "https://www.pombase.org/data/releases/pombase-${release_version}/misc/pombe_mondo_slim_ids_and_names.tsv"
+# Download slim ontology metadata
+wget -nc -P "${download_dir}/ontologies_and_associations" "https://www.pombase.org/monthly_releases/${year}/pombase-${release_version}/gene_ontology/bp_go_slim_terms.tsv"
+wget -nc -P "${download_dir}/ontologies_and_associations" "https://www.pombase.org/monthly_releases/${year}/pombase-${release_version}/gene_ontology/cc_go_slim_terms.tsv"
+wget -nc -P "${download_dir}/ontologies_and_associations" "https://www.pombase.org/monthly_releases/${year}/pombase-${release_version}/gene_ontology/mf_go_slim_terms.tsv"
+wget -nc -P "${download_dir}/ontologies_and_associations" "https://www.pombase.org/monthly_releases/${year}/pombase-${release_version}/phenotypes_and_genotypes/fypo_slim_ids_and_names.tsv"
+wget -nc -P "${download_dir}/ontologies_and_associations" "https://www.pombase.org/monthly_releases/${year}/pombase-${release_version}/human_disease_annotation/pombe_mondo_disease_slim_terms.tsv"
 
 ## Term associations
-wget -nc -P "${download_dir}/ontologies_and_associations" "https://www.pombase.org/data/releases/pombase-${release_version}/misc/go_style_gaf.tsv"
-wget -nc -P "${download_dir}/ontologies_and_associations" "https://www.pombase.org/data/releases/pombase-${release_version}/misc/pombase_style_gaf.tsv"
-wget -nc -P "${download_dir}/ontologies_and_associations" "https://www.pombase.org/data/releases/pombase-${release_version}/misc/extended_pombase_style_gaf.tsv"
-wget -nc -P "${download_dir}/ontologies_and_associations" "https://www.pombase.org/data/releases/pombase-${release_version}/misc/Complex_annotation.tsv"
-wget -nc -P "${download_dir}/ontologies_and_associations" "https://www.pombase.org/data/releases/pombase-${release_version}/misc/disease_association.tsv"
-wget -nc -P "${download_dir}/ontologies_and_associations" "https://www.pombase.org/data/releases/pombase-${release_version}/misc/single_locus_phenotype_annotations_taxon_4896.phaf"
-
-# --- Download Export files ---
-echo "[INFO] Downloading export files..."
-# Create exports subfolder
-mkdir -p "${download_dir}/exports"
-
-wget -nc -P "${download_dir}/exports" "https://www.pombase.org/data/releases/pombase-${release_version}/exports/pombase-go-physical-interactions.tsv.gz"
-gunzip -f "${download_dir}/exports/pombase-go-physical-interactions.tsv.gz"
-
-wget -nc -P "${download_dir}/exports" "https://www.pombase.org/data/releases/pombase-${release_version}/exports/pombase-interactions-since-v62-2017-01-30.gz"
-gunzip -f "${download_dir}/exports/pombase-interactions-since-v62-2017-01-30.gz" # Note: Filename indicates 'since-v62', might not align with release_version
-
-wget -nc -P "${download_dir}/exports" "https://www.pombase.org/data/releases/pombase-${release_version}/pombase-${release_version}.gaf.gz"
-gunzip -f "${download_dir}/exports/pombase-${release_version}.gaf.gz"
-
-wget -nc -P "${download_dir}/exports" "https://www.pombase.org/data/releases/pombase-${release_version}/pombase-${release_version}.phaf.gz"
-gunzip -f "${download_dir}/exports/pombase-${release_version}.phaf.gz"
+wget -nc -P "${download_dir}/ontologies_and_associations" "https://www.pombase.org/monthly_releases/${year}/pombase-${release_version}/gene_ontology/gene_ontology_annotation.gaf.tsv"
+wget -nc -P "${download_dir}/ontologies_and_associations" "https://www.pombase.org/monthly_releases/${year}/pombase-${release_version}/macromolecular_complexes/macromolecular_complex_annotation.tsv"
+wget -nc -P "${download_dir}/ontologies_and_associations" "https://www.pombase.org/monthly_releases/${year}/pombase-${release_version}/phenotypes_and_genotypes/pombase_phenotype_annotation.phaf.tsv"
+wget -nc -P "${download_dir}/ontologies_and_associations" "https://www.pombase.org/monthly_releases/${year}/pombase-${release_version}/phenotypes_and_genotypes/pombase_phenotype_annotation.eco.phaf.tsv"
+wget -nc -P "${download_dir}/ontologies_and_associations" "https://www.pombase.org/monthly_releases/${year}/pombase-${release_version}/human_disease_annotation/human_disease_association.tsv"
 
 echo "--- PomBase data download finished successfully for release: ${release_version} ---"
 echo "Files are organized in subfolders under: ${download_dir}"
