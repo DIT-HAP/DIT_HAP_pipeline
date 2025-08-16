@@ -34,9 +34,9 @@ library(readxl)
 
 ```{r load_data}
 # Load enrichment results
-# enrichment_file <- "/data/c/yangyusheng_optimized/DIT_HAP_pipeline/results/HD_DIT_HAP/20_gene_level_clustering/enrichment_analysis/selected_go_enrichment_summary_kmeans64mergedto8clusters.xlsx"
-enrichment_file <- "/data/c/yangyusheng_optimized/DIT_HAP_pipeline/results/HD_DIT_HAP/20_gene_level_clustering/enrichment_analysis/go_slim_enrichment_summary_kmeans64mergedto8clusters.xlsx"
-enrichment_file <- "/data/c/yangyusheng_optimized/DIT_HAP_pipeline/results/HD_DIT_HAP/20_gene_level_clustering/enrichment_analysis/reselected_bp_nocluster8_kmeans64mergedto8clusters.xlsx"
+enrichment_file <- "/data/c/yangyusheng_optimized/DIT_HAP_pipeline/results/HD_DIT_HAP/20_gene_level_clustering/enrichment_analysis/cluster_kmeans64mergedto7/manually_selected_go_enrichment_summary_with_revigo_for_manually_selecting_kmeans64mergedto7clusters.xlsx"
+# enrichment_file <- "/data/c/yangyusheng_optimized/DIT_HAP_pipeline/results/HD_DIT_HAP/20_gene_level_clustering/enrichment_analysis/go_slim_enrichment_summary_kmeans64mergedto8clusters.xlsx"
+# enrichment_file <- "/data/c/yangyusheng_optimized/DIT_HAP_pipeline/results/HD_DIT_HAP/20_gene_level_clustering/enrichment_analysis/reselected_bp_nocluster8_kmeans64mergedto8clusters.xlsx"
 
 # Check if file exists
 if (!file.exists(enrichment_file)) {
@@ -46,7 +46,7 @@ if (!file.exists(enrichment_file)) {
 
 # enrichment_data <- read_excel(enrichment_file, sheet = "manually_selected_go_CC")
 # enrichment_data <- read_excel(enrichment_file, sheet = "go_slim_enrichment_summary_CC")
-enrichment_data <- read_excel(enrichment_file)
+enrichment_data <- read_excel(enrichment_file, sheet = "go_enrichment_summary_CC")
 
 # Check the structure of the data
 print("Data structure:")
@@ -143,7 +143,7 @@ create_ridge_data <- function(feature_name, namespace) {
   
   # Create ridge data by parsing comma-separated values from the feature column
   ridge_data <- enriched_go_terms %>%
-    select(GO, name, cluster, cluster_coverage, all_of(feature_name)) %>%
+    select(GO, name, cluster, term_coverage, Order, all_of(feature_name)) %>%
     # Filter out rows where the feature column is NA or empty
     filter(!is.na(!!sym(feature_name)) & !!sym(feature_name) != "") %>%
     # Convert comma-separated values to individual rows
@@ -166,7 +166,7 @@ create_ridge_data <- function(feature_name, namespace) {
       # Create unique identifier to match scatter plot
       unique_name = name_short
     ) %>%
-    arrange(cluster_num, desc(cluster_coverage), GO)
+    arrange(cluster_num, Order, GO)
   
   return(ridge_data)
 }
@@ -207,7 +207,7 @@ get_ridge_colors <- function(n_clusters) {
 create_scatter_plot <- function(namespace, show_legend = FALSE) {
   plot_data <- enrichment_plot_data %>%
     filter(NS == namespace) %>%
-    arrange(cluster_num, desc(neg_log_p))
+    arrange(cluster_num, Order)
   
   if (nrow(plot_data) == 0) {
     return(ggplot() + 
@@ -215,19 +215,21 @@ create_scatter_plot <- function(namespace, show_legend = FALSE) {
            theme_void())
   }
   
-  p <- ggplot(plot_data, aes(x = cluster_num, y = factor(unique_name, levels = rev(plot_data %>% arrange(cluster_num, desc(cluster_coverage)) %>% pull(unique_name) %>% unique())))) +
-    geom_point(aes(size = cluster_coverage, color = if("p_fdr_bh" %in% colnames(plot_data)) p_fdr_bh else adj_p), alpha = 0.8) +
-    scale_size_continuous(name = "Coverage\nFraction", 
-                         range = c(1, 6),
+  p <- ggplot(plot_data, aes(x = cluster_num, y = factor(unique_name, levels = rev(plot_data %>% arrange(cluster_num, Order) %>% pull(unique_name) %>% unique())))) +
+    geom_point(aes(size = term_coverage, color = if("p_fdr_bh" %in% colnames(plot_data)) p_fdr_bh else adj_p), alpha = 0.8) +
+    scale_size_continuous(name = "Term\nCoverage\nFraction", 
+                         range = c(2, 8),
                          guide = guide_legend(override.aes = list(alpha = 1))) +
     scale_color_distiller(name = "Adj. P-value", 
                          palette = "Reds", 
                          direction = -1,
+                         limits = c(0, 0.05),
                          guide = guide_colorbar(barwidth = 1, barheight = 8)) +
     scale_x_continuous(breaks = seq(from = min(plot_data$cluster_num), 
                                     to = max(plot_data$cluster_num), 
                                     by = 1), 
-                       minor_breaks = NULL) +
+                       minor_breaks = NULL,
+                       expand = expansion(mult = c(0.1, 0.1))) +
     labs(
       # title = paste("Enriched GO Terms -", namespace),
       x = "Cluster",
@@ -236,13 +238,14 @@ create_scatter_plot <- function(namespace, show_legend = FALSE) {
     theme_minimal() +
     theme(
       axis.text.y = element_text(size = 16),
-      axis.text.x = element_text(size = 12),
+      axis.text.x = element_text(size = 14),
       axis.title = element_text(size = 12),
       plot.title = element_text(size = 14, hjust = 0.5),
       legend.position = if(show_legend) "right" else "none",
       panel.grid.minor.x = element_blank(),
       panel.grid.major.x = element_line(color = "grey85", linewidth = 0.5),
-      panel.grid.minor.y = element_blank()
+      panel.grid.minor.y = element_blank(),
+      plot.margin = margin(t = 10, r = 10, b = 10, l = 10, unit = "pt")
     )
   
   return(p)
@@ -266,7 +269,7 @@ create_ridge_plot <- function(feature_name, namespace, y_levels = NULL, show_leg
       filter(!is.na(unique_name))
   } else {
     ridge_data <- ridge_data %>%
-      arrange(cluster_num, desc(cluster_coverage)) %>%
+      arrange(cluster_num, Order) %>%
       mutate(unique_name = factor(unique_name, levels = rev(unique(unique_name))))
   }
   
@@ -308,11 +311,11 @@ create_namespace_plot <- function(namespace) {
   # Get plot data for consistent y-axis ordering
   plot_data <- enrichment_plot_data %>%
     filter(NS == namespace) %>%
-    arrange(cluster_num, desc(neg_log_p))
+    arrange(cluster_num, Order)
   
   # Get y-axis levels from scatter plot for consistent ordering, sorted by cluster ascending then coverage descending
   y_levels <- plot_data %>%
-    arrange(cluster_num, desc(cluster_coverage)) %>%
+    arrange(cluster_num, Order) %>%
     pull(unique_name) %>%
     unique()
   
@@ -325,6 +328,10 @@ create_namespace_plot <- function(namespace) {
   p1_with_legend <- create_scatter_plot(namespace, show_legend = TRUE)
   p2_with_legend <- create_ridge_plot("um", namespace, y_levels, show_legend = TRUE)
   p3_with_legend <- create_ridge_plot("lam", namespace, y_levels, show_legend = TRUE)
+
+  # save the p1_with_legend
+  # ggsave(paste0("/data/c/yangyusheng_optimized/DIT_HAP_pipeline/results/HD_DIT_HAP/20_gene_level_clustering/enrichment_analysis/cluster_kmeans64mergedto7/selected_", namespace, "_enrichment_analysis_scatter_plot.pdf"), p1_with_legend, width = 12, height = 10)
+  ggsave(paste0("/data/c/yangyusheng_optimized/DIT_HAP_pipeline/results/HD_DIT_HAP/20_gene_level_clustering/enrichment_analysis/cluster_kmeans64mergedto7/selected_", namespace, "_enrichment_analysis_scatter_plot.pdf"), p1_with_legend, width = 12, height = 10)
   
   # Extract legends
   scatter_legend <- get_legend(p1_with_legend)
@@ -383,23 +390,23 @@ create_namespace_plot <- function(namespace) {
 ## Biological Process (BP)
 
 ```{r bp_plots, fig.width=16, fig.height=10}
-if ("BP" %in% unique(enriched_terms$NS)) {
-  bp_plot <- create_namespace_plot("BP")
-  ggsave("/data/c/yangyusheng_optimized/DIT_HAP_pipeline/results/HD_DIT_HAP/20_gene_level_clustering/enrichment_analysis/reselected_bp_enrichment_analysis_ridge_plot.pdf", bp_plot, width = 16, height = 10)
-} else {
-  cat("No enriched Biological Process terms found.\n")
-}
+# if ("BP" %in% unique(enriched_terms$NS)) {
+#   bp_plot <- create_namespace_plot("BP")
+#   ggsave("/data/c/yangyusheng_optimized/DIT_HAP_pipeline/results/HD_DIT_HAP/20_gene_level_clustering/enrichment_analysis/cluster_kmeans64mergedto7/selected_bp_enrichment_analysis_ridge_plot.pdf", bp_plot, width = 16, height = 10)
+# } else {
+#   cat("No enriched Biological Process terms found.\n")
+# }
 ```
 
 ## Cellular Component (CC)
 
 ```{r cc_plots, fig.width=16, fig.height=10}
-# if ("CC" %in% unique(enriched_terms$NS)) {
-#   cc_plot <- create_namespace_plot("CC")
-#   ggsave("/data/c/yangyusheng_optimized/DIT_HAP_pipeline/results/HD_DIT_HAP/20_gene_level_clustering/enrichment_analysis/slim_cc_enrichment_analysis_ridge_plot.pdf", cc_plot, width = 16, height = 10)
-# } else {
-#   cat("No enriched Cellular Component terms found.\n")
-# }
+if ("CC" %in% unique(enriched_terms$NS)) {
+  cc_plot <- create_namespace_plot("CC")
+  ggsave("/data/c/yangyusheng_optimized/DIT_HAP_pipeline/results/HD_DIT_HAP/20_gene_level_clustering/enrichment_analysis/slim_cc_enrichment_analysis_ridge_plot.pdf", cc_plot, width = 16, height = 10)
+} else {
+  cat("No enriched Cellular Component terms found.\n")
+}
 ```
 
 ## Molecular Function (MF)
@@ -422,7 +429,7 @@ summary_stats <- enriched_terms %>%
   summarise(
     n_terms = n(),
     median_pvalue = median(p_fdr_bh),
-    median_coverage = median(cluster_coverage),
+    median_coverage = median(term_coverage),
     .groups = "drop"
   ) %>%
   arrange(NS, as.numeric(cluster))
