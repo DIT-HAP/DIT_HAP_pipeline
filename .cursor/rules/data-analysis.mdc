@@ -1,6 +1,4 @@
 ---
-description: 
-globs: *smk,*.py,*.ipynb
 alwaysApply: false
 ---
 # Bioinformatics Python Script Rules
