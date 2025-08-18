@@ -242,9 +242,9 @@ rule bam_to_tsv:
         python workflow/scripts/preprocessing/parse_bam_to_tsv.py -i {input.PBR} -o {output.PBR_tsv} -t {threads} &>> {log}
         """
 
-# Filtering read pairs for PBL and PBR
+# Filtering aligned read pairs for PBL and PBR
 # -----------------------------------------------------
-rule read_pair_filtering:
+rule filter_aligned_reads:
     input:
         PBL_tsv=rules.bam_to_tsv.output.PBL_tsv,
         PBR_tsv=rules.bam_to_tsv.output.PBR_tsv
@@ -252,11 +252,11 @@ rule read_pair_filtering:
         PBL_filtered=protected(f"results/{project_name}/6_filtered/{{sample}}_{{timepoint}}_{{condition}}.PBL.filtered.tsv"),
         PBR_filtered=protected(f"results/{project_name}/6_filtered/{{sample}}_{{timepoint}}_{{condition}}.PBR.filtered.tsv")
     log:
-        "logs/preprocessing/read_pair_filtering/{sample}_{timepoint}_{condition}.log"
+        "logs/preprocessing/filter_aligned_reads/{sample}_{timepoint}_{condition}.log"
     conda:
         "../envs/tabular_operations.yml"
     message:
-        "*** Filtering read pairs for {wildcards.sample}_{wildcards.timepoint}_{wildcards.condition}..."
+        "*** Filtering aligned read pairs for {wildcards.sample}_{wildcards.timepoint}_{wildcards.condition}..."
     params:
         r1_mapq_threshold=config["r1_mapq_threshold"],
         r1_ncigar_value=config["r1_ncigar_value"],
@@ -272,42 +272,42 @@ rule read_pair_filtering:
         chunk_size=config["chunk_size"]
     shell:
         """
-        python workflow/scripts/preprocessing/tabular_read_pair_filtering.py -i {input.PBL_tsv} \
-                                                                             -o {output.PBL_filtered} \
-                                                                             -c {params.chunk_size} \
-                                                                             --r1-mapq-threshold {params.r1_mapq_threshold} \
-                                                                             --r1-ncigar-value {params.r1_ncigar_value} \
-                                                                             --r1-nm-threshold {params.r1_nm_threshold} \
-                                                                             {params.r1_no_sa} \
-                                                                             {params.r1_no_xa} \
-                                                                             --r2-mapq-threshold {params.r2_mapq_threshold} \
-                                                                             {params.r2_disable_ncigar} \
-                                                                             {params.r2_disable_nm} \
-                                                                             {params.r2_no_sa} \
-                                                                             {params.r2_no_xa} \
-                                                                             {params.require_proper_pair} &> {log}
-        python workflow/scripts/preprocessing/tabular_read_pair_filtering.py -i {input.PBR_tsv} \
-                                                                             -o {output.PBR_filtered} \
-                                                                             -c {params.chunk_size} \
-                                                                             --r1-mapq-threshold {params.r1_mapq_threshold} \
-                                                                             --r1-ncigar-value {params.r1_ncigar_value} \
-                                                                             --r1-nm-threshold {params.r1_nm_threshold} \
-                                                                             {params.r1_no_sa} \
-                                                                             {params.r1_no_xa} \
-                                                                             --r2-mapq-threshold {params.r2_mapq_threshold} \
-                                                                             {params.r2_disable_ncigar} \
-                                                                             {params.r2_disable_nm} \
-                                                                             {params.r2_no_sa} \
-                                                                             {params.r2_no_xa} \
-                                                                             {params.require_proper_pair} &>> {log}
+        python workflow/scripts/preprocessing/filter_aligned_reads.py -i {input.PBL_tsv} \
+                                                                      -o {output.PBL_filtered} \
+                                                                      -c {params.chunk_size} \
+                                                                      --r1-mapq-threshold {params.r1_mapq_threshold} \
+                                                                      --r1-ncigar-value {params.r1_ncigar_value} \
+                                                                      --r1-nm-threshold {params.r1_nm_threshold} \
+                                                                      {params.r1_no_sa} \
+                                                                      {params.r1_no_xa} \
+                                                                      --r2-mapq-threshold {params.r2_mapq_threshold} \
+                                                                      {params.r2_disable_ncigar} \
+                                                                      {params.r2_disable_nm} \
+                                                                      {params.r2_no_sa} \
+                                                                      {params.r2_no_xa} \
+                                                                      {params.require_proper_pair} &> {log}
+        python workflow/scripts/preprocessing/filter_aligned_reads.py -i {input.PBR_tsv} \
+                                                                      -o {output.PBR_filtered} \
+                                                                      -c {params.chunk_size} \
+                                                                      --r1-mapq-threshold {params.r1_mapq_threshold} \
+                                                                      --r1-ncigar-value {params.r1_ncigar_value} \
+                                                                      --r1-nm-threshold {params.r1_nm_threshold} \
+                                                                      {params.r1_no_sa} \
+                                                                      {params.r1_no_xa} \
+                                                                      --r2-mapq-threshold {params.r2_mapq_threshold} \
+                                                                      {params.r2_disable_ncigar} \
+                                                                      {params.r2_disable_nm} \
+                                                                      {params.r2_no_sa} \
+                                                                      {params.r2_no_xa} \
+                                                                      {params.require_proper_pair} &>> {log}
         """
 
 # extract the insertions from the filtered read pairs
 # -----------------------------------------------------
 rule extract_insertions:
     input:
-        PBL_filtered=rules.read_pair_filtering.output.PBL_filtered,
-        PBR_filtered=rules.read_pair_filtering.output.PBR_filtered
+        PBL_filtered=rules.filter_aligned_reads.output.PBL_filtered,
+        PBR_filtered=rules.filter_aligned_reads.output.PBR_filtered
     output:
         PBL_insertions=protected(f"results/{project_name}/7_insertions/{{sample}}_{{timepoint}}_{{condition}}.PBL.tsv"),
         PBR_insertions=protected(f"results/{project_name}/7_insertions/{{sample}}_{{timepoint}}_{{condition}}.PBR.tsv")
