@@ -5,3 +5,5 @@ channels:
 dependencies:
   - python=3.12
   - cutadapt=5.0
+  - loguru
+  - pydantic
