@@ -1,0 +1,110 @@
+"""
+Use selected insertions as control insertions for depletion analysis.
+
+Combine the insertion tables and annotation tables, and select the control insertions.
+The control insertions are defined as:
+- In the intergenic regions
+- Distance to the nearest gene is greater than 500 bp
+"""
+
+import argparse
+import sys
+from pathlib import Path
+from typing import List, Optional, Tuple
+
+import numpy as np
+import pandas as pd
+from loguru import logger
+from pydantic import BaseModel, Field, field_validator
+
+
+# ======================== Configuration & Models ========================
+
+
+class ControlInsertionConfig(BaseModel):
+    """Configuration for control insertion selection."""
+
+    insertion_table: Path = Field(..., description="Input insertion table")
+    annotation_table: Path = Field(..., description="Input annotation table")
+
+    @field_validator("insertion_table", "annotation_table")
+    def validate_input_exists(cls, v, field):
+        """Validate that input files exist."""
+        if not v.exists():
+            raise ValueError(f"Input file {v} does not exist")
+        return v
+
+    class Config:
+        frozen = True
+
+
+# ======================== Logging Setup ========================
+
+
+def setup_logging(log_level: str = "INFO") -> None:
+    """Configure loguru for control insertion selection."""
+    logger.remove()
+    logger.add(
+        sys.stdout,
+        format="{time:HH:mm:ss} | {level: <8} | {message}",
+        level=log_level,
+        colorize=False,
+    )
+
+
+# ======================== Core Functions ========================
+@logger.catch
+def load_and_preprocess_data(
+    counts_file: Path, annotations_file: Path
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    """
+    Load and preprocess the insertion and annotation tables.
+
+    Args:
+        counts_file (Path): Path to the insertion table
+        annotations_file (Path): Path to the annotation table
+
+    Returns:
+        Tuple[pd.DataFrame, pd.DataFrame]:
+            - counts_df: Insertion table with counts
+            - insertion_annotations: Annotation table
+    """
+    counts_df = pd.read_csv(
+        counts_file, index_col=[0, 1, 2, 3], header=[0, 1], sep="\t"
+    )
+
+    # Remove NA values
+    counts_df = counts_df.loc[:, ~counts_df.isna().any(axis=0)].copy()
+
+    # Load and process annotations
+    insertion_annotations = pd.read_csv(
+        annotations_file, index_col=[0, 1, 2, 3], sep="\t"
+    )
+
+    return counts_df, insertion_annotations
+
+def get_control_insertions(counts_df: pd.DataFrame, insertion_annotations: pd.DataFrame) -> pd.DataFrame:
+
+    ctr_insertions = insertion_annotations.query(
+        "Type == 'Intergenic region' and Distance_to_region_start > 500 and Distance_to_region_end > 500"
+    )
+
+    ctr_insertions = ctr_insertions[ctr_insertions.index.isin(counts_df.index)]
+
+    return ctr_insertions
+
+def main():
+    parser = argparse.ArgumentParser(description="Select control insertions for depletion analysis")
+    parser.add_argument("-i", "--insertion_table", type=Path, required=True, help="Path to the insertion table")
+    parser.add_argument("-a", "--annotation_table", type=Path, required=True, help="Path to the annotation table")
+    parser.add_argument("-o", "--output_file", type=Path, required=True, help="Path to the output file")
+    args = parser.parse_args()
+
+    counts_df, insertion_annotations = load_and_preprocess_data(args.insertion_table, args.annotation_table)
+
+    ctr_insertions = get_control_insertions(counts_df, insertion_annotations)
+
+    ctr_insertions.to_csv(args.output_file, sep="\t", index=True)
+
+if __name__ == "__main__":
+    main()
