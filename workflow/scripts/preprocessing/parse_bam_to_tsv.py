@@ -13,7 +13,7 @@ from typing import Dict, List, Optional, Tuple
 
 import pysam
 from loguru import logger
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 
 
 # ======================== Configuration & Models ========================
@@ -24,7 +24,7 @@ class ReadInfo(BaseModel):
     mapq: int = Field(default=0, ge=0, le=255, description="Mapping quality")
     length: Optional[int] = Field(default=None, ge=0, description="Query alignment length")
     cigar: str = Field(default="N/A", description="CIGAR string")
-    strand: str = Field(default="N/A", regex="^[+-]$|^N/A$", description="Read strand")
+    strand: str = Field(default="N/A", pattern="^[+-]$|^N/A$", description="Read strand")
     n_cigar: int = Field(default=0, ge=0, description="Number of CIGAR operations")
     chrom: str = Field(default="N/A", description="Reference chromosome")
     pos: str = Field(default="N/A", description="0-based position")
@@ -36,7 +36,7 @@ class ReadInfo(BaseModel):
     class Config:
         frozen = True
         
-    @validator('strand')
+    @field_validator('strand')
     def validate_strand(cls, v):
         if v not in ['+', '-', 'N/A']:
             logger.warning(f"Unexpected strand value: {v}")
@@ -54,7 +54,7 @@ class ReadPairInfo(BaseModel):
     class Config:
         frozen = True
     
-    @validator('is_proper_pair')
+    @field_validator('is_proper_pair')
     def validate_proper_pair(cls, v):
         valid_values = ["Yes", "No", "Single_End_Or_Flag_Issue", "N/A"]
         if v not in valid_values:
@@ -73,13 +73,13 @@ class ProcessingConfig(BaseModel):
         description="Tags to extract"
     )
     
-    @validator('input_bam')
+    @field_validator('input_bam')
     def validate_input_exists(cls, v):
         if not v.exists():
             raise ValueError(f"Input file not found: {v}")
         return v
     
-    @validator('output_file')
+    @field_validator('output_file')
     def validate_output_dir(cls, v):
         output_dir = v.parent
         if not output_dir.exists():
@@ -98,9 +98,9 @@ def setup_logging(log_level: str = "INFO") -> None:
     logger.remove()
     logger.add(
         sys.stdout,
-        format="<green>{time:HH:mm:ss}</green> | <level>{level: <8}</level> | {message}",
+        format="{time:HH:mm:ss} | {level: <8} | {message}",
         level=log_level,
-        colorize=True
+        colorize=False
     )
 
 

@@ -1,12 +1,20 @@
 """
-This script is to annnotate the insertions with genome regions.
+Annotation of genomic insertions with genome regions.
+
+This script annotates transposon insertions with genome features including
+genes, intergenic regions, and coding sequences. It calculates distances
+to start/stop codons and determines affected amino acid residues.
 """
 
-import sys
 import argparse
+import logging
+import sys
+from dataclasses import dataclass
 from pathlib import Path
-import pandas as pd
+from typing import List, Optional, Tuple
+
 import numpy as np
+import pandas as pd
 from pybedtools import BedTool
 
 

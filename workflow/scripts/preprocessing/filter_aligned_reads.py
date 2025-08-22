@@ -14,7 +14,7 @@ from typing import Dict, List, Optional, Tuple
 import pandas as pd
 import numpy as np
 from loguru import logger
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 
 
 # ======================== Configuration & Models ========================
@@ -37,18 +37,18 @@ class FilterConfig(BaseModel):
     
     input_file: Path = Field(..., description="Input TSV file path")
     output_file: Path = Field(..., description="Output TSV file path")
-    chunk_size: int = Field(50000, ge=1000, le=1000000, description="Rows per chunk")
+    chunk_size: int = Field(50000, ge=1000, le=10000000, description="Rows per chunk")
     r1_filters: FilterThresholds = Field(default_factory=FilterThresholds)
     r2_filters: FilterThresholds = Field(default_factory=FilterThresholds)
     require_proper_pair: bool = Field(False, description="Require proper pairs")
     
-    @validator('input_file')
+    @field_validator('input_file')
     def validate_input_exists(cls, v):
         if not v.exists():
             raise ValueError(f"Input file not found: {v}")
         return v
     
-    @validator('output_file')
+    @field_validator('output_file')
     def validate_output_dir(cls, v):
         output_dir = v.parent
         if not output_dir.exists():
@@ -80,9 +80,9 @@ def setup_logging(log_level: str = "INFO") -> None:
     logger.remove()
     logger.add(
         sys.stdout,
-        format="<green>{time:HH:mm:ss}</green> | <level>{level: <8}</level> | {message}",
+        format="{time:HH:mm:ss} | {level: <8} | {message}",
         level=log_level,
-        colorize=True
+        colorize=False
     )
 
 
