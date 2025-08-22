@@ -1,3 +1,25 @@
+# Control insertion selection
+rule control_insertion_selection:
+    input:
+        counts_df = rules.hard_filtering.output,
+        annotation_df = rules.concat_counts_and_annotations.output.annotations
+    output:
+        f"results/{project_name}/13_filtered/control_insertions.tsv"
+    log:
+        f"logs/{project_name}/depletion_analysis/control_insertion_selection.log"
+    conda:
+        "../envs/tabular_operations.yml"
+    message:
+        "*** Selecting control insertions..."
+    shell:
+        """
+        python workflow/scripts/depletion_analysis/def_ctr_insertions.py \
+        -i {input.counts_df} \
+        -a {input.annotation_df} \
+        -o {output} &> {log}
+        """
+
+
 # Imputation of the insertions in the coding genes using Forward/Reverse insertions for better coverage in the coding genes
 # The forward/reverse insertions tend to have the similar disruption effect on the fitness
 # -----------------------------------------------------

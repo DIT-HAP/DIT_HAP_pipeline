@@ -5,12 +5,12 @@ rule fastp_preprocessing:
         fq1=lambda wildcards: sample_sheet_dict[wildcards.sample][wildcards.timepoint][wildcards.condition]["fq1"],
         fq2=lambda wildcards: sample_sheet_dict[wildcards.sample][wildcards.timepoint][wildcards.condition]["fq2"]
     output:
-        fq1=temp("results/{project_name}/1_fastp/{{sample}}_{{timepoint}}_{{condition}}.fastp_1.fq.gz"),
-        fq2=temp("results/{project_name}/1_fastp/{{sample}}_{{timepoint}}_{{condition}}.fastp_2.fq.gz"),
-        html=protected("reports/{project_name}/fastp/{{sample}}_{{timepoint}}_{{condition}}.fastp.html"),
-        json=protected("reports/{project_name}/fastp/{{sample}}_{{timepoint}}_{{condition}}.fastp.json")
+        fq1=temp(f"results/{project_name}/1_fastp/{{sample}}_{{timepoint}}_{{condition}}.fastp_1.fq.gz"),
+        fq2=temp(f"results/{project_name}/1_fastp/{{sample}}_{{timepoint}}_{{condition}}.fastp_2.fq.gz"),
+        html=protected(f"reports/{project_name}/fastp/{{sample}}_{{timepoint}}_{{condition}}.fastp.html"),
+        json=protected(f"reports/{project_name}/fastp/{{sample}}_{{timepoint}}_{{condition}}.fastp.json")
     log:
-        "logs/preprocessing/fastp/{sample}_{timepoint}_{condition}.log"
+        f"logs/{project_name}/preprocessing/fastp/{{sample}}_{{timepoint}}_{{condition}}.log"
     conda:
         "../envs/fastp.yml"
     params:
@@ -49,7 +49,7 @@ rule demultiplexing:
         PBR_r2=temp(f"results/{project_name}/2_demultiplexed/{{sample}}_{{timepoint}}_{{condition}}.PBR_2.fq.gz"),
         json=protected(f"reports/{project_name}/demultiplexing/{{sample}}_{{timepoint}}_{{condition}}.json"),
     log:
-        "logs/preprocessing/demultiplexing/{sample}_{timepoint}_{condition}.log"
+        f"logs/{project_name}/preprocessing/demultiplexing/{{sample}}_{{timepoint}}_{{condition}}.log"
     conda:
         "../envs/cutadapt.yml"
     params:
@@ -95,7 +95,7 @@ rule fastqc_demultiplexed:
         PBR_r2_html=protected(f"reports/{project_name}/fastqc/{{sample}}_{{timepoint}}_{{condition}}.PBR_2_fastqc.html"),
         PBR_r2_zip=protected(f"reports/{project_name}/fastqc/{{sample}}_{{timepoint}}_{{condition}}.PBR_2_fastqc.zip")
     log:
-        "logs/preprocessing/fastqc/{sample}_{timepoint}_{condition}_fastqc_demultiplexed.log"
+        f"logs/{project_name}/preprocessing/fastqc/{{sample}}_{{timepoint}}_{{condition}}_fastqc_demultiplexed.log"
     conda:
         "../envs/fastqc.yml"
     params:
@@ -138,7 +138,7 @@ rule bwa_mem_mapping:
         PBL=temp(f"results/{project_name}/3_mapped/{{sample}}_{{timepoint}}_{{condition}}.PBL.name_sorted.bam"),
         PBR=temp(f"results/{project_name}/3_mapped/{{sample}}_{{timepoint}}_{{condition}}.PBR.name_sorted.bam")
     log:
-        "logs/preprocessing/bwa_mem_mapping/{sample}_{timepoint}_{condition}.log"
+        f"logs/{project_name}/preprocessing/bwa_mem_mapping/{{sample}}_{{timepoint}}_{{condition}}.log"
     conda:
         "../envs/bwa_mapping.yml"
     threads: 8
@@ -165,7 +165,7 @@ rule samtools_sorting_and_indexing:
         PBL_index=protected(f"results/{project_name}/4_sorted/{{sample}}_{{timepoint}}_{{condition}}.PBL.sorted.bam.bai"),
         PBR_index=protected(f"results/{project_name}/4_sorted/{{sample}}_{{timepoint}}_{{condition}}.PBR.sorted.bam.bai")
     log:
-        "logs/preprocessing/samtools_sorting_and_indexing/{sample}_{timepoint}_{condition}.log"
+        f"logs/{project_name}/preprocessing/samtools_sorting_and_indexing/{{sample}}_{{timepoint}}_{{condition}}.log"
     conda:
         "../envs/samtools.yml"
     threads: 2
@@ -198,7 +198,7 @@ rule samtools_mapping_statistics:
         PBL_idxstats=protected(f"reports/{project_name}/samtools_mapping_statistics/{{sample}}_{{timepoint}}_{{condition}}.PBL.idxstats.txt"),
         PBR_idxstats=protected(f"reports/{project_name}/samtools_mapping_statistics/{{sample}}_{{timepoint}}_{{condition}}.PBR.idxstats.txt")
     log:
-        "logs/preprocessing/samtools_mapping_statistics/{sample}_{timepoint}_{condition}.log"
+        f"logs/{project_name}/preprocessing/samtools_mapping_statistics/{{sample}}_{{timepoint}}_{{condition}}.log"
     conda:
         "../envs/samtools.yml"
     threads: 2
@@ -226,7 +226,7 @@ rule bam_to_tsv:
         PBL_tsv=protected(f"results/{project_name}/5_tabulated/{{sample}}_{{timepoint}}_{{condition}}.PBL.tsv"),
         PBR_tsv=protected(f"results/{project_name}/5_tabulated/{{sample}}_{{timepoint}}_{{condition}}.PBR.tsv"),
     log:
-        "logs/preprocessing/bam_to_tsv/{sample}_{timepoint}_{condition}.log"
+        f"logs/{project_name}/preprocessing/bam_to_tsv/{{sample}}_{{timepoint}}_{{condition}}.log"
     conda:
         "../envs/pysam.yml"
     threads: 8
@@ -252,7 +252,7 @@ rule filter_aligned_reads:
         PBL_filtered=protected(f"results/{project_name}/6_filtered/{{sample}}_{{timepoint}}_{{condition}}.PBL.filtered.tsv"),
         PBR_filtered=protected(f"results/{project_name}/6_filtered/{{sample}}_{{timepoint}}_{{condition}}.PBR.filtered.tsv")
     log:
-        "logs/preprocessing/filter_aligned_reads/{sample}_{timepoint}_{condition}.log"
+        f"logs/{project_name}/preprocessing/filter_aligned_reads/{{sample}}_{{timepoint}}_{{condition}}.log"
     conda:
         "../envs/tabular_operations.yml"
     message:
@@ -302,9 +302,9 @@ rule filter_aligned_reads:
                                                                       {params.require_proper_pair} &>> {log}
         """
 
-# extract the insertions from the filtered read pairs
+# Extract insertion sites from filtered read pairs
 # -----------------------------------------------------
-rule extract_insertions:
+rule extract_insertion_sites:
     input:
         PBL_filtered=rules.filter_aligned_reads.output.PBL_filtered,
         PBR_filtered=rules.filter_aligned_reads.output.PBR_filtered
@@ -312,38 +312,38 @@ rule extract_insertions:
         PBL_insertions=protected(f"results/{project_name}/7_insertions/{{sample}}_{{timepoint}}_{{condition}}.PBL.tsv"),
         PBR_insertions=protected(f"results/{project_name}/7_insertions/{{sample}}_{{timepoint}}_{{condition}}.PBR.tsv")
     log:
-        "logs/preprocessing/extract_insertions/{sample}_{timepoint}_{condition}.log"
+        f"logs/{project_name}/preprocessing/extract_insertion_sites/{{sample}}_{{timepoint}}_{{condition}}.log"
     conda:
         "../envs/tabular_operations.yml"
     params:
         chunk_size=config["chunk_size"]
     message:
-        "*** Extracting insertions for {wildcards.sample}_{wildcards.timepoint}_{wildcards.condition}..."
+        "*** Extracting insertion sites for {wildcards.sample}_{wildcards.timepoint}_{wildcards.condition}..."
     shell:
         """
-        echo "*** Extracting PBL insertions..." > {log}
-        python workflow/scripts/preprocessing/process_insertion_counts.py -i {input.PBL_filtered} -o {output.PBL_insertions} -c {params.chunk_size} &>> {log}
-        echo "*** Extracting PBR insertions..." >> {log}
-        python workflow/scripts/preprocessing/process_insertion_counts.py -i {input.PBR_filtered} -o {output.PBR_insertions} -c {params.chunk_size} &>> {log}
+        echo "*** Extracting PBL insertion sites..." > {log}
+        python workflow/scripts/preprocessing/extract_insertion_sites.py -i {input.PBL_filtered} -o {output.PBL_insertions} -c {params.chunk_size} &>> {log}
+        echo "*** Extracting PBR insertion sites..." >> {log}
+        python workflow/scripts/preprocessing/extract_insertion_sites.py -i {input.PBR_filtered} -o {output.PBR_insertions} -c {params.chunk_size} &>> {log}
         """
 
-# merge the insertions from the PBL and PBR reads
+# Merge strand-specific insertions from PBL and PBR reads
 # -----------------------------------------------------
-rule merge_insertions:
+rule merge_strand_insertions:
     input:
-        PBL_insertions=rules.extract_insertions.output.PBL_insertions,
-        PBR_insertions=rules.extract_insertions.output.PBR_insertions
+        PBL_insertions=rules.extract_insertion_sites.output.PBL_insertions,
+        PBR_insertions=rules.extract_insertion_sites.output.PBR_insertions
     output:
         protected(f"results/{project_name}/8_merged/{{sample}}_{{timepoint}}_{{condition}}.tsv")
     log:
-        "logs/preprocessing/merge_insertions/{sample}_{timepoint}_{condition}.log"
+        f"logs/{project_name}/preprocessing/merge_strand_insertions/{{sample}}_{{timepoint}}_{{condition}}.log"
     conda:
         "../envs/tabular_operations.yml"
     message:
-        "*** Merging insertions for {wildcards.sample}_{wildcards.timepoint}_{wildcards.condition}..."
+        "*** Merging strand-specific insertions for {wildcards.sample}_{wildcards.timepoint}_{wildcards.condition}..."
     shell:
         """
-        python workflow/scripts/preprocessing/merge_insertions.py \
+        python workflow/scripts/preprocessing/merge_strand_insertions.py \
             -il {input.PBL_insertions} \
             -ir {input.PBR_insertions} \
             -o {output} &> {log}
@@ -353,21 +353,21 @@ rule merge_insertions:
 # -----------------------------------------------------
 rule concat_timepoints:
     input:
-        counts = lambda wildcards: expand(rules.merge_insertions.output, sample=wildcards.sample, timepoint=timepoints, condition=wildcards.condition),
+        counts = lambda wildcards: expand(rules.merge_strand_insertions.output, sample=wildcards.sample, timepoint=timepoints, condition=wildcards.condition),
         ref = rules.download_pombase_data.output.fasta.format(release_version=config["Pombase_release_version"])
     output:
         PBL = protected(f"results/{project_name}/9_concatenated/{{sample}}_{{condition}}.PBL.tsv"),
         PBR = protected(f"results/{project_name}/9_concatenated/{{sample}}_{{condition}}.PBR.tsv"),
         Reads = protected(f"results/{project_name}/9_concatenated/{{sample}}_{{condition}}.Reads.tsv")
     log:
-        "logs/preprocessing/concat_timepoints/{sample}_{condition}.log"
+        f"logs/{project_name}/preprocessing/concat_timepoints/{{sample}}_{{condition}}.log"
     conda:
         "../envs/biopython.yml"
     params:
         timepoints = " ".join(timepoints)
     shell:
         """
-        python workflow/scripts/preprocessing/concat_timepoints.py \
+        python workflow/scripts/preprocessing/concatenate_timepoint_data.py \
                     -s {wildcards.sample}_{wildcards.condition} \
                     -i {input.counts} \
                     -tp {params.timepoints} \
@@ -386,14 +386,14 @@ rule annotate_insertions:
     output:
         protected(f"results/{project_name}/10_annotated/{{sample}}_{{condition}}.annotated.tsv")
     log:
-        "logs/preprocessing/annotate_insertions/{sample}_{condition}.log"
+        f"logs/{project_name}/preprocessing/annotate_insertions/{{sample}}_{{condition}}.log"
     conda:
         "../envs/pybedtools.yml"
     message:
         "*** Annotating insertions for {wildcards.sample}_{wildcards.condition}..."
     shell:
         """
-        python workflow/scripts/preprocessing/annotate_insertions.py -i {input.insertions} -g {input.genome_region} -o {output} &> {log}
+        python workflow/scripts/preprocessing/annotate_genomic_features.py -i {input.insertions} -g {input.genome_region} -o {output} &> {log}
         """
 
 # Optional: merge the similar time points
@@ -404,7 +404,7 @@ rule merge_similar_timepoints:
     output:
         protected(f"results/{project_name}/11_merged/{{sample}}_{{condition}}.merged.tsv")
     log:
-        "logs/preprocessing/merge_similar_timepoints/{sample}_{condition}.log"
+        f"logs/{project_name}/preprocessing/merge_similar_timepoints/{{sample}}_{{condition}}.log"
     params:
         similar_timepoints = config["similar_timepoints"],
         merged_timepoint = config["merged_timepoint"],
@@ -442,7 +442,7 @@ rule concat_counts_and_annotations:
         counts = protected(f"results/{project_name}/12_concatenated/raw_reads.tsv"),
         annotations = protected(f"results/{project_name}/12_concatenated/annotations.tsv")
     log:
-        "logs/preprocessing/concat_counts_and_annotations.log"
+        f"logs/{project_name}/preprocessing/concat_counts_and_annotations.log"
     conda:
         "../envs/tabular_operations.yml"
     message:
@@ -487,7 +487,7 @@ rule hard_filtering:
     output:
         protected(f"results/{project_name}/13_filtered/raw_reads.filtered.tsv")
     log:
-        "logs/preprocessing/hard_filtering.log"
+        f"logs/{project_name}/preprocessing/hard_filtering.log"
     conda:
         "../envs/tabular_operations.yml"
     params:
