@@ -3,7 +3,6 @@ Insertion-level depletion analysis for non-replicates data
 """
 
 import argparse
-import logging
 import sys
 from pathlib import Path
 from typing import List, Optional, Tuple
@@ -25,7 +24,9 @@ class InsertionLevelDepletionAnalysisConfig(BaseModel):
     control_insertions_file: Path = Field(
         ..., description="Path to the control insertions file"
     )
-    output_file: Path = Field(..., description="Path to the output file")
+    init_timepoint: str = Field(..., description="Initial timepoint")
+    all_statistics_file: Path = Field(..., description="Path to the all statistics file")
+    LFC_file: Path = Field(..., description="Path to the LFC file")
 
     @field_validator("counts_file", "control_insertions_file")
     def validate_input_exists(cls, v, field):
@@ -33,7 +34,7 @@ class InsertionLevelDepletionAnalysisConfig(BaseModel):
             raise ValueError(f"Input file {v} does not exist")
         return v
 
-    @field_validator("output_file")
+    @field_validator("all_statistics_file", "LFC_file")
     def validate_output_dir(cls, v):
         if not v.parent.exists():
             raise ValueError(f"Output directory {v.parent} does not exist")
@@ -88,12 +89,12 @@ def calculte_MA(
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     Ms = (
         -(counts_df_after_normalization + 1)
-        .div((counts_df_after_normalization[init_timepoint] + 1), axis=0)
+        .div((counts_df_after_normalization.xs(init_timepoint, level=1, axis=1) + 1), axis=0)
         .map(np.log2)
     )
 
     As = (counts_df_after_normalization + 1).mul(
-        (counts_df_after_normalization[init_timepoint] + 1), axis=0
+        (counts_df_after_normalization.xs(init_timepoint, level=1, axis=1) + 1), axis=0
     ).map(np.log2) * 0.5
 
     return Ms, As
@@ -147,22 +148,53 @@ def main():
         help="Path to the control insertions file",
     )
     parser.add_argument(
-        "-o", "--output_file", type=Path, required=True, help="Path to the output file"
+        "-t",
+        "--init_timepoint",
+        type=str,
+        required=True,
+        help="Initial timepoint",
+    )
+    parser.add_argument(
+        "-a", "--all_statistics_file", type=Path, required=True, help="Path to the all statistics file"
+    )
+    parser.add_argument(
+        "-l", "--LFC_file", type=Path, required=True, help="Path to the LFC file"
     )
     args = parser.parse_args()
 
-    counts_df, control_insertions_df = load_and_preprocess_data(
-        args.counts_file, args.control_insertions_file
-    )
+    try:
+        config = InsertionLevelDepletionAnalysisConfig(
+            counts_file=args.counts_file,
+            control_insertions_file=args.control_insertions_file,
+            init_timepoint=args.init_timepoint,
+            all_statistics_file=args.all_statistics_file,
+            LFC_file=args.LFC_file,
+        )
 
-    counts_df_after_normalization = median_based_normalization(
-        counts_df, control_insertions_df
-    )
+        counts_df, control_insertions_df = load_and_preprocess_data(
+            config.counts_file, config.control_insertions_file
+        )
 
-    Ms, As = calculte_MA(counts_df_after_normalization, "0")
+        counts_df_after_normalization = median_based_normalization(
+            counts_df, control_insertions_df
+        )
 
-    MA_plot(Ms, As, args.output_file)
+        Ms, As = calculte_MA(counts_df_after_normalization, config.init_timepoint)
+        Ms.droplevel(0, axis=1).to_csv(config.LFC_file, sep="\t", index=True)
 
+        concated_statistics = pd.concat([Ms.droplevel(0, axis=1), As.droplevel(0, axis=1)], axis=1, keys=["M", "A"])
+        concated_statistics.to_csv(config.all_statistics_file, sep="\t", index=True)
 
+        MA_plot(Ms, As, config.all_statistics_file.parent / "MA_plot.pdf")
+
+        logger.success("Insertion-level depletion analysis completed successfully!")
+        return 0
+
+    except ValueError as e:
+        logger.error(f"Configuration error: {e}")
+        return 1
+    except Exception as e:
+        logger.error(f"Unexpected error: {e}")
+        return 1
 if __name__ == "__main__":
     main()

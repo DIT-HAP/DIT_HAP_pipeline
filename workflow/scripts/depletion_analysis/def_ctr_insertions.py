@@ -83,8 +83,10 @@ def load_and_preprocess_data(
 
     return counts_df, insertion_annotations
 
-def get_control_insertions(counts_df: pd.DataFrame, insertion_annotations: pd.DataFrame) -> pd.DataFrame:
 
+def get_control_insertions(
+    counts_df: pd.DataFrame, insertion_annotations: pd.DataFrame
+) -> pd.DataFrame:
     ctr_insertions = insertion_annotations.query(
         "Type == 'Intergenic region' and Distance_to_region_start > 500 and Distance_to_region_end > 500"
     )
@@ -93,18 +95,53 @@ def get_control_insertions(counts_df: pd.DataFrame, insertion_annotations: pd.Da
 
     return ctr_insertions
 
+
 def main():
-    parser = argparse.ArgumentParser(description="Select control insertions for depletion analysis")
-    parser.add_argument("-i", "--insertion_table", type=Path, required=True, help="Path to the insertion table")
-    parser.add_argument("-a", "--annotation_table", type=Path, required=True, help="Path to the annotation table")
-    parser.add_argument("-o", "--output_file", type=Path, required=True, help="Path to the output file")
+    parser = argparse.ArgumentParser(
+        description="Select control insertions for depletion analysis"
+    )
+    parser.add_argument(
+        "-i",
+        "--insertion_table",
+        type=Path,
+        required=True,
+        help="Path to the insertion table",
+    )
+    parser.add_argument(
+        "-a",
+        "--annotation_table",
+        type=Path,
+        required=True,
+        help="Path to the annotation table",
+    )
+    parser.add_argument(
+        "-o", "--output_file", type=Path, required=True, help="Path to the output file"
+    )
     args = parser.parse_args()
 
-    counts_df, insertion_annotations = load_and_preprocess_data(args.insertion_table, args.annotation_table)
+    setup_logging()
 
-    ctr_insertions = get_control_insertions(counts_df, insertion_annotations)
+    try:
+        config = ControlInsertionConfig(
+            insertion_table=args.insertion_table,
+            annotation_table=args.annotation_table,
+            output_file=args.output_file,
+        )
 
-    ctr_insertions.to_csv(args.output_file, sep="\t", index=True)
+        counts_df, insertion_annotations = load_and_preprocess_data(
+            config.insertion_table, config.annotation_table
+        )
+
+        ctr_insertions = get_control_insertions(counts_df, insertion_annotations)
+
+        ctr_insertions.to_csv(config.output_file, sep="\t", index=True)
+
+        logger.success("Control insertion selection completed successfully!")
+        return 0
+    except ValueError as e:
+        logger.error(f"Configuration error: {e}")
+        return 1
+
 
 if __name__ == "__main__":
     main()

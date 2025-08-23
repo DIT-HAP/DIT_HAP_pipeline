@@ -60,7 +60,7 @@ wildcard_constraints:
 rule all:
     input:
         # "resources/pombase_data/{release_version}/genome_region/genome_intervals.bed".format(release_version=config["Pombase_release_version"])
-        f"results/{project_name}/13_filtered/control_insertions.tsv"
+        f"results/{project_name}/17_gene_level_depletion_analysis/Gene_level_statistics.tsv"
         # f"results/{project_name}/16_insertion_level_curve_fitting/insertions_LFC_fitted.tsv",
         # f"results/{project_name}/18_gene_level_curve_fitting/Gene_level_statistics_fitted.tsv",
         # f"results/{project_name}/19_insertion_in_non_coding_genes/Non_coding_genes_Gene_level_statistics_fitted.tsv",
