@@ -4,11 +4,11 @@ rule control_insertion_selection:
         counts_df = rules.hard_filtering.output,
         annotation_df = rules.concat_counts_and_annotations.output.annotations
     output:
-        f"results/{project_name}/13_filtered/control_insertions.tsv"
+        protected(f"results/{project_name}/13_filtered/control_insertions.tsv")
     log:
         f"logs/{project_name}/depletion_analysis/control_insertion_selection.log"
     conda:
-        "../envs/tabular_operations.yml"
+        "../envs/statistics_and_figure_plotting.yml"
     message:
         "*** Selecting control insertions..."
     shell:
@@ -21,35 +21,8 @@ rule control_insertion_selection:
 
 # distinguish the replicates and non-replicates
 # -----------------------------------------------------
-if True:
-    # insertion-level depletion analysis
-    # -----------------------------------------------------
-    rule insertion_level_depletion_analysis_no_replicates:
-        input:
-            counts_df = rules.hard_filtering.output,
-            control_insertions_df = rules.control_insertion_selection.output
-        output:
-            all_statistics = f"results/{project_name}/14_insertion_level_depletion_analysis/insertions_LFC.tsv",
-            LFC = f"results/{project_name}/14_insertion_level_depletion_analysis/LFC.tsv"
-        log:
-            f"logs/{project_name}/depletion_analysis/insertion_level_depletion_analysis_no_replicates.log"
-        params:
-            initial_time_point=config["initial_time_point"]
-        conda:
-            "../envs/statistics_and_figure_plotting.yml"
-        message:
-            "*** Running insertion-level depletion analysis..."
-        shell:
-            """
-            python workflow/scripts/depletion_analysis/insertion_level_depletion_analysis_no_replicates.py \
-            -i {input.counts_df} \
-            -c {input.control_insertions_df} \
-            -t {params.initial_time_point} \
-            -a {output.all_statistics} \
-            -l {output.LFC} &> {log}
-            """
-
-else:
+if config.get("use_DEseq2_for_biological_replicates", False):
+    # **************************** DEseq2 for biological replicates ****************************
     # Imputation of the insertions in the coding genes using Forward/Reverse insertions for better coverage in the coding genes
     # The forward/reverse insertions tend to have the similar disruption effect on the fitness
     # -----------------------------------------------------
@@ -58,11 +31,11 @@ else:
             filtered_reads = rules.hard_filtering.output,
             annotation = rules.concat_counts_and_annotations.output.annotations
         output:
-            f"results/{project_name}/14_imputed_missing_values_using_FR/imputed_raw_reads.tsv"
+            f"results/{project_name}/13_filtered/imputed_raw_reads.tsv"
         log:
             f"logs/{project_name}/depletion_analysis/impute_missing_values_using_FR.log"
         conda:
-            "../envs/tabular_operations.yml"
+            "../envs/statistics_and_figure_plotting.yml"
         message:
             "*** Imputing missing values using FR..."
         shell:
@@ -78,11 +51,9 @@ else:
     rule insertion_level_depletion_analysis_has_replicates:
         input:
             counts_df = rules.impute_missing_values_using_FR.output,
-            annotations_df = rules.concat_counts_and_annotations.output.annotations
+            control_insertions_df = rules.control_insertion_selection.output
         output:
-            all_statistics = f"results/{project_name}/14_insertion_level_depletion_analysis/insertions_LFC.tsv",
             LFC = f"results/{project_name}/14_insertion_level_depletion_analysis/LFC.tsv",
-            lfcSE = f"results/{project_name}/14_insertion_level_depletion_analysis/lfcSE.tsv",
             padj = f"results/{project_name}/14_insertion_level_depletion_analysis/padj.tsv"
         log:
             f"logs/{project_name}/depletion_analysis/insertion_level_depletion_analysis_has_replicates.log"
@@ -94,22 +65,45 @@ else:
             "*** Running insertion-level depletion analysis..."
         shell:
             """
-            python workflow/scripts/depletion_analysis/insertion_level_depletion_analysis.py \
+            python workflow/scripts/depletion_analysis/insertion_level_depletion_analysis_has_replicates.py \
             -i {input.counts_df} \
-            -a {input.annotations_df} \
+            -c {input.control_insertions_df} \
             -t {params.initial_time_point} \
-            -o {output.all_statistics} &> {log}
+            -o {output.LFC} &> {log}
+            """
+
+else:
+    # **************************** No biological replicates ****************************
+    # insertion-level depletion analysis
+    # -----------------------------------------------------
+    rule insertion_level_depletion_analysis_no_replicates:
+        input:
+            counts_df = rules.hard_filtering.output,
+            control_insertions_df = rules.control_insertion_selection.output
+        output:
+            LFC = f"results/{project_name}/14_insertion_level_depletion_analysis/LFC.tsv"
+        log:
+            f"logs/{project_name}/depletion_analysis/insertion_level_depletion_analysis_no_replicates.log"
+        params:
+            initial_time_point=config["initial_time_point"]
+        conda:
+            "../envs/statistics_and_figure_plotting.yml"
+        message:
+            "*** Running insertion-level depletion analysis..."
+        shell:
+            """
+            python workflow/scripts/depletion_analysis/insertion_level_depletion_analysis_no_replicates.py \
+            -i {input.counts_df} \
+            -c {input.control_insertions_df} \
+            -t {params.initial_time_point} \
+            -o {output.LFC} &> {log}
             """
 
 # insertion-level curve fitting
 # -----------------------------------------------------
 rule insertion_level_curve_fitting:
     input:
-        branch(
-            config["has_replicates"],
-            then=f"results/{project_name}/14_insertion_level_depletion_analysis/LFC.tsv",
-            otherwise=f"results/{project_name}/14_insertion_level_depletion_analysis/LFC.tsv"
-        )
+        f"results/{project_name}/14_insertion_level_depletion_analysis/LFC.tsv"
     output:
         f"results/{project_name}/15_insertion_level_curve_fitting/insertions_LFC_fitted.tsv"
     log:
@@ -123,12 +117,12 @@ rule insertion_level_curve_fitting:
     shell:
         """
         python workflow/scripts/depletion_analysis/curve_fitting.py \
-        -i {input.LFC} \
+        -i {input} \
         -t {params.time_points} \
         -o {output} &> {log}
         """
 
-if True:
+if not config.get("use_DEseq2_for_biological_replicates", False):
     rule r_square_as_weights:
         input:
             rules.insertion_level_curve_fitting.output
@@ -162,49 +156,48 @@ if True:
 # -----------------------------------------------------
 rule gene_level_depletion_analysis:
     input:
-        lfc_path = branch(
-            config["has_replicates"],
-            then=f"results/{project_name}/14_insertion_level_depletion_analysis/insertions_LFC.tsv",
-            otherwise=f"results/{project_name}/15_insertion_level_curve_fitting/insertions_LFC_fitted_with_r_square_as_weights.tsv"
+        lfc_path = f"results/{project_name}/14_insertion_level_depletion_analysis/LFC.tsv",
+        weights_path = branch(
+            config.get("use_DEseq2_for_biological_replicates", False),
+            f"results/{project_name}/14_insertion_level_depletion_analysis/padj.tsv",
+            f"results/{project_name}/15_insertion_level_curve_fitting/insertions_LFC_fitted_with_r_square_as_weights.tsv"
         ),
         annotations_path = rules.concat_counts_and_annotations.output.annotations
     output:
-        all_statistics = f"results/{project_name}/17_gene_level_depletion_analysis/Gene_level_statistics.tsv",
-        LFC = f"results/{project_name}/17_gene_level_depletion_analysis/LFC.tsv"
+        all_statistics = f"results/{project_name}/16_gene_level_depletion_analysis/Gene_level_statistics.tsv",
+        LFC = f"results/{project_name}/16_gene_level_depletion_analysis/LFC.tsv"
     log:
         f"logs/{project_name}/depletion_analysis/gene_level_depletion_analysis.log"
     conda:
         "../envs/statistics_and_figure_plotting.yml"
     message:
         "*** Running gene-level depletion analysis..."
-    params:
-        method = "fisher"
     shell:
         """
         python workflow/scripts/depletion_analysis/gene_level_depletion_analysis.py \
         -l {input.lfc_path} \
         -a {input.annotations_path} \
-        -o {output.all_statistics} \
-        -m {params.method} &> {log}
+        -w {input.weights_path} \
+        -o {output.all_statistics} &> {log}
         """
 
-# rule gene_level_curve_fitting:
-#     input:
-#         LFC = rules.gene_level_depletion_analysis.output.LFC
-#     output:
-#         f"results/{project_name}/18_gene_level_curve_fitting/Gene_level_statistics_fitted.tsv"
-#     log:
-#         "logs/depletion_analysis/gene_level_curve_fitting.log"
-#     params:
-#         time_points = " ".join(map(str, config["time_points"]))
-#     conda:
-#         "../envs/statistics_and_figure_plotting.yml"
-#     message:
-#         "*** Running gene-level curve fitting..."
-#     shell:
-#         """
-#         python workflow/scripts/depletion_analysis/curve_fitting.py \
-#         -i {input.LFC} \
-#         -t {params.time_points} \
-#         -o {output} &> {log}
-#         """
+rule gene_level_curve_fitting:
+    input:
+        LFC = rules.gene_level_depletion_analysis.output.LFC
+    output:
+        f"results/{project_name}/17_gene_level_curve_fitting/Gene_level_statistics_fitted.tsv"
+    log:
+        f"logs/{project_name}/depletion_analysis/gene_level_curve_fitting.log"
+    params:
+        time_points = " ".join(map(str, config["time_points"]))
+    conda:
+        "../envs/statistics_and_figure_plotting.yml"
+    message:
+        "*** Running gene-level curve fitting..."
+    shell:
+        """
+        python workflow/scripts/depletion_analysis/curve_fitting.py \
+        -i {input.LFC} \
+        -t {params.time_points} \
+        -o {output} &> {log}
+        """

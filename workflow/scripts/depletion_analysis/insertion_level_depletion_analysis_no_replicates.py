@@ -25,7 +25,6 @@ class InsertionLevelDepletionAnalysisConfig(BaseModel):
         ..., description="Path to the control insertions file"
     )
     init_timepoint: str = Field(..., description="Initial timepoint")
-    all_statistics_file: Path = Field(..., description="Path to the all statistics file")
     LFC_file: Path = Field(..., description="Path to the LFC file")
 
     @field_validator("counts_file", "control_insertions_file")
@@ -34,7 +33,7 @@ class InsertionLevelDepletionAnalysisConfig(BaseModel):
             raise ValueError(f"Input file {v} does not exist")
         return v
 
-    @field_validator("all_statistics_file", "LFC_file")
+    @field_validator("LFC_file")
     def validate_output_dir(cls, v):
         if not v.parent.exists():
             raise ValueError(f"Output directory {v.parent} does not exist")
@@ -155,10 +154,7 @@ def main():
         help="Initial timepoint",
     )
     parser.add_argument(
-        "-a", "--all_statistics_file", type=Path, required=True, help="Path to the all statistics file"
-    )
-    parser.add_argument(
-        "-l", "--LFC_file", type=Path, required=True, help="Path to the LFC file"
+        "-o", "--output_LFC_file", type=Path, required=True, help="Path to the output LFC file"
     )
     args = parser.parse_args()
 
@@ -167,8 +163,7 @@ def main():
             counts_file=args.counts_file,
             control_insertions_file=args.control_insertions_file,
             init_timepoint=args.init_timepoint,
-            all_statistics_file=args.all_statistics_file,
-            LFC_file=args.LFC_file,
+            LFC_file=args.output_LFC_file,
         )
 
         counts_df, control_insertions_df = load_and_preprocess_data(
@@ -182,10 +177,7 @@ def main():
         Ms, As = calculte_MA(counts_df_after_normalization, config.init_timepoint)
         Ms.droplevel(0, axis=1).to_csv(config.LFC_file, sep="\t", index=True)
 
-        concated_statistics = pd.concat([Ms.droplevel(0, axis=1), As.droplevel(0, axis=1)], axis=1, keys=["M", "A"])
-        concated_statistics.to_csv(config.all_statistics_file, sep="\t", index=True)
-
-        MA_plot(Ms, As, config.all_statistics_file.parent / "MA_plot.pdf")
+        MA_plot(Ms, As, config.LFC_file.parent / "MA_plot.pdf")
 
         logger.success("Insertion-level depletion analysis completed successfully!")
         return 0

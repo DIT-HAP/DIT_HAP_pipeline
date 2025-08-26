@@ -26,12 +26,22 @@ class ControlInsertionConfig(BaseModel):
 
     insertion_table: Path = Field(..., description="Input insertion table")
     annotation_table: Path = Field(..., description="Input annotation table")
+    output_file: Path = Field(..., description="Output file")
 
     @field_validator("insertion_table", "annotation_table")
     def validate_input_exists(cls, v, field):
         """Validate that input files exist."""
         if not v.exists():
             raise ValueError(f"Input file {v} does not exist")
+        return v
+
+    @field_validator("output_file")
+    def validate_output_path(cls, v: Path) -> Path:
+        """Validate output directory exists or create it."""
+        output_dir = v.parent
+        if not output_dir.exists():
+            logger.info(f"Creating output directory: {output_dir}")
+            output_dir.mkdir(parents=True, exist_ok=True)
         return v
 
     class Config:
@@ -73,8 +83,8 @@ def load_and_preprocess_data(
         counts_file, index_col=[0, 1, 2, 3], header=[0, 1], sep="\t"
     )
 
-    # Remove NA values
-    counts_df = counts_df.loc[:, ~counts_df.isna().any(axis=0)].copy()
+    # Remove the rows with any NA value
+    counts_df = counts_df.dropna(axis=0, how="any").copy()
 
     # Load and process annotations
     insertion_annotations = pd.read_csv(
@@ -91,7 +101,7 @@ def get_control_insertions(
         "Type == 'Intergenic region' and Distance_to_region_start > 500 and Distance_to_region_end > 500"
     )
 
-    ctr_insertions = ctr_insertions[ctr_insertions.index.isin(counts_df.index)]
+    ctr_insertions = ctr_insertions[ctr_insertions.index.isin(counts_df.index)].drop_duplicates(keep="first")
 
     return ctr_insertions
 
