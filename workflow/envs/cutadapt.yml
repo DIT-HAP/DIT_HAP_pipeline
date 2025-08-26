@@ -4,6 +4,6 @@ channels:
   - defaults
 dependencies:
   - python=3.12
-  - cutadapt=5.0
+  - cutadapt=5.1
   - loguru
   - pydantic
