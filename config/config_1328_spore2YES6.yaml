@@ -1,6 +1,6 @@
 workdir: /data/c/yangyusheng_optimized/DIT_HAP_pipeline
 
-project_name: HD_DIT_HAP_generationPlus1
+project_name: Spore2YES6_1328
 
 # MultiQC configuration
 # -----------------------------------------------------
@@ -8,11 +8,12 @@ multiqc_config: config/multiqc_config.yml
 
 # Preparation configuration
 # -----------------------------------------------------
-Pombase_release_version: 2025-06-01
+Pombase_release_version: 2025-08-01
 
 # Preprocessing configuration
 # -----------------------------------------------------
-sample_sheet: config/sample_sheet_HD.tsv
+sample_sheet: config/sample_sheet_LD1328_spore2YES6.tsv
+use_DEseq2_for_biological_replicates: False
 
 # Adapter sequences and PBL/PBR sequences for adapter trimming and demultiplexing
 # -----------------------------------------------------
@@ -67,7 +68,9 @@ initial_time_point: "YES0"
 # -----------------------------------------------------
 time_points:
   - 0
-  - 3.352
-  - 6.588
-  - 10.104
-  - 13.480
+  - 3.723
+  - 6.969
+  - 10.334
+  - 13.554
+  - 17.098
+  - 20.059
