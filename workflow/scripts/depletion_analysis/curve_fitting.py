@@ -1,87 +1,110 @@
 """
 Gompertz Curve Fitting for Depletion Analysis
 
-This script fits Gompertz growth curves to depletion time-series data from 
+This script fits Gompertz growth curves to depletion time-series data from
 transposon insertion sequencing experiments. It processes multiple datasets
 simultaneously and generates publication-quality plots with fitted parameters.
 
-The Gompertz function models depletion curves with the equation:
-y = A * exp(-exp((um * e / A) * (lam - x) + 1))
-
-Where:
-- A: maximum depletion level (asymptote)
-- um: maximum depletion rate
-- lam: lag time parameter
-
-Typical usage: 
+Typical Usage:
     python curve_fitting.py -i data.csv -t 0 2 4 6 8 10 12 14 -o results.csv
 
 Input: CSV file with gene/insertion data as rows and time points as columns
 Output: CSV file with fitted parameters and PDF with visualization plots
 """
 
-import logging
+# =============================== Imports ===============================
+import sys
+import argparse
+from pathlib import Path
+from loguru import logger
+from typing import List, Optional, Dict, Tuple, Union
+from pydantic import BaseModel, Field, field_validator
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-from matplotlib.backends.backend_pdf import PdfPages
-from pathlib import Path
 from scipy.optimize import minimize
-from typing import List, Dict, Tuple, Optional, Union
-import argparse
-from collections import defaultdict
+from matplotlib import pyplot as plt
+from matplotlib.backends.backend_pdf import PdfPages
 import time
 from tqdm import tqdm
 
+
+# =============================== Constants ===============================
 # Configure matplotlib for publication quality
-plt.rcParams.update({
-    'figure.max_open_warning': 0,
-    'font.family': 'sans-serif',
-    'font.sans-serif': ['Arial'],
-    'font.size': 10,
-    'axes.linewidth': 1.2,
-    'axes.spines.top': False,
-    'axes.spines.right': False,
-    'grid.alpha': 0.3,
-    'grid.linewidth': 0.8
-})
-
-# Color palette following cursor rules
-COLOR_PALETTE = {
-    'primary_purple': '#962955',
-    'primary_green': '#7fb775', 
-    'primary_blue': '#6479cc',
-    'primary_gold': '#ad933c',
-    'fit_line': '#962955',
-    'data_points': '#6479cc',
-    'constraint_lines': '#333333'
-}
+plt.style.use("/data/c/yangyusheng_optimized/DIT_HAP_pipeline/config/DIT_HAP.mplstyle")
+AX_WIDTH, AX_HEIGHT = plt.rcParams['figure.figsize']
+COLORS = plt.rcParams['axes.prop_cycle'].by_key()['color']
 
 
+# =============================== Configuration & Models ===============================
+class CurveFittingConfig(BaseModel):
+    """Pydantic model for validating curve fitting configuration."""
+    input_file: Path = Field(..., description="Path to input CSV file with depletion data")
+    output_file: Path = Field(..., description="Path to output CSV file for fitted parameters")
+    time_points: List[float] = Field(..., description="Time points for the experiment")
+    weight_file: Optional[Path] = Field(None, description="Path to weight CSV file")
+    verbose: bool = Field(False, description="Enable verbose logging")
+
+    @field_validator('input_file')
+    def validate_input_file(cls, v):
+        if not v.exists():
+            raise ValueError(f"Input file does not exist: {v}")
+        return v
+
+    @field_validator('output_file')
+    def validate_output_file(cls, v):
+        v.parent.mkdir(parents=True, exist_ok=True)
+        return v
+
+    @field_validator('time_points')
+    def validate_time_points(cls, v):
+        if len(v) < 3:
+            raise ValueError("At least 3 time points are required")
+        return v
+
+    class Config:
+        frozen = True
+
+
+class FittingResult(BaseModel):
+    """Pydantic model for validating fitting results."""
+    ID: str = Field(..., description="Gene/insertion identifier")
+    Status: str = Field(..., description="Fitting status")
+    A: float = Field(..., description="Maximum depletion level (asymptote)")
+    um: float = Field(..., description="Maximum depletion rate")
+    lam: float = Field(..., description="Lag time parameter")
+    R2: float = Field(..., description="R-squared value")
+    RMSE: float = Field(..., description="Root mean square error")
+    normalized_RMSE: float = Field(..., description="Normalized RMSE")
+
+
+class SummaryStatistics(BaseModel):
+    """Pydantic model for validating summary statistics."""
+    total_datasets: int = Field(..., ge=0, description="Total number of datasets")
+    successful_fits: int = Field(..., ge=0, description="Number of successful fits")
+    success_rate: float = Field(..., ge=0.0, le=100.0, description="Success rate percentage")
+    mean_R2: Optional[float] = Field(None, ge=0.0, le=1.0, description="Mean R-squared value")
+    mean_RMSE: Optional[float] = Field(None, ge=0.0, description="Mean RMSE value")
+    mean_A: Optional[float] = Field(None, description="Mean A parameter")
+    mean_um: Optional[float] = Field(None, description="Mean um parameter")
+
+
+# =============================== Setup Logging ===============================
 def setup_logging(verbose: bool = False) -> None:
-    """Set up logging configuration."""
-    level = logging.DEBUG if verbose else logging.INFO
-    logging.basicConfig(
+    """Configure loguru for the application."""
+    logger.remove()
+    level = "DEBUG" if verbose else "INFO"
+    logger.add(
+        sys.stdout,
+        format="{time:YYYY-MM-DD HH:mm:ss} | {level: <8} | {message}",
         level=level,
-        format='%(asctime)s - %(levelname)s - %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S'
+        colorize=False
     )
 
 
+# =============================== Core Functions ===============================
+@logger.catch
 def gompertz_function(x: np.ndarray, A: float, um: float, lam: float) -> np.ndarray:
-    """
-    Calculate Gompertz function values with numerical stability.
-    
-    Args:
-        x: Input time points
-        A: Maximum depletion level (asymptote)
-        um: Maximum depletion rate
-        lam: Lag time parameter
-        
-    Returns:
-        Gompertz function values at input points
-    """
-    # Check for division by zero
+    """Calculate Gompertz function values with numerical stability."""
     if A == 0:
         return np.zeros_like(x)
     
@@ -89,86 +112,57 @@ def gompertz_function(x: np.ndarray, A: float, um: float, lam: float) -> np.ndar
     return A * np.exp(-np.exp(exponent))
 
 
+@logger.catch
 def gompertz_derivative(x: np.ndarray, A: float, um: float, lam: float) -> np.ndarray:
-    """
-    Calculate derivative of Gompertz function.
-    
-    Args:
-        x: Input time points
-        A: Maximum depletion level
-        um: Maximum depletion rate  
-        lam: Lag time parameter
-        
-    Returns:
-        Derivative values at input points
-    """
-    # avoid overflow
+    """Calculate derivative of Gompertz function."""
     alpha = (um * np.e) / A
     u = alpha * (lam - x) + 1
     return A * alpha * np.exp(u - np.exp(u))
 
 
-def objective_function(params: List[float], x: np.ndarray, y: np.ndarray, weight_values: np.ndarray) -> float:
-    """
-    Objective function for curve fitting using Huber loss.
-    
-    Args:
-        params: Gompertz parameters [A, um, lam]
-        x: Time point values
-        y: Depletion measurements
-        weight_values: Weight values
-        
-    Returns:
-        Huber loss value
-    """
+@logger.catch
+def objective_function(params: List[float], x: np.ndarray, y: np.ndarray, 
+                      weight_values: np.ndarray) -> float:
+    """Objective function for curve fitting using Huber loss."""
     A, um, lam = params
     y_fit = gompertz_function(x, A, um, lam)
     residuals = y - y_fit
-    z = (residuals*weight_values)**2
+    z = (residuals * weight_values) ** 2
+    
     # Huber loss for robustness to outliers
-    rho_z = np.where(z <= 1, z, 2*np.sqrt(z) - 1)
-
-    # add L1 regularization to lam
+    rho_z = np.where(z <= 1, z, 2 * np.sqrt(z) - 1)
+    
+    # Add L1 regularization to lam
     lam_penalty = 6e-3 * abs(lam)
     return np.sum(rho_z) + lam_penalty
 
 
+@logger.catch
 def constraint_function1(params: List[float], t_last: float) -> float:
     """Constraint to ensure reasonable parameter bounds."""
     A, um, lam = params
-    return t_last + 3 - abs(A)/abs(um) - lam
+    return t_last + 3 - abs(A) / abs(um) - lam
 
 
+@logger.catch
 def constraint_function2(params: List[float]) -> float:
     """Constraint to ensure smooth curve behavior."""
     A, um, lam = params
-    x0 = lam + A/um/np.e
-    return (abs(gompertz_derivative(x0-1, A, um, lam)) + 
-            abs(gompertz_derivative(x0+1, A, um, lam)) - 1.8 * abs(um))
+    x0 = lam + A / um / np.e
+    return (abs(gompertz_derivative(x0 - 1, A, um, lam)) + 
+            abs(gompertz_derivative(x0 + 1, A, um, lam)) - 1.8 * abs(um))
 
 
+@logger.catch
 def fit_single_curve(x_values: np.ndarray, y_values: np.ndarray, 
                     weight_values: np.ndarray, ID: str, t_last: float) -> Dict[str, Union[str, float]]:
-    """
-    Fit Gompertz curve to a single dataset.
-    
-    Args:
-        x_values: Time points
-        y_values: Depletion measurements
-        weight_values: Weight values
-        ID: Gene/insertion identifier
-        t_last: Last time point for constraints
-        
-    Returns:
-        Dictionary with fitting results and statistics
-    """
+    """Fit Gompertz curve to a single dataset."""
     constraints = (
         {'type': 'ineq', 'fun': constraint_function1, 'args': (t_last,)},
         {'type': 'ineq', 'fun': constraint_function2}
     )
     
     try:
-
         result = minimize(
             objective_function,
             x0=[1, 1, 1],
@@ -181,8 +175,8 @@ def fit_single_curve(x_values: np.ndarray, y_values: np.ndarray,
         if result.success:
             A, um, lam = result.x
             residuals = y_values - gompertz_function(x_values, A, um, lam)
-            ss_res = np.sum(residuals**2)
-            ss_tot = np.sum((y_values - np.mean(y_values))**2)
+            ss_res = np.sum(residuals ** 2)
+            ss_tot = np.sum((y_values - np.mean(y_values)) ** 2)
             r_squared = 1 - (ss_res / ss_tot) if ss_tot > 0 else 0
             rmse = np.sqrt(ss_res / len(y_values))
             normalized_rmse = rmse / (y_values.max() - y_values.min())
@@ -194,16 +188,16 @@ def fit_single_curve(x_values: np.ndarray, y_values: np.ndarray,
                 'R2': r_squared, 'RMSE': rmse, 'normalized_RMSE': normalized_rmse
             }
         else:
-            logging.warning(f"Optimization failed for {ID}")
+            logger.warning(f"Optimization failed for {ID}")
             return {
                 'ID': ID,
                 'Status': 'Optimization failed',
                 'A': np.nan, 'um': np.nan, 'lam': np.nan,
                 'R2': np.nan, 'RMSE': np.nan, 'normalized_RMSE': np.nan
             }
-    
+
     except Exception as e:
-        logging.error(f"Error fitting {ID}: {e}")
+        logger.error(f"Error fitting {ID}: {e}")
         return {
             'ID': ID,
             'Status': 'Fitting error',
@@ -212,18 +206,10 @@ def fit_single_curve(x_values: np.ndarray, y_values: np.ndarray,
         }
 
 
-def create_fitted_plot(ax: plt.Axes, x_values: np.ndarray, y_values: np.ndarray, 
+@logger.catch
+def create_fitted_plot(ax: plt.Axes, x_values: np.ndarray, y_values: np.ndarray,
                       params: Dict[str, Union[str, float]], ID: str) -> None:
-    """
-    Create a publication-quality plot for fitted curve.
-    
-    Args:
-        ax: Matplotlib axes object
-        x_values: Time points
-        y_values: Depletion measurements
-        params: Fitted parameters
-        ID: Gene/insertion identifier
-    """
+    """Create a publication-quality plot for fitted curve."""
     ax.grid(True, alpha=0.3)
     
     if params['Status'] == 'Success':
@@ -231,38 +217,34 @@ def create_fitted_plot(ax: plt.Axes, x_values: np.ndarray, y_values: np.ndarray,
         
         # Plot data points
         ax.scatter(x_values, y_values, 
-                  color=COLOR_PALETTE['data_points'], 
-                  s=50, alpha=0.8, 
+                  color=COLORS[1], 
+                  s=50, alpha=0.8,
                   edgecolors='white', linewidth=0.5,
                   label='Data')
         
         # Plot fitted curve
         x_smooth = np.linspace(min(x_values), max(x_values), 100)
         y_fit = gompertz_function(x_smooth, A, um, lam)
-        ax.plot(x_smooth, y_fit, 
-               color=COLOR_PALETTE['fit_line'], 
+        ax.plot(x_smooth, y_fit,
+               color=COLORS[2],
                linewidth=2.0, label='Fitted')
         
-        # Add constraint lines with subtle styling
-        ax.axhline(y=A, color=COLOR_PALETTE['constraint_lines'], 
+        # Add constraint lines
+        ax.axhline(y=A, color=COLORS[0],
                   linestyle='--', alpha=0.3, linewidth=1.0)
-        ax.axvline(x=lam, color=COLOR_PALETTE['constraint_lines'], 
+        ax.axvline(x=lam, color=COLORS[0],
                   linestyle='--', alpha=0.3, linewidth=1.0)
-        # add the straight line that crosses with the x axis at x=lam, and with the slope of um
-        x_line = np.linspace(lam-1, 14, 100)
-        y_line = um * (x_line - lam)
-        ax.plot(x_line, y_line, color=COLOR_PALETTE['constraint_lines'], linestyle='--', alpha=0.3, linewidth=1.0)
         
         # Add parameter text
         param_text = f'A={A:.2f}    R²={params["R2"]:.3f}\num={um:.2f}  RMSE={params["RMSE"]:.3f}\nlam={lam:.2f}    NRMSE={params["normalized_RMSE"]:.3f}'
-        ax.text(0.05, 0.95, param_text, 
+        ax.text(0.05, 0.95, param_text,
                transform=ax.transAxes, fontsize=8,
                verticalalignment='top')
     else:
         # Plot failed fit
-        ax.scatter(x_values, y_values, 
+        ax.scatter(x_values, y_values,
                   color='gray', s=30, alpha=0.6)
-        ax.text(0.5, 0.5, 'Fit Failed', 
+        ax.text(0.5, 0.5, 'Fit Failed',
                transform=ax.transAxes, fontsize=10,
                horizontalalignment='center', color='red')
     
@@ -271,30 +253,22 @@ def create_fitted_plot(ax: plt.Axes, x_values: np.ndarray, y_values: np.ndarray,
     ax.tick_params(labelsize=8)
 
 
-def generate_fitting_plots(results_df: pd.DataFrame, x_values: np.ndarray, 
+@logger.catch
+def generate_fitting_plots(results_df: pd.DataFrame, x_values: np.ndarray,
                           y_values: np.ndarray, output_plot: Path) -> None:
-    """
-    Generate multi-page PDF with fitting plots.
-    
-    Args:
-        results_df: DataFrame with fitting results
-        x_values: Time points
-        y_values: Depletion data matrix
-        output_plot: Output PDF path
-    """
+    """Generate multi-page PDF with fitting plots."""
     plots_per_page = 32
     num_pages = int(np.ceil(len(results_df) / plots_per_page))
     
-    logging.info(f"Generating {num_pages} pages of plots...")
+    logger.info(f"Generating {num_pages} pages of plots...")
     
     with PdfPages(output_plot) as pdf:
         for page in range(num_pages):
             fig, axes = plt.subplots(8, 4, figsize=(8.27, 11.69))  # A4 landscape
             axes = axes.flatten()
 
-            # progress bar
             if page % 10 == 0:
-                logging.info(f"Generating page {page+1} of {num_pages}...")
+                logger.info(f"Generating page {page+1} of {num_pages}...")
             
             start_idx = page * plots_per_page
             end_idx = min((page + 1) * plots_per_page, len(results_df))
@@ -305,9 +279,9 @@ def generate_fitting_plots(results_df: pd.DataFrame, x_values: np.ndarray,
                 ID = " ".join(map(str, row.name))
                 
                 create_fitted_plot(
-                    axes[ax_idx], 
-                    x_values, 
-                    y_values[idx], 
+                    axes[ax_idx],
+                    x_values,
+                    y_values[idx],
                     row.to_dict(),
                     ID
                 )
@@ -321,19 +295,11 @@ def generate_fitting_plots(results_df: pd.DataFrame, x_values: np.ndarray,
             plt.close(fig)
 
 
-def process_depletion_data(input_file: Path, time_points: List[float], weight_file: Optional[Path] = None) -> Tuple[np.ndarray, np.ndarray, List[str]]:
-    """
-    Load and process depletion data from CSV file.
-    
-    Args:
-        input_file: Path to input CSV file
-        time_points: List of time point values
-        weight_file: Path to weight CSV file
-        
-    Returns:
-        Tuple of (x_values, y_values, gene_names)
-    """
-    logging.info(f"Loading data from {input_file}")
+@logger.catch
+def process_depletion_data(input_file: Path, time_points: List[float], 
+                          weight_file: Optional[Path] = None) -> Tuple[np.ndarray, np.ndarray, np.ndarray, List[str], List[str]]:
+    """Load and process depletion data from CSV file."""
+    logger.info(f"Loading data from {input_file}")
     
     # Load data with multi-level index for insertions
     data = pd.read_csv(input_file, header=0, sep="\t")
@@ -348,7 +314,7 @@ def process_depletion_data(input_file: Path, time_points: List[float], weight_fi
     # Create gene identifiers
     IDs = ["=".join(map(str, idx)) for idx in data.index.tolist()]
     
-    x_values = time_points
+    x_values = np.array(time_points)
     y_values = data.values
 
     if weight_file is not None:
@@ -357,26 +323,19 @@ def process_depletion_data(input_file: Path, time_points: List[float], weight_fi
         weight_data = weight_data.loc[data.index].fillna(0.01)
         # if weights are lfcSE, then convert to 1/lfcSE^2
         if "lfcSE" in Path(weight_file).stem:
-            weight_data = 1/(weight_data**2)
+            weight_data = 1 / (weight_data ** 2)
         weight_values = weight_data.values
     else:
         weight_values = np.ones(shape=(len(IDs), len(x_values)))
     
-    logging.info(f"Loaded {len(IDs)} datasets with {len(x_values)} time points")
+    logger.info(f"Loaded {len(IDs)} datasets with {len(x_values)} time points")
     
     return x_values, y_values, weight_values, IDs, index_names
 
 
-def generate_summary_statistics(results_df: pd.DataFrame) -> Dict[str, Union[int, float]]:
-    """
-    Generate comprehensive summary statistics.
-    
-    Args:
-        results_df: DataFrame with fitting results
-        
-    Returns:
-        Dictionary with summary statistics
-    """
+@logger.catch
+def generate_summary_statistics(results_df: pd.DataFrame) -> SummaryStatistics:
+    """Generate comprehensive summary statistics."""
     total_count = len(results_df)
     success_count = len(results_df[results_df['Status'] == 'Success'])
     success_rate = (success_count / total_count * 100) if total_count > 0 else 0
@@ -384,98 +343,94 @@ def generate_summary_statistics(results_df: pd.DataFrame) -> Dict[str, Union[int
     # Statistics for successful fits only
     successful_fits = results_df[results_df['Status'] == 'Success']
     
-    stats = {
-        'Total datasets': total_count,
-        'Successful fits': success_count,
-        'Success rate (%)': success_rate,
-        'Failed fits': total_count - success_count
-    }
+    stats = SummaryStatistics(
+        total_datasets=total_count,
+        successful_fits=success_count,
+        success_rate=success_rate
+    )
     
     if len(successful_fits) > 0:
-        stats.update({
-            'Mean R²': successful_fits['R2'].mean(),
-            'Median R²': successful_fits['R2'].median(),
-            'Mean RMSE': successful_fits['RMSE'].mean(),
-            'Mean A parameter': successful_fits['A'].mean(),
-            'Mean um parameter': successful_fits['um'].mean(),
-            'Mean normalized RMSE': successful_fits['normalized_RMSE'].mean()
-        })
+        stats.mean_R2 = successful_fits['R2'].mean()
+        stats.mean_RMSE = successful_fits['RMSE'].mean()
+        stats.mean_A = successful_fits['A'].mean()
+        stats.mean_um = successful_fits['um'].mean()
     
     return stats
 
 
-def display_summary_table(stats: Dict[str, Union[int, float]]) -> None:
-    """
-    Display summary statistics in formatted table.
+@logger.catch
+def display_summary_table(stats: SummaryStatistics) -> None:
+    """Display summary statistics in formatted table."""
+    logger.info("=" * 50)
+    logger.info("CURVE FITTING SUMMARY STATISTICS")
+    logger.info("=" * 50)
     
-    Args:
-        stats: Dictionary with summary statistics
-    """
-    logging.info("\n" + "="*50)
-    logging.info("CURVE FITTING SUMMARY STATISTICS")
-    logging.info("="*50)
+    for key, value in stats.model_dump().items():
+        if value is not None:
+            if isinstance(value, float):
+                logger.info(f"{key.replace('_', ' ').title():<25}: {value:.3f}")
+            else:
+                logger.info(f"{key.replace('_', ' ').title():<25}: {value}")
     
-    for key, value in stats.items():
-        if isinstance(value, float):
-            logging.info(f"{key:<25}: {value:.3f}")
-        else:
-            logging.info(f"{key:<25}: {value}")
-    
-    logging.info("="*50)
+    logger.info("=" * 50)
 
 
-def parse_arguments() -> argparse.Namespace:
-    """Parse command line arguments."""
+# =============================== Main Function ===============================
+def parse_arguments():
+    """Set and parse command line arguments."""
     parser = argparse.ArgumentParser(
-        description='''
-        Fit Gompertz curves to depletion time-series data.
-        
-        This script processes transposon insertion depletion data and fits
-        Gompertz growth curves to model depletion kinetics. Generates both
-        parameter estimates and visualization plots.
-        ''',
+        description="Fit Gompertz curves to depletion time-series data",
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
     
-    parser.add_argument('-i', '--input', type=Path, required=True,
-                       help='Input CSV file with depletion data')
-    parser.add_argument('-w', '--weight', type=Path, required=False, default=None,
-                       help='Input CSV file with weight data, if provided, the weight data will be used to calculate the normalized RMSE')
-    parser.add_argument('-t', '--time_points', required=True, nargs='+', 
-                       type=float, help='Time points for the experiment')
-    parser.add_argument('-o', '--output', type=Path, required=True,
-                       help='Output CSV file for fitted parameters')
-    parser.add_argument('-v', '--verbose', action='store_true',
-                       help='Enable verbose logging')
+    parser.add_argument("-i", "--input", type=Path, required=True,
+                       help="Path to input CSV file with depletion data")
+    parser.add_argument("-w", "--weight", type=Path, required=False, default=None,
+                       help="Path to weight CSV file")
+    parser.add_argument("-t", "--time_points", required=True, nargs='+',
+                       type=float, help="Time points for the experiment")
+    parser.add_argument("-o", "--output", type=Path, required=True,
+                       help="Path to output CSV file for fitted parameters")
+    parser.add_argument("-v", "--verbose", action="store_true",
+                       help="Enable verbose logging")
     
     return parser.parse_args()
 
 
-def main() -> None:
-    """Main execution function."""
+@logger.catch
+def main():
+    """Main entry point of the script."""
     start_time = time.time()
     
     # Parse arguments and setup
     args = parse_arguments()
     setup_logging(args.verbose)
     
-    logging.info("Starting Gompertz curve fitting analysis")
-    logging.info(f"Input file: {args.input}")
-    logging.info(f"Time points: {args.time_points}")
+    # Validate configuration
+    try:
+        config = CurveFittingConfig(
+            input_file=args.input,
+            output_file=args.output,
+            time_points=args.time_points,
+            weight_file=args.weight,
+            verbose=args.verbose
+        )
+    except ValueError as e:
+        logger.error(f"Configuration error: {e}")
+        sys.exit(1)
     
-    # Create output directories
-    args.output.parent.mkdir(parents=True, exist_ok=True)
-    output_plot = args.output.with_suffix('.pdf').with_name(args.output.stem + '_fitted_curves.pdf')
+    logger.info("Starting Gompertz curve fitting analysis")
+    logger.info(f"Input file: {config.input_file}")
+    logger.info(f"Time points: {config.time_points}")
     
     # Process data
-    if args.weight is not None:
-        x_values, y_values, weight_values, IDs, index_names = process_depletion_data(args.input, args.time_points, args.weight)
-    else:
-        x_values, y_values, weight_values, IDs, index_names = process_depletion_data(args.input, args.time_points)
+    x_values, y_values, weight_values, IDs, index_names = process_depletion_data(
+        config.input_file, config.time_points, config.weight_file
+    )
     t_last = x_values[-1]
     
     # Fit curves with progress tracking
-    logging.info("Fitting Gompertz curves...")
+    logger.info("Fitting Gompertz curves...")
     all_results = []
     
     with tqdm(total=len(y_values), desc="Fitting progress") as pbar:
@@ -485,10 +440,7 @@ def main() -> None:
             # Add time series data to result
             for j, time_val in enumerate(x_values):
                 result[f't{j}'] = y_data[j]
-            # Add the fitted time series data to the result
-            for j, time_val in enumerate(x_values):
                 result[f't{j}_fitted'] = round(gompertz_function(time_val, result['A'], result['um'], result['lam']), 3)
-            for j, time_val in enumerate(x_values):
                 result[f't{j}_residual'] = round(result[f't{j}'] - result[f't{j}_fitted'], 3)
             
             all_results.append(result)
@@ -501,26 +453,29 @@ def main() -> None:
     # Round numeric columns
     numeric_columns = ['A', 'um', 'lam', 'R2', 'RMSE', 'normalized_RMSE']
     results_df[numeric_columns] = results_df[numeric_columns].round(3)
-
+    
+    # Set multi-level index
     results_df.set_index("ID", inplace=True)
-    multiple_index = pd.MultiIndex.from_tuples([ idx.split("=") for idx in results_df.index.tolist()])
+    multiple_index = pd.MultiIndex.from_tuples([idx.split("=") for idx in results_df.index.tolist()])
     results_df.index = multiple_index
     results_df.rename_axis(index_names, inplace=True)
-
+    
     # Save results
-    results_df.to_csv(args.output, index=True, float_format='%.3f', sep="\t")
+    results_df.to_csv(config.output_file, index=True, float_format='%.3f', sep="\t")
     
     # Generate plots
+    output_plot = config.output_file.with_suffix('.pdf').with_name(config.output_file.stem + '_fitted_curves.pdf')
     generate_fitting_plots(results_df, x_values, y_values, output_plot)
     
     # Calculate and display statistics
     stats = generate_summary_statistics(results_df)
     display_summary_table(stats)
+    
     # Final summary
     elapsed_time = time.time() - start_time
-    logging.info(f"\nAnalysis completed in {elapsed_time:.1f} seconds")
-    logging.info(f"Results saved to: {args.output}")
-    logging.info(f"Plots saved to: {output_plot}")
+    logger.success(f"Analysis completed in {elapsed_time:.1f} seconds")
+    logger.success(f"Results saved to: {config.output_file}")
+    logger.success(f"Plots saved to: {output_plot}")
 
 
 if __name__ == "__main__":
