@@ -4,21 +4,49 @@ Enhanced genomic feature annotation with Pydantic validation and Loguru logging.
 Annotates transposon insertion sites with genomic features including genes,
 intergenic regions, and coding sequences. Calculates distances to start/stop
 codons and determines affected amino acid residues.
+
+Typical Usage:
+    python annotate_genomic_features.py --input [input_file] --genome-region [genome_file] --output [output_file]
+
+Input: Input insertion file (TSV or CSV)
+Output: Output annotation file with genomic features
+Additional: Genome region BED file for feature annotation
 """
 
-import argparse
+# =============================== Imports ===============================
+# import necessary libraries, just keep the ones you need, the following are just examples
 import sys
+import argparse
 from pathlib import Path
-from typing import List, Optional, Tuple
-
+from loguru import logger
+from typing import List, Optional, Dict, Tuple
+from pydantic import BaseModel, Field, field_validator
 import numpy as np
 import pandas as pd
-from loguru import logger
 from pybedtools import BedTool
-from pydantic import BaseModel, Field, field_validator
 
 
-# ======================== Configuration & Models ========================
+# =============================== Configuration & Models ===============================
+class InputOutputConfig(BaseModel):
+    """Pydantic model for validating and managing input/output paths."""
+    input_file: Path = Field(..., description="Path to the input insertion file")
+    genome_region_file: Path = Field(..., description="Path to the genome region BED file")
+    output_file: Path = Field(..., description="Path to the output annotation file")
+
+    @field_validator('input_file', 'genome_region_file')
+    def validate_input_file(cls, v):
+        if not v.exists():
+            raise ValueError(f"Input file does not exist: {v}")
+        return v
+    
+    @field_validator('output_file')
+    def validate_output_file(cls, v):
+        v.parent.mkdir(parents=True, exist_ok=True) # Create dir if it doesn't exist
+        return v
+    
+    class Config:
+        frozen = True # Makes the model immutable after creation
+
 
 class GenomicFeature(BaseModel):
     """Model for a genomic feature annotation."""
@@ -41,61 +69,31 @@ class GenomicFeature(BaseModel):
         frozen = True
 
 
-class AnnotationConfig(BaseModel):
-    """Configuration for genomic annotation."""
-    
-    input_file: Path = Field(..., description="Input insertion file")
-    genome_region_file: Path = Field(..., description="Genome region BED file")
-    output_file: Path = Field(..., description="Output annotation file")
-    
-    @field_validator('input_file', 'genome_region_file')
-    def validate_input_exists(cls, v, field):
-        if not v.exists():
-            raise ValueError(f"{field.name} not found: {v}")
-        return v
-    
-    @field_validator('output_file')
-    def validate_output_dir(cls, v):
-        output_dir = v.parent
-        if not output_dir.exists():
-            logger.info(f"Creating output directory: {output_dir}")
-            output_dir.mkdir(parents=True, exist_ok=True)
-        return v
-    
-    class Config:
-        frozen = True
-
-
-class AnnotationStats(BaseModel):
-    """Statistics from annotation process."""
-    
-    total_insertions: int = Field(..., ge=0, description="Total insertion sites")
-    annotated_insertions: int = Field(..., ge=0, description="Successfully annotated")
-    coding_insertions: int = Field(..., ge=0, description="In coding regions")
-    intergenic_insertions: int = Field(..., ge=0, description="In intergenic regions")
-    unique_genes: int = Field(..., ge=0, description="Unique genes affected")
-    forward_insertions: int = Field(..., ge=0, description="Forward direction")
-    reverse_insertions: int = Field(..., ge=0, description="Reverse direction")
-    
-    class Config:
-        frozen = True
+class AnalysisResult(BaseModel):
+    """Pydantic model to hold and validate the results of the analysis."""
+    total_insertions: int = Field(..., ge=0, description="Total number of insertions processed")
+    annotated_insertions: int = Field(..., ge=0, description="Number of insertions successfully annotated")
+    coding_insertions: int = Field(..., ge=0, description="Number of insertions in coding regions")
+    intergenic_insertions: int = Field(..., ge=0, description="Number of insertions in intergenic regions")
+    unique_genes: int = Field(..., ge=0, description="Number of unique genes affected")
+    forward_insertions: int = Field(..., ge=0, description="Number of forward insertions")
+    reverse_insertions: int = Field(..., ge=0, description="Number of reverse insertions")
     
     @property
     def coding_percentage(self) -> float:
         """Percentage of insertions in coding regions."""
         if self.total_insertions == 0:
             return 0.0
-        return (self.coding_insertions / self.total_insertions) * 100
+        return (self.coding_insertions / self.total_insertions) * 100.0
 
 
-# ======================== Logging Setup ========================
-
+# =============================== Setup Logging ===============================
 def setup_logging(log_level: str = "INFO") -> None:
-    """Configure loguru for genomic annotation."""
-    logger.remove()
+    """Configure loguru for the application."""
+    logger.remove() # Remove default logger
     logger.add(
         sys.stdout,
-        format="{time:HH:mm:ss} | {level: <8} | {message}",
+        format="{time:YYYY-MM-DD HH:mm:ss} | {level: <8} | {message}",
         level=log_level,
         colorize=False
     )
@@ -296,7 +294,7 @@ def drop_boundary_duplicates(sub_df: pd.DataFrame) -> pd.DataFrame:
 def annotate_insertions(
     insertions_df: pd.DataFrame,
     regions_df: pd.DataFrame
-) -> Tuple[pd.DataFrame, AnnotationStats]:
+) -> Tuple[pd.DataFrame, AnalysisResult]:
     """
     Annotate insertions with genomic features.
     
@@ -377,7 +375,7 @@ def annotate_insertions(
     )
     
     # Calculate statistics
-    stats = AnnotationStats(
+    stats = AnalysisResult(
         total_insertions=len(insertions_df),
         annotated_insertions=len(annotated_df),
         coding_insertions=len(annotated_df[annotated_df["Type"] != "Intergenic region"]),
@@ -394,7 +392,7 @@ def annotate_insertions(
 def save_annotations(
     annotated_df: pd.DataFrame,
     output_path: Path,
-    stats: AnnotationStats
+    stats: AnalysisResult
 ) -> None:
     """
     Save annotated insertions to file.
@@ -435,63 +433,69 @@ def save_annotations(
     logger.success(f"Annotations saved to {output_path}")
 
 
-# ======================== Main Entry Point ========================
+# =============================== Core Functions ===============================
 
+@logger.catch
+def main_processing_function(config: InputOutputConfig) -> AnalysisResult:
+    """
+    Main processing function that orchestrates the annotation workflow.
+    
+    Args:
+        config: Input/output configuration object
+        
+    Returns:
+        AnalysisResult containing annotation statistics
+    """
+    logger.info(f"Starting annotation workflow for {config.input_file}")
+    logger.info(f"Genome regions: {config.genome_region_file}")
+    logger.info(f"Output file: {config.output_file}")
+    
+    # Load data
+    insertions_df = load_insertion_data(config.input_file)
+    regions_df = load_genome_regions(config.genome_region_file)
+    
+    # Annotate insertions
+    annotated_df, stats = annotate_insertions(insertions_df, regions_df)
+    
+    # Save results
+    save_annotations(annotated_df, config.output_file, stats)
+    
+    logger.success("Annotation workflow completed successfully!")
+    return stats
+
+# =============================== Main Function ===============================
+def parse_arguments():
+    """Set and parse command line arguments. Modify flags and help text as needed."""
+    parser = argparse.ArgumentParser(description="Annotate insertion sites with genomic features")
+    parser.add_argument("-i", "--input", type=Path, required=True, help="Path to the input insertion file")
+    parser.add_argument("-g", "--genome-region", type=Path, required=True, help="Path to the genome region BED file")
+    parser.add_argument("-o", "--output", type=Path, required=True, help="Path to the output annotation file")
+    parser.add_argument("-v", "--verbose", action="store_true", help="Enable verbose logging")
+    return parser.parse_args()
+
+@logger.catch
 def main():
     """Main entry point for the script."""
-    setup_logging()
-    
-    parser = argparse.ArgumentParser(
-        description="Annotate insertion sites with genomic features",
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter
-    )
-    
-    parser.add_argument(
-        "-i", "--input",
-        dest="input",
-        type=Path,
-        required=True,
-        help="Input insertion file (TSV or CSV)"
-    )
-    parser.add_argument(
-        "-g", "--genome-region",
-        dest="genome_region",
-        type=Path,
-        required=True,
-        help="Genome region BED file"
-    )
-    parser.add_argument(
-        "-o", "--output",
-        dest="output",
-        type=Path,
-        required=True,
-        help="Output annotation file"
-    )
-    
-    args = parser.parse_args()
-    
+
+    args = parse_arguments()
+    log_level = "DEBUG" if args.verbose else "INFO"
+    setup_logging(log_level)
+
     logger.info(f"Pandas version: {pd.__version__}")
     logger.info(f"NumPy version: {np.__version__}")
     
     try:
         # Create and validate configuration
-        config = AnnotationConfig(
+        config = InputOutputConfig(
             input_file=args.input,
             genome_region_file=args.genome_region,
             output_file=args.output
         )
         
-        # Load data
-        insertions_df = load_insertion_data(config.input_file)
-        regions_df = load_genome_regions(config.genome_region_file)
+        # Run the core analysis/logic
+        results = main_processing_function(config)
         
-        # Annotate insertions
-        annotated_df, stats = annotate_insertions(insertions_df, regions_df)
-        
-        # Save results
-        save_annotations(annotated_df, config.output_file, stats)
-        
-        logger.success("Annotation completed successfully!")
+        logger.success(f"Annotation completed successfully! Processed {results.total_insertions} insertions.")
         return 0
         
     except ValueError as e:

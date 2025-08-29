@@ -1,46 +1,65 @@
 """
-Enhanced timepoint concatenation with Pydantic validation and Loguru logging.
+Concatenate timepoint insertion count data with target sequence annotation.
 
 Concatenates insertion count data across multiple timepoints for the same sample,
-adding target sequence information from the reference genome.
+adding target sequence information from the reference genome. Generates separate
+output files for PBL, PBR, and total read counts with target sequence annotation.
+
+Typical Usage:
+    python concatenate_timepoint_data.py -i file1.tsv file2.tsv -tp T1 T2 -g genome.fasta -o output_pbl.tsv --output_pbr output_pbr.tsv --output_reads output_reads.tsv
+
+Input: Multiple timepoint insertion count files, reference genome FASTA
+Output: Three output files (PBL, PBR, Reads) with concatenated timepoint data
+Adds target sequence information from reference genome for each insertion site.
 """
 
-import argparse
+# =============================== Imports ===============================
 import sys
+import argparse
 from pathlib import Path
-from typing import Dict, List, Tuple
-
-import pandas as pd
-from Bio import SeqIO
 from loguru import logger
+from typing import List, Optional, Dict, Tuple
 from pydantic import BaseModel, Field, field_validator
+import pandas as pd
+
+# The following is for Bio sequence handling
+from Bio import SeqIO
 
 
-# ======================== Configuration & Models ========================
+# =============================== Constants ===============================
+# No plotting constants needed for this script
 
-class TimepointConfig(BaseModel):
-    """Configuration for timepoint concatenation."""
-    
-    sample_name: str = Field(..., min_length=1, description="Sample identifier")
-    input_files: List[Path] = Field(..., min_items=1, description="Input insertion files")
-    timepoints: List[str] = Field(..., min_items=1, description="Timepoint names")
+# =============================== Configuration & Models ===============================
+class InputOutputConfig(BaseModel):
+    """Pydantic model for validating and managing input/output paths."""
+    input_files: List[Path] = Field(..., description="Input insertion count files", min_items=1)
     genome_file: Path = Field(..., description="Reference genome FASTA file")
     output_pbl: Path = Field(..., description="Output PBL file path")
-    output_pbr: Path = Field(..., description="Output PBR file path")
+    output_pbr: Path = Field(..., description="Output PBR file path") 
     output_reads: Path = Field(..., description="Output reads file path")
-    
+    sample_name: str = Field(..., description="Sample identifier", min_length=1)
+    timepoints: List[str] = Field(..., description="Timepoint names", min_items=1)
+
     @field_validator('input_files')
-    @classmethod
     def validate_input_files(cls, v):
         missing = [f for f in v if not f.exists()]
         if missing:
             raise ValueError(f"Input files not found: {missing}")
         return v
     
+    @field_validator('genome_file')
+    def validate_genome_file(cls, v):
+        if not v.exists():
+            raise ValueError(f"Genome file not found: {v}")
+        return v
+    
+    @field_validator('output_pbl', 'output_pbr', 'output_reads')
+    def validate_output_dir(cls, v):
+        v.parent.mkdir(parents=True, exist_ok=True)
+        return v
+    
     @field_validator('timepoints')
-    @classmethod
     def validate_timepoint_count(cls, v, info):
-        # In Pydantic v2, we need to access data through info.data
         if hasattr(info, 'data') and 'input_files' in info.data:
             input_files = info.data['input_files']
             if len(v) != len(input_files):
@@ -50,29 +69,12 @@ class TimepointConfig(BaseModel):
                 )
         return v
     
-    @field_validator('genome_file')
-    @classmethod
-    def validate_genome_exists(cls, v):
-        if not v.exists():
-            raise ValueError(f"Genome file not found: {v}")
-        return v
-    
-    @field_validator('output_pbl', 'output_pbr', 'output_reads')
-    @classmethod
-    def validate_output_dir(cls, v):
-        output_dir = v.parent
-        if not output_dir.exists():
-            logger.info(f"Creating output directory: {output_dir}")
-            output_dir.mkdir(parents=True, exist_ok=True)
-        return v
-    
     class Config:
         frozen = True
 
-
-class ConcatenationStats(BaseModel):
-    """Statistics from concatenation operation."""
-    
+# REPLACE THIS ENTIRE CLASS WITH A MODEL FOR YOUR SPECIFIC RESULTS.
+class AnalysisResult(BaseModel):
+    """Pydantic model to hold and validate the results of the analysis."""
     num_timepoints: int = Field(..., ge=1, description="Number of timepoints")
     num_insertions: int = Field(..., ge=0, description="Total unique insertions")
     num_chromosomes: int = Field(..., ge=0, description="Number of chromosomes")
@@ -84,32 +86,22 @@ class ConcatenationStats(BaseModel):
         frozen = True
 
 
-# ======================== Logging Setup ========================
-
+# =============================== Setup Logging ===============================
 def setup_logging(log_level: str = "INFO") -> None:
-    """Configure loguru for timepoint concatenation."""
-    logger.remove()
+    """Configure loguru for the application."""
+    logger.remove() # Remove default logger
     logger.add(
         sys.stdout,
-        format="{time:HH:mm:ss} | {level: <8} | {message}",
+        format="{time:YYYY-MM-DD HH:mm:ss} | {level: <8} | {message}",
         level=log_level,
         colorize=False
     )
 
-
-# ======================== Core Functions ========================
+# =============================== Core Functions ===============================
 
 @logger.catch
-def load_reference_genome(genome_path: Path) -> Dict:
-    """
-    Load reference genome sequences.
-    
-    Args:
-        genome_path: Path to genome FASTA file
-        
-    Returns:
-        Dictionary of sequence records
-    """
+def load_reference_data(genome_path: Path) -> Dict:
+    """Load reference genome sequences from FASTA file for target sequence extraction."""
     logger.info(f"Loading reference genome: {genome_path}")
     
     try:
@@ -136,23 +128,13 @@ def extract_target_sequence(
     coordinate: int,
     ref_dict: Dict
 ) -> str:
-    """
-    Extract TTAA target sequence from reference.
-    
-    Args:
-        chrom: Chromosome name
-        coordinate: Insertion coordinate
-        ref_dict: Reference genome dictionary
-        
-    Returns:
-        4bp target sequence (TTAA or variant)
-    """
+    """Extract 4bp target sequence from reference genome at insertion coordinate."""
     try:
         if chrom not in ref_dict:
             logger.warning(f"Chromosome {chrom} not found in reference")
             return "NNNN"
         
-        # Extract 4bp target sequence (TTAA)
+        # Extract 4bp target sequence
         # Coordinate is 1-based, convert to 0-based
         start = coordinate - 4
         end = coordinate
@@ -175,43 +157,35 @@ def extract_target_sequence(
 
 
 @logger.catch
-def concatenate_timepoints(
-    config: TimepointConfig,
+def process_concatenation_data(
+    config: InputOutputConfig,
     ref_dict: Dict
-) -> Tuple[pd.DataFrame, ConcatenationStats]:
-    """
-    Concatenate insertion data across timepoints.
-    
-    Args:
-        config: Validated configuration
-        ref_dict: Reference genome dictionary
-        
-    Returns:
-        Tuple of (concatenated dataframe, statistics)
-    """
+) -> Tuple[pd.DataFrame, AnalysisResult]:
+    """Concatenate insertion data across multiple timepoints with target sequence annotation."""
     logger.info(f"Concatenating {len(config.timepoints)} timepoints")
     
+    tp_files = {}
+    for tp in config.timepoints:
+        for file in config.input_files:
+            if f"_{tp}_" in file.name:
+                tp_files[tp] = file
+
     # Load all timepoint files
-    dfs = []
-    for i, (file, tp) in enumerate(zip(config.input_files, config.timepoints)):
+    dfs = {}
+    for tp, file in tp_files.items():
         logger.debug(f"Loading timepoint {tp} from {file}")
         
         try:
             df = pd.read_csv(file, header=0, index_col=[0, 1, 2], sep="\t")
             logger.debug(f"  Loaded {len(df)} insertions for {tp}")
-            dfs.append(df)
+            dfs[tp] = df
         except Exception as e:
             logger.error(f"Error loading {file}: {e}")
             raise
     
     # Concatenate all timepoints
     logger.info("Concatenating dataframes...")
-    concatenated = pd.concat(
-        dfs,
-        axis=1,
-        keys=config.timepoints,
-        join="outer"
-    )
+    concatenated = pd.concat(dfs, axis=1, join="outer")
     
     # Sort by timepoint names and coordinates
     concatenated = concatenated.sort_index(
@@ -264,7 +238,7 @@ def concatenate_timepoints(
         total_reads = int(reads_data.sum().sum())
     
     # Create statistics object with calculated values (can't modify after creation due to frozen=True)
-    stats = ConcatenationStats(
+    result = AnalysisResult(
         num_timepoints=len(config.timepoints),
         num_insertions=len(concatenated),
         num_chromosomes=concatenated.index.get_level_values("Chr").nunique(),
@@ -273,23 +247,15 @@ def concatenate_timepoints(
         total_reads=total_reads
     )
     
-    return concatenated, stats
+    return concatenated, result
 
 
 @logger.catch
-def save_concatenated_data(
+def save_processed_data(
     concatenated: pd.DataFrame,
-    config: TimepointConfig,
-    stats: ConcatenationStats
+    config: InputOutputConfig
 ) -> None:
-    """
-    Save concatenated data to output files.
-    
-    Args:
-        concatenated: Concatenated dataframe
-        config: Configuration
-        stats: Concatenation statistics
-    """
+    """Save concatenated timepoint data to separate output files for each read type."""
     logger.info("Saving concatenated data...")
     
     # Save PBL data
@@ -321,111 +287,72 @@ def save_concatenated_data(
         logger.success(f"Saved Reads data to {config.output_reads}")
     else:
         logger.warning("No Reads data found in concatenated results")
-    
-    # Display summary statistics
-    logger.info("=" * 60)
-    logger.info("CONCATENATION SUMMARY")
-    logger.info("=" * 60)
-    logger.info(f"Sample: {config.sample_name}")
-    logger.info(f"Timepoints: {', '.join(config.timepoints)}")
-    logger.success(f"Unique insertion sites: {stats.num_insertions:,}")
-    logger.info(f"Chromosomes: {stats.num_chromosomes}")
-    
-    if stats.total_reads > 0:
-        logger.info(f"\nRead counts:")
-        logger.info(f"  PBL reads: {stats.total_pbl_reads:,}")
-        logger.info(f"  PBR reads: {stats.total_pbr_reads:,}")
-        logger.info(f"  Total reads: {stats.total_reads:,}")
 
 
-# ======================== Main Entry Point ========================
+# =============================== Main Function ===============================
+def parse_arguments():
+    """Set and parse command line arguments for concatenating timepoint insertion data."""
+    parser = argparse.ArgumentParser(description="Concatenate insertion data across timepoints with target sequence annotation")
+    parser.add_argument("-s", "--sample", type=str, required=True, help="Sample name")
+    parser.add_argument("-i", "--input", type=Path, nargs="+", required=True, help="Path to the input insertion count files")
+    parser.add_argument("-tp", "--timepoints", type=str, nargs="+", required=True, help="Timepoint names")
+    parser.add_argument("-g", "--genome", type=Path, required=True, help="Reference genome FASTA file")
+    parser.add_argument("-ol", "--output_pbl", type=Path, required=True, help="Output PBL file path")
+    parser.add_argument("-or", "--output_pbr", type=Path, required=True, help="Output PBR file path")
+    parser.add_argument("-o", "--output_reads", type=Path, required=True, help="Output reads file path")
+    parser.add_argument("-v", "--verbose", action="store_true", help="Enable verbose logging")
+    return parser.parse_args()
 
+@logger.catch
 def main():
-    """Main entry point for the script."""
-    setup_logging()
-    
-    parser = argparse.ArgumentParser(
-        description="Concatenate insertion data across timepoints",
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter
-    )
-    
-    parser.add_argument("-s", "--sample", required=True, help="Sample name")
-    parser.add_argument(
-        "-i", "--input-files",
-        dest="input_files",
-        nargs="+",
-        type=Path,
-        required=True,
-        help="Input insertion count files"
-    )
-    parser.add_argument(
-        "-tp", "--timepoints",
-        dest="timepoints",
-        nargs="+",
-        type=str,
-        required=True,
-        help="Timepoint names"
-    )
-    parser.add_argument(
-        "-g", "--genome",
-        type=Path,
-        required=True,
-        help="Reference genome FASTA file"
-    )
-    parser.add_argument(
-        "-ol", "--outputPBL",
-        type=Path,
-        required=True,
-        help="Output PBL file"
-    )
-    parser.add_argument(
-        "-or", "--outputPBR",
-        type=Path,
-        required=True,
-        help="Output PBR file"
-    )
-    parser.add_argument(
-        "-o", "--outputReads",
-        type=Path,
-        required=True,
-        help="Output Reads file"
-    )
-    
-    args = parser.parse_args()
-    
-    logger.info(f"Pandas version: {pd.__version__}")
-    
+    """Main entry point for concatenating timepoint insertion data with target sequence annotation."""
+
+    args = parse_arguments()
+    log_level = "DEBUG" if args.verbose else "INFO"
+    setup_logging(log_level)
+
+    # Validate input and output paths using the Pydantic model
     try:
-        # Create and validate configuration
-        config = TimepointConfig(
-            sample_name=args.sample,
-            input_files=args.input_files,
+        config = InputOutputConfig(
+            input_files=args.input,
             timepoints=args.timepoints,
             genome_file=args.genome,
-            output_pbl=args.outputPBL,
-            output_pbr=args.outputPBR,
-            output_reads=args.outputReads
+            output_pbl=args.output_pbl,
+            output_pbr=args.output_pbr,
+            output_reads=args.output_reads,
+            sample_name=args.sample
         )
-        
+
+        logger.info(f"Starting processing of {config.sample_name}")
+
         # Load reference genome
-        ref_dict = load_reference_genome(config.genome_file)
+        ref_dict = load_reference_data(config.genome_file)
         
-        # Concatenate timepoints
-        concatenated, stats = concatenate_timepoints(config, ref_dict)
+        # Run the core analysis/logic
+        concatenated, results = process_concatenation_data(config, ref_dict)
         
         # Save results
-        save_concatenated_data(concatenated, config, stats)
+        save_processed_data(concatenated, config)
         
-        logger.success("Concatenation completed successfully!")
-        return 0
+        logger.success(f"Analysis complete. Results saved to {config.output_pbl}, {config.output_pbr}, and {config.output_reads}")
         
+        # Display summary statistics
+        logger.info("=" * 60)
+        logger.info("CONCATENATION SUMMARY")
+        logger.info("=" * 60)
+        logger.info(f"Sample: {config.sample_name}")
+        logger.info(f"Timepoints: {', '.join(config.timepoints)}")
+        logger.success(f"Unique insertion sites: {results.num_insertions:,}")
+        logger.info(f"Chromosomes: {results.num_chromosomes}")
+        if results.total_reads > 0:
+            logger.info("\nRead counts:")
+            logger.info(f"  PBL reads: {results.total_pbl_reads:,}")
+            logger.info(f"  PBR reads: {results.total_pbr_reads:,}")
+            logger.info(f"  Total reads: {results.total_reads:,}")
+    
     except ValueError as e:
-        logger.error(f"Configuration error: {e}")
-        return 1
-    except Exception as e:
-        logger.error(f"Unexpected error: {e}")
-        return 1
-
+        logger.error(f"Error: {e}")
+        sys.exit(1)
 
 if __name__ == "__main__":
-    sys.exit(main())
+    main()

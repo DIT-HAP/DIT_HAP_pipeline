@@ -1,23 +1,48 @@
 """
-Enhanced read pair filtering with Pydantic validation and Loguru logging.
+Filter aligned read pairs using YAML configuration.
 
-Filters aligned read pairs from BAM-derived TSV files based on configurable
-quality criteria for R1 and R2 reads independently, using chunked processing
-for memory efficiency.
+This script filters aligned read pairs from BAM-derived TSV files using configuration
+parameters loaded from a YAML file. It supports independent filtering for R1 and R2
+reads with configurable quality thresholds, alignment criteria, and chunked processing
+for memory efficiency. All filtering parameters are loaded from the YAML configuration
+file to ensure consistent and reproducible filtering across analyses.
+
+Key Features:
+- YAML-based configuration for all filtering parameters
+- Independent filtering for R1 and R2 reads with separate thresholds
+- Support for MAPQ, NCIGAR, and NM value filtering
+- Filtering based on supplementary (SA) and secondary (XA) alignments
+- Proper pair validation options
+- Memory-efficient chunked processing for large files
+- Comprehensive validation using Pydantic models
+- Structured logging with Loguru
+
+Typical Usage:
+    python filter_aligned_reads.py --input-file input.tsv --output-file filtered.tsv --config-file config.yaml
+    python filter_aligned_reads.py -i input.tsv -o filtered.tsv --config-file config.yaml -c 100000
+
+Input: TSV file with read pair data from BAM parsing (columns include R1_MAPQ, R2_MAPQ, R1_NCIGAR, R2_NCIGAR, R1_NM, R2_NM, R1_SA, R2_SA, R1_XA, R2_XA, Is_Proper_Pair)
+Output: Filtered TSV file with high-quality read pairs that pass all specified criteria
+Config: YAML file with aligned_read_filtering section containing read_1_filtering and read_2_filtering parameters
 """
 
-import argparse
+# =============================== Imports ===============================
 import sys
+import argparse
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
-
+from typing import Any, Dict, Optional, Tuple
 import pandas as pd
-import numpy as np
+import yaml
 from loguru import logger
 from pydantic import BaseModel, Field, field_validator
 
 
-# ======================== Configuration & Models ========================
+# =============================== Constants ===============================
+NA_VALUES = ['N/A', 'NA', '']
+DEFAULT_CHUNK_SIZE = 50000
+
+
+# =============================== Configuration & Models ===============================
 
 class FilterThresholds(BaseModel):
     """Validation model for read filtering thresholds."""
@@ -32,20 +57,18 @@ class FilterThresholds(BaseModel):
         frozen = True
 
 
-class FilterConfig(BaseModel):
+class InputOutputConfig(BaseModel):
     """Complete filtering configuration with validation."""
     
     input_file: Path = Field(..., description="Input TSV file path")
     output_file: Path = Field(..., description="Output TSV file path")
-    chunk_size: int = Field(50000, ge=1000, le=10000000, description="Rows per chunk")
-    r1_filters: FilterThresholds = Field(default_factory=FilterThresholds)
-    r2_filters: FilterThresholds = Field(default_factory=FilterThresholds)
-    require_proper_pair: bool = Field(False, description="Require proper pairs")
+    chunk_size: int = Field(DEFAULT_CHUNK_SIZE, ge=1000, le=10000000, description="Rows per chunk")
+    config_data: Dict[str, Any] = Field(..., description="Configuration data")
     
     @field_validator('input_file')
     def validate_input_exists(cls, v):
         if not v.exists():
-            raise ValueError(f"Input file not found: {v}")
+            raise ValueError(f"File not found: {v}")
         return v
     
     @field_validator('output_file')
@@ -60,7 +83,7 @@ class FilterConfig(BaseModel):
         frozen = True
 
 
-class FilteringStats(BaseModel):
+class AnalysisResult(BaseModel):
     """Statistics from filtering operation."""
     
     total_rows: int = Field(..., ge=0)
@@ -73,20 +96,56 @@ class FilteringStats(BaseModel):
         frozen = True
 
 
-# ======================== Logging Setup ========================
+# =============================== Setup Logging ===============================
 
 def setup_logging(log_level: str = "INFO") -> None:
     """Configure loguru for read filtering."""
     logger.remove()
     logger.add(
         sys.stdout,
-        format="{time:HH:mm:ss} | {level: <8} | {message}",
+        format="{time:YYYY-MM-DD HH:mm:ss} | {level: <8} | {message}",
         level=log_level,
         colorize=False
     )
 
 
-# ======================== Core Filtering Functions ========================
+# =============================== Core Functions ===============================
+@logger.catch
+def load_config_from_yaml(config_file: Path) -> Dict[str, Any]:
+    """Load filtering configuration from YAML file."""
+    try:
+        with open(config_file, 'r') as f:
+            config = yaml.safe_load(f)
+        
+        # Extract aligned_read_filtering configuration
+        if 'aligned_read_filtering' not in config:
+            raise ValueError("'aligned_read_filtering' section not found in config file")
+        
+        filtering_config = config['aligned_read_filtering']
+        
+        # Convert YAML config to internal format
+        internal_config = {}
+        for read in ['read_1_filtering', 'read_2_filtering']:
+            internal_config[read] = FilterThresholds(
+                mapq_threshold=filtering_config.get(read, {}).get("mapq_threshold"),
+                ncigar_value=filtering_config.get(read, {}).get("ncigar_value"),
+                nm_threshold=filtering_config.get(read, {}).get("nm_threshold"),
+                no_sa=filtering_config.get(read, {}).get("no_sa"),
+                no_xa=filtering_config.get(read, {}).get("no_xa")
+            )
+        
+        internal_config['require_proper_pair'] = filtering_config.get("require_proper_pair")
+        
+        logger.info(f"Loaded configuration from: {config_file}")
+        logger.debug(f"R1 filters: MAPQ={internal_config['read_1_filtering'].mapq_threshold}, NCIGAR={internal_config['read_1_filtering'].ncigar_value}, NM={internal_config['read_1_filtering'].nm_threshold}")
+        logger.debug(f"R2 filters: MAPQ={internal_config['read_2_filtering'].mapq_threshold}, NCIGAR={internal_config['read_2_filtering'].ncigar_value}, NM={internal_config['read_2_filtering'].nm_threshold}")
+        logger.debug(f"Pair filters: no_sa={internal_config['read_1_filtering'].no_sa}, no_xa={internal_config['read_1_filtering'].no_xa}, proper_pair={internal_config['require_proper_pair']}")
+        
+        return internal_config
+        
+    except Exception as e:
+        logger.error(f"Error loading config file {config_file}: {e}")
+        raise
 
 @logger.catch
 def build_filter_mask(
@@ -95,18 +154,7 @@ def build_filter_mask(
     r2_filters: FilterThresholds,
     require_proper_pair: bool
 ) -> pd.Series:
-    """
-    Build boolean mask for filtering read pairs.
-    
-    Args:
-        chunk: DataFrame chunk to filter
-        r1_filters: R1 filtering thresholds
-        r2_filters: R2 filtering thresholds
-        require_proper_pair: Whether to require proper pairs
-        
-    Returns:
-        Boolean series indicating which rows pass filters
-    """
+    """Build boolean mask for filtering read pairs."""
     # Initialize mask with all True
     filter_mask = pd.Series([True] * len(chunk), index=chunk.index)
     
@@ -115,7 +163,7 @@ def build_filter_mask(
         filter_mask &= (chunk['R1_MAPQ'] >= r1_filters.mapq_threshold)
         
     if r1_filters.ncigar_value is not None:
-        filter_mask &= (chunk['R1_NCIGAR'] == r1_filters.ncigar_value)
+        filter_mask &= (chunk['R1_NCIGAR'] <= r1_filters.ncigar_value)
         
     if r1_filters.nm_threshold is not None:
         filter_mask &= (chunk['R1_NM'] <= r1_filters.nm_threshold)
@@ -131,7 +179,7 @@ def build_filter_mask(
         filter_mask &= (chunk['R2_MAPQ'] >= r2_filters.mapq_threshold)
         
     if r2_filters.ncigar_value is not None:
-        filter_mask &= (chunk['R2_NCIGAR'] == r2_filters.ncigar_value)
+        filter_mask &= (chunk['R2_NCIGAR'] <= r2_filters.ncigar_value)
         
     if r2_filters.nm_threshold is not None:
         filter_mask &= (chunk['R2_NM'] <= r2_filters.nm_threshold)
@@ -149,56 +197,16 @@ def build_filter_mask(
     return filter_mask
 
 
-def display_filter_configuration(config: FilterConfig) -> None:
-    """Display filtering configuration in formatted output."""
-    logger.info("=" * 60)
-    logger.info("FILTER CONFIGURATION")
-    logger.info("=" * 60)
-    
-    logger.info("R1 Filters:")
-    if config.r1_filters.mapq_threshold is not None:
-        logger.info(f"  - MAPQ threshold: {config.r1_filters.mapq_threshold}")
-    if config.r1_filters.ncigar_value is not None:
-        logger.info(f"  - NCIGAR value: {config.r1_filters.ncigar_value}")
-    if config.r1_filters.nm_threshold is not None:
-        logger.info(f"  - NM threshold: {config.r1_filters.nm_threshold}")
-    logger.info(f"  - Require no supplementary (SA): {config.r1_filters.no_sa}")
-    logger.info(f"  - Require no secondary (XA): {config.r1_filters.no_xa}")
-    
-    logger.info("R2 Filters:")
-    if config.r2_filters.mapq_threshold is not None:
-        logger.info(f"  - MAPQ threshold: {config.r2_filters.mapq_threshold}")
-    if config.r2_filters.ncigar_value is not None:
-        logger.info(f"  - NCIGAR value: {config.r2_filters.ncigar_value}")
-    if config.r2_filters.nm_threshold is not None:
-        logger.info(f"  - NM threshold: {config.r2_filters.nm_threshold}")
-    logger.info(f"  - Require no supplementary (SA): {config.r2_filters.no_sa}")
-    logger.info(f"  - Require no secondary (XA): {config.r2_filters.no_xa}")
-    
-    logger.info("Pair-level Filters:")
-    logger.info(f"  - Require proper pairs: {config.require_proper_pair}")
-    logger.info(f"  - Chunk size: {config.chunk_size:,} rows")
 
 
 @logger.catch
 def process_chunk(
     chunk: pd.DataFrame,
     chunk_num: int,
-    config: FilterConfig,
+    config: Dict[str, Any],
     first_chunk: bool
 ) -> Tuple[pd.DataFrame, bool]:
-    """
-    Process a single chunk of data.
-    
-    Args:
-        chunk: DataFrame chunk to process
-        chunk_num: Chunk number for logging
-        config: Filtering configuration
-        first_chunk: Whether this is the first chunk
-        
-    Returns:
-        Tuple of (filtered chunk, is_first_chunk_after_processing)
-    """
+    """Process a single chunk of data."""
     chunk_rows_before = len(chunk)
     
     # Display info for first chunk
@@ -216,9 +224,9 @@ def process_chunk(
     # Build and apply filter mask
     filter_mask = build_filter_mask(
         chunk,
-        config.r1_filters,
-        config.r2_filters,
-        config.require_proper_pair
+        config['read_1_filtering'],
+        config['read_2_filtering'],
+        config['require_proper_pair']
     )
     
     filtered_chunk = chunk[filter_mask]
@@ -237,18 +245,9 @@ def process_chunk(
 
 
 @logger.catch
-def filter_read_pairs(config: FilterConfig) -> FilteringStats:
-    """
-    Main function to filter read pairs using chunked processing.
-    
-    Args:
-        config: Validated filtering configuration
-        
-    Returns:
-        FilteringStats object with processing statistics
-    """
+def filter_read_pairs(config: InputOutputConfig) -> AnalysisResult:
+    """Filter read pairs using chunked processing."""
     logger.info(f"Loading data from: {config.input_file}")
-    display_filter_configuration(config)
     
     # Initialize counters
     total_rows = 0
@@ -263,7 +262,7 @@ def filter_read_pairs(config: FilterConfig) -> FilteringStats:
         chunk_iterator = pd.read_csv(
             config.input_file,
             sep='\t',
-            na_values=['N/A', 'NA', ''],
+            na_values=NA_VALUES,
             chunksize=config.chunk_size
         )
         
@@ -277,7 +276,7 @@ def filter_read_pairs(config: FilterConfig) -> FilteringStats:
             
             # Process chunk
             filtered_chunk, first_chunk = process_chunk(
-                chunk_df, chunk_count, config, first_chunk
+                chunk_df, chunk_count, config.config_data, first_chunk
             )
             filtered_rows += len(filtered_chunk)
             
@@ -299,7 +298,7 @@ def filter_read_pairs(config: FilterConfig) -> FilteringStats:
         removed_rows = total_rows - filtered_rows
         retention_rate = filtered_rows / total_rows * 100 if total_rows > 0 else 0
         
-        stats = FilteringStats(
+        stats = AnalysisResult(
             total_rows=total_rows,
             filtered_rows=filtered_rows,
             removed_rows=removed_rows,
@@ -322,7 +321,7 @@ def filter_read_pairs(config: FilterConfig) -> FilteringStats:
         if filtered_rows > 0:
             try:
                 sample_df = pd.read_csv(config.output_file, sep='\t', nrows=5)
-                logger.debug(f"Sample of filtered data (first 5 rows):")
+                logger.debug("Sample of filtered data (first 5 rows):")
                 logger.debug(f"Shape: {sample_df.shape}")
             except Exception as e:
                 logger.warning(f"Could not read sample of filtered data: {e}")
@@ -334,14 +333,12 @@ def filter_read_pairs(config: FilterConfig) -> FilteringStats:
         raise
 
 
-# ======================== Main Entry Point ========================
+# =============================== Main Function ===============================
 
-def main():
-    """Main entry point for the script."""
-    setup_logging()
-    
+def parse_arguments():
+    """Set command line arguments."""
     parser = argparse.ArgumentParser(
-        description="Filter aligned read pairs with configurable quality criteria",
+        description="Filter aligned read pairs using configuration from YAML file",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
     
@@ -356,6 +353,11 @@ def main():
         required=True, 
         help="Output TSV file for filtered data"
     )
+    parser.add_argument(
+        "--config-file", 
+        required=True, 
+        help="YAML configuration file with filtering parameters"
+    )
     
     # Chunking configuration
     parser.add_argument(
@@ -365,139 +367,28 @@ def main():
         help="Number of rows to process per chunk"
     )
     
-    # R1 filter parameters
-    parser.add_argument(
-        "--r1-mapq-threshold", 
-        type=float, 
-        default=10,
-        help="Minimum MAPQ score for R1 reads"
-    )
-    parser.add_argument(
-        "--r1-ncigar-value", 
-        type=int, 
-        default=1,
-        help="Required NCIGAR value for R1 reads"
-    )
-    parser.add_argument(
-        "--r1-nm-threshold", 
-        type=int, 
-        default=3,
-        help="Maximum mismatches for R1 reads"
-    )
-    parser.add_argument(
-        "--r1-require-no-supplementary", 
-        action="store_true",
-        help="Require R1 reads to have no supplementary alignments"
-    )
-    parser.add_argument(
-        "--r1-require-no-secondary", 
-        action="store_true",
-        help="Require R1 reads to have no secondary alignments"
-    )
-    
-    # R2 filter parameters
-    parser.add_argument(
-        "--r2-mapq-threshold", 
-        type=float, 
-        default=10,
-        help="Minimum MAPQ score for R2 reads"
-    )
-    parser.add_argument(
-        "--r2-ncigar-value", 
-        type=int, 
-        default=5,
-        help="Required NCIGAR value for R2 reads"
-    )
-    parser.add_argument(
-        "--r2-nm-threshold", 
-        type=int, 
-        default=10,
-        help="Maximum mismatches for R2 reads"
-    )
-    parser.add_argument(
-        "--r2-require-no-supplementary", 
-        action="store_true",
-        help="Require R2 reads to have no supplementary alignments"
-    )
-    parser.add_argument(
-        "--r2-require-no-secondary", 
-        action="store_true",
-        help="Require R2 reads to have no secondary alignments"
-    )
-    
-    # Pair-level filters
-    parser.add_argument(
-        "--require-proper-pair", 
-        action="store_true",
-        help="Require proper pairs"
-    )
-    
-    # Disable specific filters
-    parser.add_argument(
-        "--r1-disable-mapq", 
-        action="store_true",
-        help="Disable MAPQ filtering for R1"
-    )
-    parser.add_argument(
-        "--r1-disable-ncigar", 
-        action="store_true",
-        help="Disable NCIGAR filtering for R1"
-    )
-    parser.add_argument(
-        "--r1-disable-nm", 
-        action="store_true",
-        help="Disable NM filtering for R1"
-    )
-    parser.add_argument(
-        "--r2-disable-mapq", 
-        action="store_true",
-        help="Disable MAPQ filtering for R2"
-    )
-    parser.add_argument(
-        "--r2-disable-ncigar", 
-        action="store_true",
-        help="Disable NCIGAR filtering for R2"
-    )
-    parser.add_argument(
-        "--r2-disable-nm", 
-        action="store_true",
-        help="Disable NM filtering for R2"
-    )
-    
-    args = parser.parse_args()
-    
-    logger.info(f"Pandas version: {pd.__version__}")
-    logger.info(f"NumPy version: {np.__version__}")
+    return parser.parse_args()
+
+@logger.catch
+def main():
+    """Main execution function for read filtering."""
+    args = parse_arguments()
+    setup_logging()
     
     try:
-        # Build filter configuration
-        r1_filters = FilterThresholds(
-            mapq_threshold=None if args.r1_disable_mapq else args.r1_mapq_threshold,
-            ncigar_value=None if args.r1_disable_ncigar else args.r1_ncigar_value,
-            nm_threshold=None if args.r1_disable_nm else args.r1_nm_threshold,
-            no_sa=args.r1_require_no_supplementary,
-            no_xa=args.r1_require_no_secondary
-        )
+        # Load configuration from YAML file
+        config_data = load_config_from_yaml(Path(args.config_file))
         
-        r2_filters = FilterThresholds(
-            mapq_threshold=None if args.r2_disable_mapq else args.r2_mapq_threshold,
-            ncigar_value=None if args.r2_disable_ncigar else args.r2_ncigar_value,
-            nm_threshold=None if args.r2_disable_nm else args.r2_nm_threshold,
-            no_sa=args.r2_require_no_supplementary,
-            no_xa=args.r2_require_no_secondary
-        )
-        
-        config = FilterConfig(
+        config = InputOutputConfig(
             input_file=Path(args.input_file),
             output_file=Path(args.output_file),
             chunk_size=args.chunk_size,
-            r1_filters=r1_filters,
-            r2_filters=r2_filters,
-            require_proper_pair=args.require_proper_pair
+            config_data=config_data
         )
         
         # Process the file
-        stats = filter_read_pairs(config)
+        filter_read_pairs(config)
+        logger.success("Filtering completed successfully")
         
     except ValueError as e:
         logger.error(f"Configuration error: {e}")

@@ -167,7 +167,7 @@ rule samtools_sorting_and_indexing:
     log:
         f"logs/{project_name}/preprocessing/samtools_sorting_and_indexing/{{sample}}_{{timepoint}}_{{condition}}.log"
     conda:
-        "../envs/samtools.yml"
+        "../envs/bwa_mapping.yml"
     threads: 2
     message:
         "*** Sorting and indexing {input.PBL} and {input.PBR}..."
@@ -200,7 +200,7 @@ rule samtools_mapping_statistics:
     log:
         f"logs/{project_name}/preprocessing/samtools_mapping_statistics/{{sample}}_{{timepoint}}_{{condition}}.log"
     conda:
-        "../envs/samtools.yml"
+        "../envs/bwa_mapping.yml"
     threads: 2
     message:
         "*** Running Samtools for mapping statistics for {wildcards.sample}_{wildcards.timepoint}_{wildcards.condition}..."
@@ -254,52 +254,22 @@ rule filter_aligned_reads:
     log:
         f"logs/{project_name}/preprocessing/filter_aligned_reads/{{sample}}_{{timepoint}}_{{condition}}.log"
     conda:
-        "../envs/tabular_operations.yml"
+        "../envs/statistics_and_figure_plotting.yml"
     message:
         "*** Filtering aligned read pairs for {wildcards.sample}_{wildcards.timepoint}_{wildcards.condition}..."
     params:
-        r1_mapq_threshold=config["r1_mapq_threshold"],
-        r1_ncigar_value=config["r1_ncigar_value"],
-        r1_nm_threshold=config["r1_nm_threshold"],
-        r1_no_sa=config["r1_no_sa"],
-        r1_no_xa=config["r1_no_xa"],
-        r2_mapq_threshold=config["r2_mapq_threshold"],
-        r2_disable_ncigar = config["r2_disable_ncigar"],
-        r2_disable_nm = config["r2_disable_nm"],
-        r2_no_sa=config["r2_no_sa"],
-        r2_no_xa=config["r2_no_xa"],
-        require_proper_pair=config["require_proper_pair"],
+        snakemake_config_file=snakemake_config_file,
         chunk_size=config["chunk_size"]
     shell:
         """
         python workflow/scripts/preprocessing/filter_aligned_reads.py -i {input.PBL_tsv} \
                                                                       -o {output.PBL_filtered} \
                                                                       -c {params.chunk_size} \
-                                                                      --r1-mapq-threshold {params.r1_mapq_threshold} \
-                                                                      --r1-ncigar-value {params.r1_ncigar_value} \
-                                                                      --r1-nm-threshold {params.r1_nm_threshold} \
-                                                                      {params.r1_no_sa} \
-                                                                      {params.r1_no_xa} \
-                                                                      --r2-mapq-threshold {params.r2_mapq_threshold} \
-                                                                      {params.r2_disable_ncigar} \
-                                                                      {params.r2_disable_nm} \
-                                                                      {params.r2_no_sa} \
-                                                                      {params.r2_no_xa} \
-                                                                      {params.require_proper_pair} &> {log}
+                                                                      --config-file {params.snakemake_config_file} &> {log}
         python workflow/scripts/preprocessing/filter_aligned_reads.py -i {input.PBR_tsv} \
                                                                       -o {output.PBR_filtered} \
                                                                       -c {params.chunk_size} \
-                                                                      --r1-mapq-threshold {params.r1_mapq_threshold} \
-                                                                      --r1-ncigar-value {params.r1_ncigar_value} \
-                                                                      --r1-nm-threshold {params.r1_nm_threshold} \
-                                                                      {params.r1_no_sa} \
-                                                                      {params.r1_no_xa} \
-                                                                      --r2-mapq-threshold {params.r2_mapq_threshold} \
-                                                                      {params.r2_disable_ncigar} \
-                                                                      {params.r2_disable_nm} \
-                                                                      {params.r2_no_sa} \
-                                                                      {params.r2_no_xa} \
-                                                                      {params.require_proper_pair} &>> {log}
+                                                                      --config-file {params.snakemake_config_file} &>> {log}
         """
 
 # Extract insertion sites from filtered read pairs
@@ -314,7 +284,7 @@ rule extract_insertion_sites:
     log:
         f"logs/{project_name}/preprocessing/extract_insertion_sites/{{sample}}_{{timepoint}}_{{condition}}.log"
     conda:
-        "../envs/tabular_operations.yml"
+        "../envs/statistics_and_figure_plotting.yml"
     params:
         chunk_size=config["chunk_size"]
     message:
@@ -338,14 +308,14 @@ rule merge_strand_insertions:
     log:
         f"logs/{project_name}/preprocessing/merge_strand_insertions/{{sample}}_{{timepoint}}_{{condition}}.log"
     conda:
-        "../envs/tabular_operations.yml"
+        "../envs/statistics_and_figure_plotting.yml"
     message:
         "*** Merging strand-specific insertions for {wildcards.sample}_{wildcards.timepoint}_{wildcards.condition}..."
     shell:
         """
         python workflow/scripts/preprocessing/merge_strand_insertions.py \
-            -il {input.PBL_insertions} \
-            -ir {input.PBR_insertions} \
+            -i {input.PBL_insertions} \
+            -j {input.PBR_insertions} \
             -o {output} &> {log}
         """
 
@@ -410,7 +380,7 @@ rule merge_similar_timepoints:
         merged_timepoint = config["merged_timepoint"],
         drop_columns = config["drop_columns"]
     conda:
-        "../envs/tabular_operations.yml"
+        "../envs/statistics_and_figure_plotting.yml"
     message:
         "*** Merging similar time points for {wildcards.sample}_{wildcards.condition}..."
     run:
@@ -444,7 +414,7 @@ rule concat_counts_and_annotations:
     log:
         f"logs/{project_name}/preprocessing/concat_counts_and_annotations.log"
     conda:
-        "../envs/tabular_operations.yml"
+        "../envs/statistics_and_figure_plotting.yml"
     message:
         "*** Concatenating counts and annotations..."
     run:
@@ -489,7 +459,7 @@ rule hard_filtering:
     log:
         f"logs/{project_name}/preprocessing/hard_filtering.log"
     conda:
-        "../envs/tabular_operations.yml"
+        "../envs/statistics_and_figure_plotting.yml"
     params:
         cutoff = config["hard_filtering_cutoff"],
         init_timepoint = config["initial_time_point"]
