@@ -1,105 +1,150 @@
 """
 Insertion Density Analysis for Transposon Insertion Sequencing
 
-This script analyzes the density and distribution patterns of transposon insertions
-within genes to assess mutagenesis quality and coverage. It calculates comprehensive
-statistics including insertion density, gap analysis, read distribution inequality,
-and strand preferences.
+This script analyzes insertion density patterns in transposon sequencing data by loading 
+insertion LFC data and genomic annotations, filtering for in-gene insertions using 
+established criteria, and calculating comprehensive density metrics.
 
-The analysis includes:
-1. Loading insertion LFC data and genomic annotations
-2. Filtering for in-gene insertions using established criteria
-3. Calculating insertion and site density metrics
-4. Analyzing gap regions between insertions
-5. Measuring read distribution inequality (concentration vs. dispersion)
-6. Calculating strand preference and pairing statistics
+Typical Usage:
+    python insertion_density_analysis.py -i insertion_data.csv -a annotations.tsv -o density_stats.csv -t T0
 
-Key Metrics:
-- Insertion density: Number of insertions per gene length
-- Site density: Number of unique sites (Forward/Reverse counted as one)
-- Gap analysis: Statistics on regions without insertions
-- Gini coefficient: Measure of read distribution inequality
-- Strand bias: Preference for Forward vs. Reverse insertions
-
-Typical usage:
-    python insertion_density_analysis.py -l LFC.csv -a annotations.tsv -o density_stats.csv
-
-Input: CSV files with insertion LFC data and genomic annotations
-Output: CSV file with comprehensive insertion density statistics per gene
+Input: CSV file with insertion LFC data and TSV file with genomic annotations
+Output: CSV file with density statistics and PDF with histogram distributions
 """
 
-import logging
+# =============================== Imports ===============================
+import sys
+import time
+import argparse
+from pathlib import Path
+from collections import defaultdict
+from datetime import datetime
+from typing import List, Dict, Tuple, Optional, Union
+
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
+from loguru import logger
+from pydantic import BaseModel, Field, field_validator
+
+# The following is for plotting
+from matplotlib import pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
-from pathlib import Path
-from typing import List, Dict, Tuple, Optional, Union
-import argparse
-from collections import defaultdict
-import time
-import warnings
-
-# Suppress pandas warnings for cleaner output
-warnings.filterwarnings("ignore", category=pd.errors.PerformanceWarning)
-
-# Configure matplotlib for publication quality
-plt.rcParams.update({
-    'font.family': 'sans-serif',
-    'font.sans-serif': ['Arial'],
-    'font.size': 10,
-    'axes.linewidth': 1.2,
-    'axes.spines.top': False,
-    'axes.spines.right': False,
-    'grid.alpha': 0.3,
-    'grid.linewidth': 0.8
-})
-
-# Color palette following cursor rules
-COLOR_PALETTE = {
-    'primary_purple': '#962955',
-    'primary_green': '#7fb775', 
-    'primary_blue': '#6479cc',
-    'primary_gold': '#ad933c',
-    'neutral_gray': '#89afba'
-}
 
 
-def setup_logging(verbose: bool = False) -> None:
-    """Set up logging configuration."""
-    level = logging.DEBUG if verbose else logging.INFO
-    logging.basicConfig(
-        level=level,
-        format='%(asctime)s - %(levelname)s - %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S'
+# =============================== Constants ===============================
+# The following is for plotting
+plt.style.use('/data/c/yangyusheng_optimized/DIT_HAP_pipeline/config/DIT_HAP.mplstyle')
+AX_WIDTH, AX_HEIGHT = plt.rcParams['figure.figsize']
+COLORS = plt.rcParams['axes.prop_cycle'].by_key()['color']
+
+
+# =============================== Configuration & Models ===============================
+class InputOutputConfig(BaseModel):
+    """Pydantic model for validating and managing input/output paths."""
+    insertion_data_path: Path = Field(..., description="Path to CSV/TSV file with insertion data")
+    annotations_path: Path = Field(..., description="Path to TSV file with genomic annotations")
+    output_path: Path = Field(..., description="Path to output CSV file for density statistics")
+    initial_timepoint: str = Field(..., min_length=1, description="Column name for initial timepoint")
+
+    @field_validator('insertion_data_path', 'annotations_path')
+    def validate_input_files(cls, v):
+        if not v.exists():
+            raise ValueError(f"Input file does not exist: {v}")
+        if not v.is_file():
+            raise ValueError(f"Input path is not a file: {v}")
+        if v.suffix.lower() not in ['.csv', '.tsv', '.txt']:
+            raise ValueError(f"Input file must be CSV or TSV format. Got: {v.suffix}")
+        if v.stat().st_size == 0:
+            raise ValueError(f"Input file is empty: {v}")
+        return v
+    
+    @field_validator('output_path')
+    def validate_output_file(cls, v):
+        v.parent.mkdir(parents=True, exist_ok=True)
+        if v.suffix.lower() not in ['.csv', '.tsv', '.txt']:
+            raise ValueError(f"Output file must be CSV or TSV format. Got: {v.suffix}")
+        return v
+    
+    class Config:
+        frozen = True
+
+class AnalysisResult(BaseModel):
+    """Pydantic model to hold and validate the results of the analysis."""
+    total_genes_analyzed: int = Field(..., ge=0, description="Total number of genes analyzed")
+    total_insertions_analyzed: int = Field(..., ge=0, description="Total number of insertions analyzed")
+    mean_insertion_density_per_kb: float = Field(..., ge=0.0, description="Mean insertion density per kilobase")
+    mean_gini_coefficient_of_depth: float = Field(..., ge=0.0, le=1.0, description="Mean Gini coefficient of read depth (inequality measure)")
+    mean_strand_bias: float = Field(..., ge=0.0, le=1.0, description="Mean strand bias across all genes")
+    
+    class Config:
+        frozen = True
+
+
+# =============================== Setup Logging ===============================
+def setup_logging(log_level: str = "INFO") -> None:
+    """Configure loguru for the application."""
+    logger.remove()
+    logger.add(
+        sys.stdout,
+        format="{time:YYYY-MM-DD HH:mm:ss} | {level: <8} | {message}",
+        level=log_level,
+        colorize=False
     )
 
+# =============================== Core Functions ===============================
+@logger.catch
+def validate_data_file_structure(file_path: Path, required_columns: List[str], file_type: str) -> None:
+    """Validate that a data file has the required structure and columns."""
+    try:
+        # Read first few lines to check structure
+        if file_path.suffix.lower() == '.csv':
+            df_sample = pd.read_csv(file_path, nrows=5, sep=',')
+        else:
+            df_sample = pd.read_csv(file_path, nrows=5, sep='\t')
+        
+        # Check if DataFrame is empty
+        if df_sample.empty:
+            raise ValueError(f"{file_type} file appears to be empty or malformed")
+        
+        # Check for required columns
+        missing_columns = [col for col in required_columns if col not in df_sample.columns]
+        if missing_columns:
+            available_columns = df_sample.columns.tolist()
+            raise ValueError(
+                f"Missing required columns in {file_type}: {missing_columns}. "
+                f"Available columns: {available_columns}"
+            )
+        
+        # Check for multi-index structure if expected
+        if file_type == "insertion data":
+            try:
+                # Try to read with multi-index to validate structure
+                df_multi = pd.read_csv(file_path, index_col=[0, 1, 2, 3], nrows=5, sep='\t')
+                logger.debug(f"{file_type} multi-index structure validated successfully")
+            except Exception as e:
+                logger.warning(f"Could not validate {file_type} multi-index structure: {e}")
+        
+    except Exception as e:
+        raise ValueError(f"Error validating {file_type} file structure: {e}")
 
+@logger.catch
 def load_insertion_data(insertion_data_path: Path, initial_timepoint: str) -> pd.DataFrame:
-    """
-    Load insertion data and extract initial timepoint read counts.
-    
-    Args:
-        insertion_data_path: Path to CSV file with the insertion data
-        initial_timepoint: Column name for initial timepoint
-        
-    Returns:
-        DataFrame with insertion data indexed by genomic coordinates
-        
-    Raises:
-        FileNotFoundError: If insertion data file doesn't exist
-        ValueError: If required columns are missing
-    """
-    logging.info(f"Loading insertion data from {insertion_data_path}")
-    
-    if not insertion_data_path.exists():
-        raise FileNotFoundError(f"Insertion data file not found: {insertion_data_path}")
+    """Load insertion data and extract initial timepoint read counts."""
+    logger.info(f"Loading insertion data from {insertion_data_path}")
     
     try:
-        # Load with multi-level index
-        insertion_data = pd.read_csv(insertion_data_path, index_col=[0, 1, 2, 3], header=[0, 1])
+        # First validate file structure
+        logger.debug("Validating insertion data file structure")
+        validate_data_file_structure(
+            insertion_data_path, 
+            [initial_timepoint],  # Initial timepoint is the only required column we know about
+            "insertion data"
+        )
         
-        # Validate that initial timepoint exists
+        # Load with multi-level index
+        insertion_data = pd.read_csv(insertion_data_path, index_col=[0, 1, 2, 3], sep="\t")
+        
+        # Validate that initial timepoint exists (re-check after full load)
         if initial_timepoint not in insertion_data.columns:
             available_cols = insertion_data.columns.tolist()
             raise ValueError(
@@ -107,10 +152,20 @@ def load_insertion_data(insertion_data_path: Path, initial_timepoint: str) -> pd
                 f"Available columns: {available_cols}"
             )
         
+        # Check for valid data in the timepoint column
+        if insertion_data[initial_timepoint].isna().all():
+            raise ValueError(f"All values in timepoint column '{initial_timepoint}' are NaN")
+        
+        # Check for reasonable values (non-negative counts)
+        negative_counts = (insertion_data[initial_timepoint] < 0).sum()
+        if negative_counts > 0:
+            logger.warning(f"Found {negative_counts} negative read counts in timepoint '{initial_timepoint}'")
+        
         # Extract initial timepoint data (used as read counts proxy)
         insertion_data = insertion_data[initial_timepoint]
         
-        logging.info(f"Loaded {len(insertion_data)} insertions with read count data")
+        logger.info(f"Loaded {len(insertion_data)} insertions with read count data")
+        logger.info(f"Read count statistics - Mean: {insertion_data.mean():.2f}, Median: {insertion_data.median():.2f}")
         
         return insertion_data
         
@@ -118,37 +173,46 @@ def load_insertion_data(insertion_data_path: Path, initial_timepoint: str) -> pd
         raise ValueError(f"Error loading insertion data: {e}")
 
 
+@logger.catch
 def load_annotation_data(annotations_path: Path) -> pd.DataFrame:
-    """
-    Load genomic annotations for insertions.
-    
-    Args:
-        annotations_path: Path to TSV file with annotations
-        
-    Returns:
-        DataFrame with annotations indexed by genomic coordinates
-        
-    Raises:
-        FileNotFoundError: If annotations file doesn't exist
-        ValueError: If required columns are missing
-    """
-    logging.info(f"Loading annotation data from {annotations_path}")
-    
-    if not annotations_path.exists():
-        raise FileNotFoundError(f"Annotations file not found: {annotations_path}")
+    """Load genomic annotations for insertions."""
+    logger.info(f"Loading annotation data from {annotations_path}")
     
     try:
+        # First validate file structure
+        logger.debug("Validating annotation data file structure")
+        required_cols = ['Type', 'Distance_to_stop_codon', 'Systematic ID', 'Name', 'Chr_Interval', 'Strand_Interval', 'ParentalRegion_start', 'ParentalRegion_end', 'ParentalRegion_length', 'Insertion_direction']
+        validate_data_file_structure(annotations_path, required_cols, "annotation data")
+        
         # Load with multi-level index and tab separator
         annotations = pd.read_csv(annotations_path, index_col=[0, 1, 2, 3], sep="\t")
         
-        # Validate required columns exist
-        required_cols = ['Type', 'Distance_to_stop_codon', 'Systematic ID', 'Name', 'Chr_Interval', 'Strand_Interval', 'ParentalRegion_start', 'ParentalRegion_end', 'ParentalRegion_length', 'Insertion_direction']
+        # Validate required columns exist (re-check after full load)
         missing_cols = [col for col in required_cols if col not in annotations.columns]
         if missing_cols:
             raise ValueError(f"Missing required annotation columns: {missing_cols}")
         
-        logging.info(f"Loaded annotations for {len(annotations)} insertions")
-        logging.info(f"Annotation columns: {annotations.columns.tolist()}")
+        # Validate data quality
+        # Check for empty systematic IDs
+        empty_systematic_ids = annotations['Systematic ID'].isna().sum()
+        if empty_systematic_ids > 0:
+            logger.warning(f"Found {empty_systematic_ids} annotations with empty Systematic ID")
+        
+        # Check for invalid gene lengths
+        invalid_lengths = (annotations['ParentalRegion_length'] <= 0).sum()
+        if invalid_lengths > 0:
+            logger.warning(f"Found {invalid_lengths} annotations with invalid gene length (<= 0)")
+        
+        # Check for valid strand values
+        valid_strands = ['+', '-', 'Forward', 'Reverse', 'forward', 'reverse']
+        invalid_strands = ~annotations['Strand_Interval'].isin(valid_strands)
+        if invalid_strands.any():
+            unique_invalid = annotations.loc[invalid_strands, 'Strand_Interval'].unique()
+            logger.warning(f"Found invalid strand values: {unique_invalid}")
+        
+        logger.info(f"Loaded annotations for {len(annotations)} insertions")
+        logger.info(f"Annotation columns: {annotations.columns.tolist()}")
+        logger.info(f"Unique gene types: {annotations['Type'].value_counts().to_dict()}")
         
         return annotations
         
@@ -156,19 +220,11 @@ def load_annotation_data(annotations_path: Path) -> pd.DataFrame:
         raise ValueError(f"Error loading annotation data: {e}")
 
 
+@logger.catch
 def filter_in_gene_insertions(insertion_data: pd.DataFrame, 
                              annotations: pd.DataFrame) -> pd.DataFrame:
-    """
-    Filter insertions to include only those within genes using established criteria.
-    
-    Args:
-        insertion_data: DataFrame with insertion read counts
-        annotations: DataFrame with genomic annotations
-        
-    Returns:
-        DataFrame with in-gene insertions and their annotations
-    """
-    logging.info("Filtering for in-gene insertions")
+    """Filter insertions to include only those within genes using established criteria."""
+    logger.info("Filtering for in-gene insertions")
     
     # Merge insertion data with annotations
     merged_data = pd.merge(
@@ -185,21 +241,14 @@ def filter_in_gene_insertions(insertion_data: pd.DataFrame,
     
     in_gene_insertions = merged_data[in_gene_mask].copy()
     
-    logging.info(f"Found {len(in_gene_insertions)} in-gene insertions")
-    logging.info(f"Filtered out {len(merged_data) - len(in_gene_insertions)} intergenic/near-stop insertions")
+    logger.info(f"Found {len(in_gene_insertions)} in-gene insertions")
+    logger.info(f"Filtered out {len(merged_data) - len(in_gene_insertions)} intergenic/near-stop insertions")
     
     return in_gene_insertions
 
+@logger.catch
 def calculate_insertion_statistics(gene_insertions: pd.DataFrame) -> Dict[str, Union[int, float]]:
-    """
-    Calculate basic insertion and site statistics for a gene.
-    
-    Args:
-        gene_insertions: DataFrame with insertions for a single gene
-        
-    Returns:
-        Dictionary with insertion statistics
-    """
+    """Calculate basic insertion and site statistics for a gene."""
     # Basic counts
     total_insertions = len(gene_insertions)
     
@@ -222,15 +271,7 @@ def calculate_insertion_statistics(gene_insertions: pd.DataFrame) -> Dict[str, U
 
 
 def calculate_gap_statistics(gene_insertions: pd.DataFrame) -> Dict[str, Union[int, float, str]]:
-    """
-    Calculate statistics about gaps between insertions within a gene.
-    
-    Args:
-        gene_insertions: DataFrame with insertions for a single gene
-        
-    Returns:
-        Dictionary with gap statistics
-    """
+    """Calculate statistics about gaps between insertions within a gene."""
     coordinates = sorted(gene_insertions.index.get_level_values(1).unique())
     start_coordinate = gene_insertions["ParentalRegion_start"].iloc[0]
     end_coordinate = gene_insertions["ParentalRegion_end"].iloc[0]
@@ -282,18 +323,7 @@ def calculate_gap_statistics(gene_insertions: pd.DataFrame) -> Dict[str, Union[i
 
 
 def calculate_gini_coefficient(values: np.ndarray) -> float:
-    """
-    Calculate Gini coefficient to measure inequality in read distribution.
-    
-    The Gini coefficient ranges from 0 (perfect equality) to 1 (maximum inequality).
-    Higher values indicate more concentrated/uneven distribution of reads.
-    
-    Args:
-        values: Array of read counts
-        
-    Returns:
-        Gini coefficient (0-1)
-    """
+    """Calculate Gini coefficient to measure inequality in read distribution."""
     if len(values) == 0:
         return 0.0
     
@@ -308,17 +338,9 @@ def calculate_gini_coefficient(values: np.ndarray) -> float:
     return max(0.0, min(1.0, gini))  # Ensure result is between 0 and 1
 
 
-def calculate_read_statistics(gene_insertions: pd.DataFrame) -> Dict[str, Union[int, float]]:
-    """
-    Calculate read distribution statistics for insertions within a gene.
-    
-    Args:
-        gene_insertions: DataFrame with insertions for a single gene
-        
-    Returns:
-        Dictionary with read statistics
-    """
-    read_counts = gene_insertions['baseMean'].values
+def calculate_read_statistics(gene_insertions: pd.DataFrame, initial_timepoint: str) -> Dict[str, Union[int, float]]:
+    """Calculate read distribution statistics for insertions within a gene."""
+    read_counts = gene_insertions[initial_timepoint].values
     
     if len(read_counts) == 0:
         return {
@@ -348,15 +370,7 @@ def calculate_read_statistics(gene_insertions: pd.DataFrame) -> Dict[str, Union[
 
 
 def calculate_strand_statistics(gene_insertions: pd.DataFrame) -> Dict[str, Union[int, float]]:
-    """
-    Calculate strand preference and pairing statistics.
-    
-    Args:
-        gene_insertions: DataFrame with insertions for a single gene
-        
-    Returns:
-        Dictionary with strand statistics
-    """
+    """Calculate strand preference and pairing statistics."""
     strands = gene_insertions["Insertion_direction"].values
     coordinates = gene_insertions.index.get_level_values(1)
     
@@ -400,21 +414,13 @@ def calculate_strand_statistics(gene_insertions: pd.DataFrame) -> Dict[str, Unio
     }
 
 
-def analyze_gene_insertions(gene_id: str, gene_insertions: pd.DataFrame) -> Dict[str, Union[str, int, float]]:
-    """
-    Perform comprehensive analysis of insertions within a single gene.
-    
-    Args:
-        gene_id: Systematic gene ID
-        gene_insertions: DataFrame with insertions for this gene
-        
-    Returns:
-        Dictionary with all calculated statistics for the gene
-    """
+@logger.catch
+def analyze_gene_insertions(gene_id: str, gene_insertions: pd.DataFrame, initial_timepoint: str) -> Dict[str, Union[str, int, float]]:
+    """Perform comprehensive analysis of insertions within a single gene."""
     # Calculate all statistics
     insertion_stats = calculate_insertion_statistics(gene_insertions)
     gap_stats = calculate_gap_statistics(gene_insertions)
-    read_stats = calculate_read_statistics(gene_insertions)
+    read_stats = calculate_read_statistics(gene_insertions, initial_timepoint)
     strand_stats = calculate_strand_statistics(gene_insertions)
     
     # Combine all statistics
@@ -437,15 +443,7 @@ def analyze_gene_insertions(gene_id: str, gene_insertions: pd.DataFrame) -> Dict
 
 
 def generate_summary_statistics(results_df: pd.DataFrame) -> Dict[str, Union[int, float]]:
-    """
-    Generate summary statistics across all analyzed genes.
-    
-    Args:
-        results_df: DataFrame with gene-level analysis results
-        
-    Returns:
-        Dictionary with summary statistics
-    """
+    """Generate summary statistics across all analyzed genes."""
     stats = {
         'total_genes_analyzed': len(results_df),
         'total_insertions_analyzed': results_df['total_insertions'].sum(),
@@ -468,14 +466,8 @@ def generate_summary_statistics(results_df: pd.DataFrame) -> Dict[str, Union[int
 
 
 def plot_numeric_distributions_to_pdf(results_df: pd.DataFrame, output_path: Path) -> None:
-    """
-    Generate histograms for all numeric columns and save to a multi-page PDF.
-    
-    Args:
-        results_df: DataFrame with gene-level analysis results
-        output_path: Path for the output PDF file
-    """
-    logging.info("Generating histograms for numeric columns in PDF format")
+    """Generate histograms for all numeric columns and save to a multi-page PDF."""
+    logger.info("Generating histograms for numeric columns in PDF format")
     
     # Identify numeric columns (excluding string columns like gene names)
     numeric_columns = results_df.select_dtypes(include=[np.number]).columns.tolist()
@@ -486,7 +478,7 @@ def plot_numeric_distributions_to_pdf(results_df: pd.DataFrame, output_path: Pat
                       if not any(pattern in col for pattern in exclude_patterns)]
     
     if not numeric_columns:
-        logging.warning("No numeric columns found for plotting")
+        logger.warning("No numeric columns found for plotting")
         return
     
     # Group columns by category for better organization
@@ -513,6 +505,8 @@ def plot_numeric_distributions_to_pdf(results_df: pd.DataFrame, output_path: Pat
     
     # Create PDF file
     pdf_path = output_path.parent / f"{output_path.stem}_histograms.pdf"
+
+    COLOR_PALETTE = COLORS
     
     with PdfPages(pdf_path) as pdf:
         # Create title page
@@ -526,7 +520,7 @@ def plot_numeric_distributions_to_pdf(results_df: pd.DataFrame, output_path: Pat
             if not group_columns:
                 continue
                 
-            logging.info(f"Plotting {group_name}: {len(group_columns)} columns")
+            logger.info(f"Plotting {group_name}: {len(group_columns)} columns")
             
             # Calculate subplot layout
             n_cols = min(3, len(group_columns))
@@ -554,13 +548,13 @@ def plot_numeric_distributions_to_pdf(results_df: pd.DataFrame, output_path: Pat
                 
                 # Choose color based on column type
                 if 'density' in column.lower():
-                    color = COLOR_PALETTE['primary_blue']
+                    color = COLOR_PALETTE[0]
                 elif 'gap' in column.lower():
-                    color = COLOR_PALETTE['primary_green']
+                    color = COLOR_PALETTE[1]
                 elif any(term in column.lower() for term in ['read', 'gini']):
-                    color = COLOR_PALETTE['primary_purple']
+                    color = COLOR_PALETTE[2]
                 else:
-                    color = COLOR_PALETTE['primary_gold']
+                    color = COLOR_PALETTE[3]
                 
                 # Check if this is a read depth related column that should be log transformed
                 is_read_depth = any(term in column.lower() for term in 
@@ -623,17 +617,11 @@ def plot_numeric_distributions_to_pdf(results_df: pd.DataFrame, output_path: Pat
             pdf.savefig(fig, bbox_inches='tight')
             plt.close(fig)
     
-    logging.info(f"Multi-page histogram PDF saved to {pdf_path}")
+    logger.info(f"Multi-page histogram PDF saved to {pdf_path}")
 
 
 def create_title_page(pdf: PdfPages, results_df: pd.DataFrame) -> None:
-    """
-    Create a title page for the PDF with analysis summary.
-    
-    Args:
-        pdf: PdfPages object to save the page to
-        results_df: DataFrame with analysis results for summary stats
-    """
+    """Create a title page for the PDF with analysis summary."""
     fig, ax = plt.subplots(figsize=(8.5, 11))
     ax.axis('off')
     
@@ -675,7 +663,6 @@ Statistical Annotations:
            va='top', ha='left', linespacing=1.5)
     
     # Footer
-    from datetime import datetime
     ax.text(0.5, 0.1, f'Generated on {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}', 
            transform=ax.transAxes, fontsize=10, ha='center', va='center',
            style='italic', color='gray')
@@ -685,13 +672,7 @@ Statistical Annotations:
 
 
 def create_summary_histogram_plot_pdf(results_df: pd.DataFrame, pdf: PdfPages) -> None:
-    """
-    Create a summary plot with the most important metrics for PDF.
-    
-    Args:
-        results_df: DataFrame with gene-level analysis results
-        pdf: PdfPages object to save the plot to
-    """
+    """Create a summary plot with the most important metrics for PDF."""
     # Select key metrics for summary plot
     key_metrics = [
         'insertion_density_per_kb',
@@ -701,26 +682,32 @@ def create_summary_histogram_plot_pdf(results_df: pd.DataFrame, pdf: PdfPages) -
         'strand_bias',
         'paired_sites_fraction'
     ]
+
+    COLOR_PALETTE = COLORS
     
     # Filter to only include columns that exist in the data
     available_metrics = [col for col in key_metrics if col in results_df.columns]
     
     if not available_metrics:
-        logging.warning("No key metrics available for summary plot")
+        logger.warning("No key metrics available for summary plot")
         return
     
     # Create summary plot
     n_cols = 3
     n_rows = int(np.ceil(len(available_metrics) / n_cols))
+
+    plot_width, plot_height = plt.rcParams['figure.figsize']
+    fig_width = plot_width * n_cols
+    fig_height = plot_height * n_rows
     
-    fig, axes = plt.subplots(n_rows, n_cols, figsize=(12, 4*n_rows))
+    fig, axes = plt.subplots(n_rows, n_cols, figsize=(fig_width, fig_height))
     if n_rows == 1:
         axes = axes.flatten() if n_cols > 1 else [axes]
     else:
         axes = axes.flatten()
     
-    colors = [COLOR_PALETTE['primary_blue'], COLOR_PALETTE['primary_green'], 
-              COLOR_PALETTE['primary_purple'], COLOR_PALETTE['primary_gold']] * 2
+    colors = [COLOR_PALETTE[0], COLOR_PALETTE[1], 
+              COLOR_PALETTE[2], COLOR_PALETTE[3]] * 2
     
     for idx, metric in enumerate(available_metrics):
         ax = axes[idx]
@@ -728,8 +715,8 @@ def create_summary_histogram_plot_pdf(results_df: pd.DataFrame, pdf: PdfPages) -
         
         if len(data) == 0:
             ax.text(0.5, 0.5, 'No Data', transform=ax.transAxes, 
-                   ha='center', va='center', fontsize=12)
-            ax.set_title(metric.replace('_', ' ').title(), fontsize=12, fontweight='bold')
+                   ha='center', va='center')
+            ax.set_title(metric.replace('_', ' ').title())
             continue
         
         # Check if this is a read depth related metric that should be log transformed
@@ -767,15 +754,13 @@ def create_summary_histogram_plot_pdf(results_df: pd.DataFrame, pdf: PdfPages) -
         
         # Add statistics (always show original data statistics)
         stats_text = f'Mean: {mean_val:.3f}\nMedian: {median_val:.3f}\nStd: {std_val:.3f}'
-        ax.text(0.02, 0.98, stats_text, transform=ax.transAxes, 
-               fontsize=9, verticalalignment='top',
-               bbox=dict(boxstyle='round,pad=0.3', facecolor='white', alpha=0.9))
+        ax.text(0.02, 0.98, stats_text, transform=ax.transAxes, verticalalignment='top')
         
         # Formatting
         title = metric.replace('_', ' ').replace('per kb', '(per kb)').title()
-        ax.set_title(title, fontsize=12, fontweight='bold', pad=10)
-        ax.set_xlabel(xlabel, fontsize=11)
-        ax.set_ylabel('Number of Genes', fontsize=11)
+        ax.set_title(title)
+        ax.set_xlabel(xlabel)
+        ax.set_ylabel('Number of Genes')
         ax.grid(True, alpha=0.3)
         
         # Add reference lines (on transformed scale if applicable)
@@ -784,90 +769,78 @@ def create_summary_histogram_plot_pdf(results_df: pd.DataFrame, pdf: PdfPages) -
         
         # Add legend for first plot
         if idx == 0:
-            ax.legend(fontsize=9, frameon=False)
+            ax.legend()
     
     # Hide unused subplots
     for idx in range(len(available_metrics), len(axes)):
         axes[idx].set_visible(False)
     
     plt.suptitle('Key Insertion Density Metrics Distribution', 
-                fontsize=16, fontweight='bold', y=0.98)
-    plt.tight_layout()
+                y=0.98)
     
     # Save to PDF
     pdf.savefig(fig, bbox_inches='tight')
     plt.close(fig)
 
 
-def display_summary_table(stats: Dict[str, Union[int, float]]) -> None:
-    """Display summary statistics in formatted table."""
-    logging.info("\n" + "="*60)
-    logging.info("INSERTION DENSITY ANALYSIS SUMMARY")
-    logging.info("="*60)
-    
-    for key, value in stats.items():
-        if isinstance(value, float):
-            logging.info(f"{key:<35}: {value:.3f}")
-        else:
-            logging.info(f"{key:<35}: {value}")
-    
-    logging.info("="*60)
-
-
-def parse_arguments() -> argparse.Namespace:
-    """Parse command line arguments."""
-    parser = argparse.ArgumentParser(
-        description='''
-        Insertion density analysis for transposon insertion sequencing.
-        
-        This script analyzes the density and distribution patterns of insertions
-        within genes, calculating comprehensive statistics including gap analysis,
-        read distribution inequality, and strand preferences.
-        ''',
-        formatter_class=argparse.RawDescriptionHelpFormatter
-    )
-    
-    parser.add_argument('-i', '--insertion_data_path', type=Path, required=True,
-                       help='Path to CSV file with insertion data')
-    parser.add_argument('-a', '--annotations_path', type=Path, required=True,
-                       help='Path to TSV file with insertion annotations')
-    parser.add_argument('-o', '--output_path', type=Path, required=True,
-                       help='Path for output CSV file with density statistics')
-    parser.add_argument('-t', '--initial_timepoint', type=str, required=True,
-                       help='Initial timepoint column name for read counts')
-    parser.add_argument('-v', '--verbose', action='store_true',
-                       help='Enable verbose logging')
-    
+# =============================== Main Function ===============================
+def parse_arguments():
+    """Set and parse command line arguments."""
+    parser = argparse.ArgumentParser(description="Insertion density analysis script")
+    parser.add_argument("-i", "--insertion_data_path", type=Path, required=True, help="Input CSV file with insertion data")
+    parser.add_argument("-a", "--annotations_path", type=Path, required=True, help="Input TSV file with annotations")
+    parser.add_argument("-o", "--output_path", type=Path, required=True, help="Output CSV file with density statistics")
+    parser.add_argument("-t", "--initial_timepoint", type=str, required=True, help="Initial timepoint column name")
+    parser.add_argument("-v", "--verbose", action="store_true", help="Enable verbose logging")
     return parser.parse_args()
 
 
-def main() -> None:
-    """Main execution function."""
+@logger.catch
+def main():
+    """Main entry point of the script."""
+    
+    args = parse_arguments()
+    log_level = "DEBUG" if args.verbose else "INFO"
+    setup_logging(log_level)
+
+    # Validate input and output paths using the Pydantic model
     start_time = time.time()
     
-    # Parse arguments and setup
-    args = parse_arguments()
-    setup_logging(args.verbose)
-    
-    logging.info("Starting insertion density analysis")
-    logging.info(f"Insertion data file: {args.insertion_data_path}")
-    logging.info(f"Annotations file: {args.annotations_path}")
-    logging.info(f"Initial timepoint: {args.initial_timepoint}")
-    
     try:
-        # Create output directory
-        args.output_path.parent.mkdir(parents=True, exist_ok=True)
+        config = InputOutputConfig(
+            insertion_data_path=args.insertion_data_path,
+            annotations_path=args.annotations_path,
+            output_path=args.output_path,
+            initial_timepoint=args.initial_timepoint
+        )
+        
+        # Get file sizes for result tracking
+        insertion_file_size = config.insertion_data_path.stat().st_size
+        annotation_file_size = config.annotations_path.stat().st_size
+        
+        res = AnalysisResult(
+            total_genes_analyzed=0,
+            total_insertions_analyzed=0,
+            mean_insertion_density_per_kb=0.0,
+            mean_gini_coefficient_of_depth=0.0,
+            mean_strand_bias=0.0
+        )
+
+        logger.info(f"Starting insertion density analysis")
+        logger.info(f"Insertion data file: {config.insertion_data_path} ({insertion_file_size:,} bytes)")
+        logger.info(f"Annotations file: {config.annotations_path} ({annotation_file_size:,} bytes)")
+        logger.info(f"Initial timepoint: {config.initial_timepoint}")
         
         # Load data
-        insertion_data = load_insertion_data(args.insertion_data_path, args.initial_timepoint)
-        annotations = load_annotation_data(args.annotations_path)
+        insertion_data = load_insertion_data(config.insertion_data_path, config.initial_timepoint)
+        annotations = load_annotation_data(config.annotations_path)
         
         # Filter for in-gene insertions
         in_gene_insertions = filter_in_gene_insertions(insertion_data, annotations)
 
         # valid genes
         valid_genes = in_gene_insertions["Systematic ID"].unique().tolist()
-        logging.info(f"Analyzing {len(valid_genes)} genes")
+        logger.info(f"Analyzing {len(valid_genes)} genes")
         
         # Analyze each gene
         gene_results = []
@@ -878,34 +851,57 @@ def main() -> None:
             ]
             
             if len(gene_insertions) > 0:
-                gene_analysis = analyze_gene_insertions(gene_id, gene_insertions)
+                gene_analysis = analyze_gene_insertions(gene_id, gene_insertions, config.initial_timepoint)
                 gene_results.append(gene_analysis)
         
         # Create results DataFrame
         results_df = pd.DataFrame(gene_results)
         results_df = results_df.set_index('Systematic ID')
         
-        # Generate and display summary statistics
+        # Generate summary statistics
         stats = generate_summary_statistics(results_df)
-        display_summary_table(stats)
+        
+        # Update result object with final statistics
+        end_time = time.time()
+        analysis_duration = end_time - start_time
+        
+        # Create a new AnalysisResult instance with the calculated values
+        res = AnalysisResult(
+            total_genes_analyzed=stats['total_genes_analyzed'],
+            total_insertions_analyzed=stats['total_insertions_analyzed'],
+            mean_insertion_density_per_kb=stats['mean_insertion_density_per_kb'],
+            mean_gini_coefficient_of_depth=stats['mean_gini_coefficient_of_location'],
+            mean_strand_bias=stats['mean_strand_bias']
+        )
         
         # Generate histogram plots in PDF format
-        plot_numeric_distributions_to_pdf(results_df, args.output_path)
+        plot_numeric_distributions_to_pdf(results_df, config.output_path)
         
         # Save results
-        results_df.to_csv(args.output_path, index=True)
+        results_df.to_csv(config.output_path, index=True, sep="\t")
         
         # Final summary
-        elapsed_time = time.time() - start_time
-        logging.info(f"\nAnalysis completed successfully in {elapsed_time:.1f} seconds")
-        logging.info(f"Results saved to: {args.output_path}")
-        logging.info(f"Histogram PDF saved to: {args.output_path.parent / f'{args.output_path.stem}_histograms.pdf'}")
-        logging.info(f"Analyzed {len(results_df)} genes with insertion data")
+        logger.success("Analysis completed successfully")
+        logger.success(f"Results saved to {config.output_path}")
+        logger.success(f"Histogram PDF saved to {config.output_path.parent / f'{config.output_path.stem}_histograms.pdf'}")
+        logger.success(f"Analyzed {len(results_df)} genes with insertion data")
         
+        # Log summary statistics
+        summary = res.model_dump()
+        logger.info(f"Analysis summary: {summary}")
+        
+        if res:
+            logger.success(f"Analysis complete. Results saved to {config.output_path}")
+            logger.info(f"Performance: {analysis_duration:.2f} seconds for {res.total_genes_analyzed} genes")
+    
+    except ValueError as e:
+        logger.error(f"Validation error: {e}")
+        sys.exit(1)
     except Exception as e:
-        logging.error(f"Analysis failed: {e}")
-        raise
-
+        logger.error(f"Analysis failed: {e}")
+        if args.verbose:
+            logger.exception("Full traceback:")
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()
