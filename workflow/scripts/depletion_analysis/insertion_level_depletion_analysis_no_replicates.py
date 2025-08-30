@@ -188,7 +188,7 @@ def main():
         M_values, A_values = calculate_MA_values(normalized_counts, config.init_timepoint)
         logger.info("M and A values calculated")
 
-        M_values.droplevel(0, axis=1).to_csv(config.output_LFC_file, sep="\t", index=True)
+        M_values.droplevel(0, axis=1).to_csv(config.output_LFC_file, sep="\t", index=True, float_format="%.3f")
         logger.info(f"LFC results saved to {config.output_LFC_file}")
 
         MA_plot_path = config.output_LFC_file.parent / "MA_plot.pdf"

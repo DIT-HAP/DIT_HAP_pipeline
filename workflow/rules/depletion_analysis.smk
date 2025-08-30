@@ -140,10 +140,11 @@ if not config.get("use_DEseq2_for_biological_replicates", False):
 
             fitting_res["confidence"] = fitting_res["R2"].clip(lower=1e-6, upper=1-1e-6)
 
-            log2FoldChange = fitting_res.filter(regex=r"^t(\d+)$").astype(float)
-            weights = pd.DataFrame(index=fitting_res.index, columns=log2FoldChange.columns)
+            timepoint_columns = fitting_res.filter(regex=r".*_fitted$").columns.tolist()
+            timepoint_columns = [col.rstrip("_fitted") for col in timepoint_columns]
+            weights = pd.DataFrame(index=fitting_res.index, columns=timepoint_columns)
 
-            for col in log2FoldChange.columns:
+            for col in timepoint_columns:
                 weights[col] = 1 - fitting_res["confidence"]
             weights.to_csv(output[0], sep="\t")
 

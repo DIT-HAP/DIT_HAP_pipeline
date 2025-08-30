@@ -1,6 +1,6 @@
 workdir: /data/c/yangyusheng_optimized/DIT_HAP_pipeline
 
-project_name: HD_DIT_HAP
+project_name: HD_DIT_HAP_generationPLUS1
 
 # MultiQC configuration
 # -----------------------------------------------------
@@ -63,7 +63,7 @@ initial_time_point: "YES0"
 # -----------------------------------------------------
 time_points:
   - 0
-  - 2.352
-  - 5.588
-  - 9.104
-  - 12.480
+  - 3.352
+  - 6.588
+  - 10.104
+  - 13.480

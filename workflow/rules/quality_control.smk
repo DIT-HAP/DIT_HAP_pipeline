@@ -126,7 +126,11 @@ rule PBL_PBR_correlation_analysis:
 # -----------------------------------------------------
 rule read_count_distribution_analysis:
     input:
-        expand(rules.merge_similar_timepoints.output, sample=samples, condition=conditions)
+        branch(
+            config["merge_similar_timepoints"],
+            expand(f"results/{project_name}/11_merged/{{sample}}_{{condition}}.merged.tsv", sample=samples, condition=conditions),
+            expand(rules.concat_timepoints.output.Reads, sample=samples, condition=conditions)
+        )
     output:
         report(
             f"reports/{project_name}/read_count_distribution_analysis/read_count_distribution_analysis.pdf",

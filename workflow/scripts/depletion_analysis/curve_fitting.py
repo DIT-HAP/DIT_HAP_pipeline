@@ -435,8 +435,10 @@ def main():
             
             # Add time series data to result
             for j, time_val in enumerate(x_values):
-                result[timepoint_columns[j]] = y_data[j]
+                result[timepoint_columns[j]] = round(y_data[j], 3)
+            for j, time_val in enumerate(x_values):
                 result[timepoint_columns[j] + '_fitted'] = round(gompertz_function(time_val, result['A'], result['um'], result['lam']), 3)
+            for j, time_val in enumerate(x_values):
                 result[timepoint_columns[j] + '_residual'] = round(result[timepoint_columns[j]] - result[timepoint_columns[j] + '_fitted'], 3)
             
             all_results.append(result)

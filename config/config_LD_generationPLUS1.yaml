@@ -26,25 +26,20 @@ PBR_reverseComplement_adapter: CCCTAGAAAGATAATCATATTGTGACGTACGTTAAAGATAATCATGCGT
 
 # Pair read filtering configuration
 # -----------------------------------------------------
-r1_mapq_threshold: 20
-r1_ncigar_value: 1
-r1_nm_threshold: 3
-r1_no_sa: "--r1-require-no-supplementary"
-r1_no_xa: "--r1-require-no-secondary"
-# r1_disable_mapq: "--r1-disable-mapq"
-# r1_disable_ncigar: "--r1-disable-ncigar"
-# r1_disable_nm: "--r1-disable-nm"
-
-r2_mapq_threshold: 20
-# r2_ncigar_value: 1
-# r2_nm_threshold: 3
-r2_no_sa: "--r2-require-no-supplementary"
-r2_no_xa: "--r2-require-no-secondary"
-# r2_disable_mapq: "--r2-disable-mapq"
-r2_disable_ncigar: "--r2-disable-ncigar"
-r2_disable_nm: "--r2-disable-nm"
-
-require_proper_pair: "--require-proper-pair"
+aligned_read_filtering:
+  read_1_filtering:
+    mapq_threshold: 20
+    ncigar_value: 1
+    nm_threshold: 3
+    no_sa: True # require no supplementary alignments
+    no_xa: True # require no secondary alignments
+  read_2_filtering:
+    mapq_threshold: 40
+    ncigar_value: 10
+    nm_threshold: 15
+    no_sa: True # require no supplementary alignments
+    no_xa: True # require no secondary alignments
+  require_proper_pair: True # require proper pairs
 
 # Chunk size for parallel processing
 # -----------------------------------------------------
@@ -52,6 +47,7 @@ chunk_size: 3000000
 
 # Merge similar time points configuration
 # -----------------------------------------------------
+merge_similar_timepoints: TRUE
 similar_timepoints:
   - "0h"
   - "YES0"
