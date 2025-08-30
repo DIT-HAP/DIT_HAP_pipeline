@@ -29,7 +29,7 @@ rule samtools_faidx:
     message:
         "*** Indexing genome fasta file with samtools faidx"
     wrapper:
-        "v6.2.0/bio/samtools/faidx"
+        "v7.2.0/bio/samtools/faidx"
 
 # index the genome fasta file with bwa
 # -----------------------------------------------------
@@ -43,7 +43,7 @@ rule bwa_index:
     message:
         "*** Indexing genome fasta file with bwa"
     wrapper:
-        "v6.2.0/bio/bwa/index"
+        "v7.2.0/bio/bwa/index"
 
 # extract genome region from gff3 file
 # -----------------------------------------------------

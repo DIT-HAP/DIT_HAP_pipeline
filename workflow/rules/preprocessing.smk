@@ -368,45 +368,50 @@ rule annotate_insertions:
 
 # Optional: merge the similar time points
 # -----------------------------------------------------
-rule merge_similar_timepoints:
-    input:
-        rules.concat_timepoints.output.Reads
-    output:
-        protected(f"results/{project_name}/11_merged/{{sample}}_{{condition}}.merged.tsv")
-    log:
-        f"logs/{project_name}/preprocessing/merge_similar_timepoints/{{sample}}_{{condition}}.log"
-    params:
-        similar_timepoints = config["similar_timepoints"],
-        merged_timepoint = config["merged_timepoint"],
-        drop_columns = config["drop_columns"]
-    conda:
-        "../envs/statistics_and_figure_plotting.yml"
-    message:
-        "*** Merging similar time points for {wildcards.sample}_{wildcards.condition}..."
-    run:
-        import pandas as pd
-        df = pd.read_csv(input[0], sep="\t", index_col=[0,1,2,3])
-        print("*** Before merging similar time points")
-        print(df.head())
-        print(df.columns)
-        df[params.merged_timepoint] = df[params.similar_timepoints].sum(axis=1)
-        print("*** After merging similar time points")
-        print("Merged timepoint: ", params.merged_timepoint)
-        print("Drop columns: ", params.drop_columns)
-        print(df.head())
-        print(df.columns)
-        df.drop(columns=params.drop_columns, inplace=True)
-        df.sort_index(axis=1, inplace=True)
-        print("*** After sorting the index")
-        print(df.head())
-        print(df.columns)
-        df.to_csv(output[0], sep="\t", index=True)
+if config["merge_similar_timepoints"]:
+    rule merge_similar_timepoints:
+        input:
+            rules.concat_timepoints.output.Reads
+        output:
+            protected(f"results/{project_name}/11_merged/{{sample}}_{{condition}}.merged.tsv")
+        log:
+            f"logs/{project_name}/preprocessing/merge_similar_timepoints/{{sample}}_{{condition}}.log"
+        params:
+            similar_timepoints = config["similar_timepoints"],
+            merged_timepoint = config["merged_timepoint"],
+            drop_columns = config["drop_columns"]
+        conda:
+            "../envs/statistics_and_figure_plotting.yml"
+        message:
+            "*** Merging similar time points for {wildcards.sample}_{wildcards.condition}..."
+        run:
+            import pandas as pd
+            df = pd.read_csv(input[0], sep="\t", index_col=[0,1,2,3])
+            print("*** Before merging similar time points")
+            print(df.head())
+            print(df.columns)
+            df[params.merged_timepoint] = df[params.similar_timepoints].sum(axis=1)
+            print("*** After merging similar time points")
+            print("Merged timepoint: ", params.merged_timepoint)
+            print("Drop columns: ", params.drop_columns)
+            print(df.head())
+            print(df.columns)
+            df.drop(columns=params.drop_columns, inplace=True)
+            df.sort_index(axis=1, inplace=True)
+            print("*** After sorting the index")
+            print(df.head())
+            print(df.columns)
+            df.to_csv(output[0], sep="\t", index=True)
 
 # concat the sample counts and annotations
 # -----------------------------------------------------
 rule concat_counts_and_annotations:
     input:
-        counts = expand(rules.merge_similar_timepoints.output, sample=samples, condition=conditions),
+        counts = branch(
+            config["merge_similar_timepoints"],
+            expand(f"results/{project_name}/11_merged/{{sample}}_{{condition}}.merged.tsv", sample=samples, condition=conditions),
+            expand(rules.concat_timepoints.output.Reads, sample=samples, condition=conditions)
+        ),
         annotations = expand(rules.annotate_insertions.output, sample=samples, condition=conditions)
     output:
         counts = protected(f"results/{project_name}/12_concatenated/raw_reads.tsv"),

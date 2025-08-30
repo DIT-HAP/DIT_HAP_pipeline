@@ -138,19 +138,14 @@ if not config.get("use_DEseq2_for_biological_replicates", False):
             import pandas as pd
             fitting_res = pd.read_csv(input[0], sep="\t", index_col=[0,1,2,3])
 
-            fitting_res["confidence"] = fitting_res["R2"].clip(lower=1e-3, upper=1-1e-3)
+            fitting_res["confidence"] = fitting_res["R2"].clip(lower=1e-6, upper=1-1e-6)
 
             log2FoldChange = fitting_res.filter(regex=r"^t(\d+)$").astype(float)
-            log2FoldChange.columns = log2FoldChange.columns.str.replace("t", "YES")
-
-            padj = pd.DataFrame(index=fitting_res.index, columns=log2FoldChange.columns)
+            weights = pd.DataFrame(index=fitting_res.index, columns=log2FoldChange.columns)
 
             for col in log2FoldChange.columns:
-                padj[col] = 1 - fitting_res["confidence"]
-
-            concated_statistics = pd.concat([log2FoldChange, padj], axis=1, keys=["log2FoldChange", "padj"])
-            concated_statistics = concated_statistics.rename_axis(["Statistic", "Timepoint"], axis=1)
-            concated_statistics.reorder_levels(["Timepoint", "Statistic"], axis=1).to_csv(output[0], sep="\t")
+                weights[col] = 1 - fitting_res["confidence"]
+            weights.to_csv(output[0], sep="\t")
 
 # gene-level depletion analysis
 # -----------------------------------------------------

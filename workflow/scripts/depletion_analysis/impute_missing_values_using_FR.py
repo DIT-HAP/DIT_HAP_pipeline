@@ -31,9 +31,9 @@ DISTANCE_TO_STOP_CODON_THRESHOLD = 3
 # =============================== Configuration & Models ===============================
 class ImputationConfig(BaseModel):
     """Pydantic model for validating and managing input/output paths."""
-    input_file: Path = Field(..., description="Path to the input counts data file", min_length=1)
-    annotation_file: Path = Field(..., description="Path to the insertion annotation file", min_length=1)
-    output_file: Path = Field(..., description="Path to the output imputed counts file", min_length=1)
+    input_file: Path = Field(..., description="Path to the input counts data file")
+    annotation_file: Path = Field(..., description="Path to the insertion annotation file")
+    output_file: Path = Field(..., description="Path to the output imputed counts file")
 
     @field_validator('input_file')
     def validate_input_file(cls, v):

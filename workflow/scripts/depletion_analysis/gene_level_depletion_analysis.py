@@ -47,7 +47,7 @@ def setup_logging() -> None:
     logger.remove()
     logger.add(
         sys.stdout,
-        format="{time:HH:mm:ss} | {level: <8} | {message}",
+        format="{time:YYYY-MM-DD HH:mm:ss} | {level: <8} | {message}",
         level="INFO",
         colorize=False
     )

@@ -210,47 +210,44 @@ def fit_single_curve(x_values: np.ndarray, y_values: np.ndarray,
 def create_fitted_plot(ax: plt.Axes, x_values: np.ndarray, y_values: np.ndarray,
                       params: Dict[str, Union[str, float]], ID: str) -> None:
     """Create a publication-quality plot for fitted curve."""
-    ax.grid(True, alpha=0.3)
+    ax.grid(True)
     
     if params['Status'] == 'Success':
         A, um, lam = params['A'], params['um'], params['lam']
         
         # Plot data points
         ax.scatter(x_values, y_values, 
-                  color=COLORS[1], 
-                  s=50, alpha=0.8,
-                  edgecolors='white', linewidth=0.5,
+                  color=COLORS[1], alpha=0.8,
+                  edgecolors='white',
                   label='Data')
         
         # Plot fitted curve
         x_smooth = np.linspace(min(x_values), max(x_values), 100)
         y_fit = gompertz_function(x_smooth, A, um, lam)
         ax.plot(x_smooth, y_fit,
-               color=COLORS[2],
-               linewidth=2.0, label='Fitted')
+               color=COLORS[2], label='Fitted')
         
         # Add constraint lines
         ax.axhline(y=A, color=COLORS[0],
-                  linestyle='--', alpha=0.3, linewidth=1.0)
+                  linestyle='--', alpha=0.3)
         ax.axvline(x=lam, color=COLORS[0],
-                  linestyle='--', alpha=0.3, linewidth=1.0)
+                  linestyle='--', alpha=0.3)
         
         # Add parameter text
         param_text = f'A={A:.2f}    R²={params["R2"]:.3f}\num={um:.2f}  RMSE={params["RMSE"]:.3f}\nlam={lam:.2f}    NRMSE={params["normalized_RMSE"]:.3f}'
         ax.text(0.05, 0.95, param_text,
-               transform=ax.transAxes, fontsize=8,
+               transform=ax.transAxes,
                verticalalignment='top')
     else:
         # Plot failed fit
         ax.scatter(x_values, y_values,
-                  color='gray', s=30, alpha=0.6)
+                  color='gray', alpha=0.6)
         ax.text(0.5, 0.5, 'Fit Failed',
-               transform=ax.transAxes, fontsize=10,
+               transform=ax.transAxes,
                horizontalalignment='center', color='red')
     
     ax.set_ylim(-1.5, 8.5)
-    ax.set_title(" ".join(ID.split("=")), fontsize=9, pad=5)
-    ax.tick_params(labelsize=8)
+    ax.set_title(" ".join(ID.split("=")))
 
 
 @logger.catch
@@ -264,7 +261,7 @@ def generate_fitting_plots(results_df: pd.DataFrame, x_values: np.ndarray,
     
     with PdfPages(output_plot) as pdf:
         for page in range(num_pages):
-            fig, axes = plt.subplots(8, 4, figsize=(8.27, 11.69))  # A4 landscape
+            fig, axes = plt.subplots(8, 4, figsize=(AX_WIDTH*4, AX_HEIGHT*8))
             axes = axes.flatten()
 
             if page % 10 == 0:
@@ -290,8 +287,7 @@ def generate_fitting_plots(results_df: pd.DataFrame, x_values: np.ndarray,
             for ax_idx in range(end_idx - start_idx, plots_per_page):
                 axes[ax_idx].set_visible(False)
             
-            plt.tight_layout(pad=1.0)
-            pdf.savefig(fig, bbox_inches='tight', dpi=300)
+            pdf.savefig(fig)
             plt.close(fig)
 
 
@@ -330,7 +326,7 @@ def process_depletion_data(input_file: Path, time_points: List[float],
     
     logger.info(f"Loaded {len(IDs)} datasets with {len(x_values)} time points")
     
-    return x_values, y_values, weight_values, IDs, index_names
+    return x_values, y_values, weight_values, IDs, index_names, timepoint_columns
 
 
 @logger.catch
@@ -384,13 +380,13 @@ def parse_arguments():
     )
     
     parser.add_argument("-i", "--input", type=Path, required=True,
-                       help="Path to input CSV file with depletion data")
+                       help="Path to input TSV file with depletion data")
     parser.add_argument("-w", "--weight", type=Path, required=False, default=None,
-                       help="Path to weight CSV file")
+                       help="Path to weight TSV file")
     parser.add_argument("-t", "--time_points", required=True, nargs='+',
                        type=float, help="Time points for the experiment")
     parser.add_argument("-o", "--output", type=Path, required=True,
-                       help="Path to output CSV file for fitted parameters")
+                       help="Path to output TSV file for fitted parameters")
     parser.add_argument("-v", "--verbose", action="store_true",
                        help="Enable verbose logging")
     
@@ -424,7 +420,7 @@ def main():
     logger.info(f"Time points: {config.time_points}")
     
     # Process data
-    x_values, y_values, weight_values, IDs, index_names = process_depletion_data(
+    x_values, y_values, weight_values, IDs, index_names, timepoint_columns = process_depletion_data(
         config.input_file, config.time_points, config.weight_file
     )
     t_last = x_values[-1]
@@ -439,20 +435,22 @@ def main():
             
             # Add time series data to result
             for j, time_val in enumerate(x_values):
-                result[f't{j}'] = y_data[j]
-                result[f't{j}_fitted'] = round(gompertz_function(time_val, result['A'], result['um'], result['lam']), 3)
-                result[f't{j}_residual'] = round(result[f't{j}'] - result[f't{j}_fitted'], 3)
+                result[timepoint_columns[j]] = y_data[j]
+                result[timepoint_columns[j] + '_fitted'] = round(gompertz_function(time_val, result['A'], result['um'], result['lam']), 3)
+                result[timepoint_columns[j] + '_residual'] = round(result[timepoint_columns[j]] - result[timepoint_columns[j] + '_fitted'], 3)
             
             all_results.append(result)
             pbar.update(1)
     
     # Create results DataFrame
     results_df = pd.DataFrame(all_results)
-    results_df.insert(1, 'time_points', [list(x_values)] * len(results_df))
+    results_df.insert(1, 'time_points', [",".join(map(str, list(x_values)))] * len(results_df))
     
     # Round numeric columns
-    numeric_columns = ['A', 'um', 'lam', 'R2', 'RMSE', 'normalized_RMSE']
-    results_df[numeric_columns] = results_df[numeric_columns].round(3)
+    numeric_columns = {
+        'A':3, 'um':3, 'lam':3, 'R2':6, 'RMSE':3, 'normalized_RMSE':6
+    }
+    results_df[list(numeric_columns.keys())] = results_df[list(numeric_columns.keys())].round(numeric_columns)
     
     # Set multi-level index
     results_df.set_index("ID", inplace=True)
@@ -461,11 +459,11 @@ def main():
     results_df.rename_axis(index_names, inplace=True)
     
     # Save results
-    results_df.to_csv(config.output_file, index=True, float_format='%.3f', sep="\t")
+    results_df.to_csv(config.output_file, index=True, sep="\t")
     
     # Generate plots
     output_plot = config.output_file.with_suffix('.pdf').with_name(config.output_file.stem + '_fitted_curves.pdf')
-    generate_fitting_plots(results_df, x_values, y_values, output_plot)
+    # generate_fitting_plots(results_df, x_values, y_values, output_plot)
     
     # Calculate and display statistics
     stats = generate_summary_statistics(results_df)
