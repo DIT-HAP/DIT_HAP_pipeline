@@ -191,6 +191,15 @@ def main():
         M_values.droplevel(0, axis=1).to_csv(config.output_LFC_file, sep="\t", index=True, float_format="%.3f")
         logger.info(f"LFC results saved to {config.output_LFC_file}")
 
+        normalized_counts.droplevel(0, axis=1).to_csv(config.output_LFC_file.parent / "normed_counts.tsv", sep="\t", index=True, float_format="%.3f")
+        logger.info(f"Normalized counts saved to {config.output_LFC_file.parent / 'normed_counts.tsv'}")
+
+        baseMean = normalized_counts.droplevel(0, axis=1).copy()
+        for col in baseMean.columns:
+            baseMean[col] = baseMean[config.init_timepoint]
+        baseMean.to_csv(config.output_LFC_file.parent / "baseMean.tsv", sep="\t", index=True, float_format="%.3f")
+        logger.info(f"Base mean saved to {config.output_LFC_file.parent / 'baseMean.tsv'}")
+
         MA_plot_path = config.output_LFC_file.parent / "MA_plot.pdf"
         generate_MA_plots(M_values, A_values, MA_plot_path)
         logger.info(f"MA plots saved to {MA_plot_path}")

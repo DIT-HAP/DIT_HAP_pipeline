@@ -166,7 +166,7 @@ def create_file_comparison_figure(
         axes = [axes]  # Ensure axes is always a list
     
     # Set overall title
-    fig.suptitle(f'Strand Orientation Analysis: {filename}', y=0.95)
+    fig.suptitle(f'Strand Orientation Analysis: {filename}', y=1.05)
     
     stats = {
         "filename": filename,
