@@ -256,6 +256,9 @@ def main():
         # Load input data
         counts_df = pd.read_csv(config.input_file, index_col=[0, 1, 2, 3], sep="\t", header=[0, 1])
         insertion_annotations = pd.read_csv(config.annotation_file, index_col=[0, 1, 2, 3], sep="\t")
+
+        samples = counts_df.columns.get_level_values(0).unique()
+        timepoints = counts_df.columns.get_level_values(1).unique()
         
         # Filter insertions by genomic location
         _, in_gene_insertions = filter_insertions(insertion_annotations)
@@ -278,9 +281,13 @@ def main():
         # Concatenate complete datasets
         imputed_counts = pd.concat([intergenic_counts_df, imputed_in_gene_counts_df_noNA], axis=0)
 
-        # Save imputed data
+        # Save imputed datas
         imputed_counts.to_csv(config.output_file, index=True, sep="\t")
         logger.success(f"Imputation complete. Results saved to {config.output_file}")
+
+        imputation_statistics = counts_df.loc[imputed_counts.index].xs(timepoints[0], level=1, axis=1).isna().sum(axis=1).astype(int).rename("num_of_imputed_insertions")
+        imputation_statistics.to_csv(config.output_file.parent/f"imputation_statistics.tsv", index=True, sep="\t")
+        logger.success(f"Number of imputed insertions saved to {config.output_file.parent/f"imputation_statistics.tsv"}")
 
         # Calculate and print statistics
         stats = calculate_imputation_statistics(

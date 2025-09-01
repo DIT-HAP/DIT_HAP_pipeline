@@ -28,13 +28,6 @@ Output:
     - log2FoldChange.tsv: Primary output with log2 fold changes
     - Additional TSV files: baseMean, lfcSE, stat, pvalue, padj, normed_counts
     - PNG files: dispersions.png, MA_*.png plots
-
-Dependencies:
-    - pydeseq2>=0.4.0
-    - pandas>=1.3.0
-    - numpy>=1.20.0
-    - loguru>=0.6.0
-    - pydantic>=2.0.0
 """
 
 # =============================== Imports ===============================
@@ -272,7 +265,7 @@ def main():
             counts_file=args.counts_file,
             control_insertions_file=args.control_insertions_file,
             initial_timepoint=args.initial_timepoint,
-            output_file=args.output_file,
+            output_file=args.output,
             verbose=args.verbose
         )
         
@@ -351,10 +344,14 @@ def main():
         concated_results.insert(0, (config.initial_timepoint,"lfcSE"), lfcSE_initial)
         concated_results.insert(0, (config.initial_timepoint,"log2FoldChange"), log2FoldChange_initial)
         concated_results.insert(0, (config.initial_timepoint,"baseMean"), baseMean_initial)
-
-        concated_results = concated_results.round({"baseMean": 3, "log2FoldChange": 3, "lfcSE": 3, "stat": 3, "pvalue": 6, "padj": 6})
+        
+        numeric_columns = {"baseMean": 3, "log2FoldChange": 3, "lfcSE": 3, "stat": 3, "pvalue": 6, "padj": 6}
+        logger.info("Rounding numeric columns...")
+        for stat_name, decimal_places in numeric_columns.items():
+            stat_columns = concated_results.xs(stat_name, axis=1, level="Statistic", drop_level=False)
+            concated_results[stat_columns.columns] = stat_columns.round(decimal_places)
         logger.info("Saving results...")
-        concated_results.to_csv(config.output_file.parent / "all_statistics.tsv", sep="\t")
+        concated_results.to_csv(config.output_file.parent / "insertion_level_statistics.tsv", sep="\t")
 
         # Save individual statistic files
         baseMean_df = concated_results.xs("baseMean", axis=1, level="Statistic")

@@ -157,12 +157,12 @@ def create_file_comparison_figure(
     logger.info(f"Creating figure for {filename} with {len(numeric_columns)} columns: {numeric_columns}")
     
     # Create figure with subplots: 1 row × n columns
-    n_cols = len(numeric_columns)
-    fig_width = n_cols * AX_WIDTH
-    fig_height = AX_HEIGHT
+    n_rows = len(numeric_columns)
+    fig_width = AX_WIDTH
+    fig_height = n_rows * AX_HEIGHT
     
-    fig, axes = plt.subplots(1, n_cols, figsize=(fig_width, fig_height))
-    if n_cols == 1:
+    fig, axes = plt.subplots(n_rows, 1, figsize=(fig_width, fig_height))
+    if n_rows == 1:
         axes = [axes]  # Ensure axes is always a list
     
     # Set overall title

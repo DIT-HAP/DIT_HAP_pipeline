@@ -105,7 +105,7 @@ rule insertion_level_curve_fitting:
     input:
         f"results/{project_name}/14_insertion_level_depletion_analysis/LFC.tsv"
     output:
-        f"results/{project_name}/15_insertion_level_curve_fitting/insertions_LFC_fitted.tsv"
+        f"results/{project_name}/15_insertion_level_curve_fitting/insertion_level_fitting_statistics.tsv"
     log:
         f"logs/{project_name}/depletion_analysis/insertion_level_curve_fitting.log"
     conda:
@@ -160,7 +160,7 @@ rule gene_level_depletion_analysis:
         ),
         annotations_path = rules.concat_counts_and_annotations.output.annotations
     output:
-        all_statistics = f"results/{project_name}/16_gene_level_depletion_analysis/Gene_level_statistics.tsv",
+        all_statistics = f"results/{project_name}/16_gene_level_depletion_analysis/gene_level_statistics.tsv",
         LFC = f"results/{project_name}/16_gene_level_depletion_analysis/LFC.tsv"
     log:
         f"logs/{project_name}/depletion_analysis/gene_level_depletion_analysis.log"
@@ -181,7 +181,7 @@ rule gene_level_curve_fitting:
     input:
         LFC = rules.gene_level_depletion_analysis.output.LFC
     output:
-        f"results/{project_name}/17_gene_level_curve_fitting/Gene_level_statistics_fitted.tsv"
+        f"results/{project_name}/17_gene_level_curve_fitting/gene_level_fitting_statistics.tsv"
     log:
         f"logs/{project_name}/depletion_analysis/gene_level_curve_fitting.log"
     params:

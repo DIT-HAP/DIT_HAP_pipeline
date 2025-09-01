@@ -305,8 +305,6 @@ def process_depletion_data(input_file: Path, time_points: List[float],
     timepoint_columns = data.columns.tolist()[index_column_num:]
     data.set_index(index_columns, inplace=True)
 
-    index_names = data.index.names
-
     # Create gene identifiers
     IDs = ["=".join(map(str, idx)) for idx in data.index.tolist()]
     
@@ -326,7 +324,7 @@ def process_depletion_data(input_file: Path, time_points: List[float],
     
     logger.info(f"Loaded {len(IDs)} datasets with {len(x_values)} time points")
     
-    return x_values, y_values, weight_values, IDs, index_names, timepoint_columns
+    return x_values, y_values, weight_values, IDs, index_columns, timepoint_columns
 
 
 @logger.catch
@@ -420,7 +418,7 @@ def main():
     logger.info(f"Time points: {config.time_points}")
     
     # Process data
-    x_values, y_values, weight_values, IDs, index_names, timepoint_columns = process_depletion_data(
+    x_values, y_values, weight_values, IDs, index_columns, timepoint_columns = process_depletion_data(
         config.input_file, config.time_points, config.weight_file
     )
     t_last = x_values[-1]
@@ -458,10 +456,15 @@ def main():
     results_df.set_index("ID", inplace=True)
     multiple_index = pd.MultiIndex.from_tuples([idx.split("=") for idx in results_df.index.tolist()])
     results_df.index = multiple_index
-    results_df.rename_axis(index_names, inplace=True)
+    results_df.rename_axis(index_columns, inplace=True)
     
     # Save results
     results_df.to_csv(config.output_file, index=True, sep="\t")
+
+    # fitted_LFCs
+    results_df.filter(like="fitted").to_csv(config.output_file.parent/"fitting_LFCs.tsv", index=True, sep="\t")
+    # fitted_results
+    results_df[list(numeric_columns.keys())].to_csv(config.output_file.parent/"fitting_results.tsv", index=True, sep="\t")
     
     # Generate plots
     output_plot = config.output_file.with_suffix('.pdf').with_name(config.output_file.stem + '_fitted_curves.pdf')
