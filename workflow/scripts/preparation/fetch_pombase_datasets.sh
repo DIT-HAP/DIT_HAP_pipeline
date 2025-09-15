@@ -47,14 +47,16 @@ set -euo pipefail  # Exit on error, undefined vars, pipe failures
 
 readonly SCRIPT_NAME="$(basename "${0}")"
 readonly DEFAULT_FALLBACK_FYPO_VERSION="v2025-08-13"
+readonly DEFAULT_FALLBACK_MONDO_VERSION="v2025-09-02"
 
 # Base URLs for different data sources
 readonly POMBASE_BASE_URL="https://www.pombase.org/monthly_releases"
+readonly GO_OBO_URL="https://purl.obolibrary.org/obo/go/go-basic.obo"
+readonly GO_SLIM_URL="https://current.geneontology.org/ontology/subsets/goslim_pombe.obo"
 readonly FYPO_GITHUB_API="https://api.github.com/repos/pombase/fypo/releases/latest"
 readonly FYPO_RELEASE_URL="https://github.com/pombase/fypo/releases/download"
-readonly GO_OBO_URL="https://purl.obolibrary.org/obo/go/go-basic.obo"
-readonly MONDO_OBO_URL="https://purl.obolibrary.org/obo/mondo.obo"
-readonly GO_SLIM_URL="https://current.geneontology.org/ontology/subsets/goslim_pombe.obo"
+readonly MONDO_GITHUB_API="https://api.github.com/repos/monarch-initiative/mondo/releases/latest"
+readonly MONDO_RELEASE_URL="https://github.com/monarch-initiative/mondo/releases/download"
 
 # Wget common options
 readonly WGET_OPTS="-nc --progress=bar:force --timeout=30 --tries=3"
@@ -154,22 +156,23 @@ download_file() {
     return 0
 }
 
-# Get latest FYPO version from GitHub API
-get_latest_fypo_version() {
-    log_info "Fetching latest FYPO version from GitHub API..."
+# Get latest ontology version from GitHub API
+get_latest_ontology_version() {
+    log_info "Fetching latest ontology version from GitHub API..."
+    local ontology_github_api="$1"
+    local default_fallback_ontology_version="$2"
+    local ontology_version
+    ontology_version=$(curl -s --max-time 10 "${ontology_github_api}" | grep '"tag_name"' | cut -d'"' -f4 2>/dev/null)
     
-    local fypo_version
-    fypo_version=$(curl -s --max-time 10 "${FYPO_GITHUB_API}" | grep '"tag_name"' | cut -d'"' -f4 2>/dev/null)
-    
-    if [[ -z "${fypo_version}" ]]; then
-        log_warn "Could not detect latest FYPO version from API"
-        log_warn "Falling back to default version: ${DEFAULT_FALLBACK_FYPO_VERSION}"
-        fypo_version="${DEFAULT_FALLBACK_FYPO_VERSION}"
+    if [[ -z "${ontology_version}" ]]; then
+        log_warn "Could not detect latest ontology version from API"
+        log_warn "Falling back to default version: ${default_fallback_ontology_version}"
+        ontology_version="${default_fallback_ontology_version}"
     else
-        log_info "Latest FYPO version detected: ${fypo_version}"
+        log_info "Latest ontology version detected: ${ontology_version}"
     fi
     
-    echo "${fypo_version}"
+    echo "${ontology_version}"
 }
 
 #===============================================================================
@@ -303,7 +306,7 @@ download_ontologies() {
     local base_url="$1"
     local target_dir="$2"
     local fypo_version="$3"
-    
+    local mondo_version="$4"
     log_info "Starting ontology and association downloads..."
     
     local onto_dir="${target_dir}/ontologies_and_associations"
@@ -311,8 +314,8 @@ download_ontologies() {
     
     # Core ontology files
     download_file "${GO_OBO_URL}" "${onto_dir}" "GO basic ontology" || return 1
-    download_file "${MONDO_OBO_URL}" "${onto_dir}" "Mondo ontology" || return 1
-    download_file "${FYPO_RELEASE_URL}/${fypo_version}/fypo-base.obo" "${onto_dir}" "FYPO ontology" || return 1
+    download_file "${MONDO_RELEASE_URL}/${mondo_version}/mondo-simple.obo" "${onto_dir}" "Mondo ontology" || return 1
+    download_file "${FYPO_RELEASE_URL}/${fypo_version}/fypo-simple-pombase.obo" "${onto_dir}" "FYPO ontology" || return 1
     download_file "${GO_SLIM_URL}" "${onto_dir}" "GO slim pombe" || return 1
     
     # Slim ontology metadata
@@ -379,7 +382,11 @@ main() {
     
     # Get latest FYPO version
     local fypo_version
-    fypo_version=$(get_latest_fypo_version)
+    fypo_version=$(get_latest_ontology_version "${FYPO_GITHUB_API}" "${DEFAULT_FALLBACK_FYPO_VERSION}")
+    
+    # Get latest Mondo version
+    local mondo_version
+    mondo_version=$(get_latest_ontology_version "${MONDO_GITHUB_API}" "${DEFAULT_FALLBACK_MONDO_VERSION}")
     
     # Execute download phases
     log_info "Beginning multi-phase download process..."
@@ -388,7 +395,7 @@ main() {
     download_gene_metadata "${base_url}" "${download_dir}" || exit 1
     download_rna_metadata "${base_url}" "${download_dir}" || exit 1
     download_protein_features "${base_url}" "${download_dir}" || exit 1
-    download_ontologies "${base_url}" "${download_dir}" "${fypo_version}" || exit 1
+    download_ontologies "${base_url}" "${download_dir}" "${fypo_version}" "${mondo_version}" || exit 1
     
     # Generate completion summary
     log_info "All downloads completed successfully!"
@@ -397,6 +404,7 @@ main() {
     echo "Release Version: ${release_version}"
     echo "Download Location: ${download_dir}"
     echo "FYPO Version: ${fypo_version}"
+    echo "Mondo Version: ${mondo_version}"
     echo ""
     echo "Directory Structure:"
     echo "  ${download_dir}/"
@@ -404,7 +412,7 @@ main() {
     echo "  ├── Gene_metadata/                   # Gene information and viability"
     echo "  ├── RNA_metadata/                    # Expression data (qualitative/quantitative)"
     echo "  ├── Protein_features/                # Protein annotations and modifications"
-    echo "  └── ontologies_and_associations/     # Ontologies (GO, FYPO, Mondo) and associations"
+    echo "  └── ontologies_and_associations/     # Ontologies (GO, FYPO, Mondo) and associations (GAF, PHAF, ECO)"
     echo ""
     echo "Total downloaded files: $(find "${download_dir}" -type f | wc -l)"
     echo "Total download size: $(du -sh "${download_dir}" | cut -f1)"

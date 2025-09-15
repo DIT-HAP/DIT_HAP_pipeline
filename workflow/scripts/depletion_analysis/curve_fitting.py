@@ -315,9 +315,6 @@ def process_depletion_data(input_file: Path, time_points: List[float],
         weight_data = pd.read_csv(weight_file, header=0)
         weight_data.set_index(index_columns, inplace=True)
         weight_data = weight_data.loc[data.index].fillna(0.01)
-        # if weights are lfcSE, then convert to 1/lfcSE^2
-        if "lfcSE" in Path(weight_file).stem:
-            weight_data = 1 / (weight_data ** 2)
         weight_values = weight_data.values
     else:
         weight_values = np.ones(shape=(len(IDs), len(x_values)))
@@ -462,7 +459,9 @@ def main():
     results_df.to_csv(config.output_file, index=True, sep="\t")
 
     # fitted_LFCs
-    results_df.filter(like="fitted").to_csv(config.output_file.parent/"fitting_LFCs.tsv", index=True, sep="\t")
+    fitting_LFCs = results_df.filter(like="fitted")
+    fitting_LFCs.columns = fitting_LFCs.columns.str.replace("_fitted", "")
+    fitting_LFCs.to_csv(config.output_file.parent/"fitting_LFCs.tsv", index=True, sep="\t")
     # fitted_results
     results_df[list(numeric_columns.keys())].to_csv(config.output_file.parent/"fitting_results.tsv", index=True, sep="\t")
     

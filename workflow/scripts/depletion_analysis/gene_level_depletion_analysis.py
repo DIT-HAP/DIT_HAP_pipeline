@@ -69,11 +69,14 @@ def load_data(config: AnalysisConfig) -> Tuple[pd.DataFrame, pd.DataFrame, pd.Da
         in_gene_insertions = annotations_df.query(
             "(Type != 'Intergenic region') and (Distance_to_stop_codon > 4)"
         ).index
+
+        # transform weights
+        transformed_weights_df = -np.log10(weights_df.fillna(1).clip(lower=1e-6, upper=1-1e-6))
         
         logger.info(f"Loaded {lfc_df.shape[0]} total insertions")
         logger.info(f"Found {len(in_gene_insertions)} in-gene insertions")
         
-        return lfc_df, weights_df, annotations_df, in_gene_insertions
+        return lfc_df, transformed_weights_df, annotations_df, in_gene_insertions
         
     except Exception as e:
         raise ValueError(f"Error loading data: {e}")
@@ -81,11 +84,11 @@ def load_data(config: AnalysisConfig) -> Tuple[pd.DataFrame, pd.DataFrame, pd.Da
 # ======================== Data Processing ========================
 
 @logger.catch
-def filter_in_gene_data(lfc_df: pd.DataFrame, weights_df: pd.DataFrame, 
+def filter_in_gene_data(lfc_df: pd.DataFrame, transformed_weights_df: pd.DataFrame, 
                        in_gene_insertions: pd.Index) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """Filter LFC and weights data for in-gene insertions."""
     in_gene_lfc = lfc_df[lfc_df.index.isin(in_gene_insertions)].copy()
-    in_gene_weights = weights_df[weights_df.index.isin(in_gene_insertions)].copy()
+    in_gene_weights = transformed_weights_df[transformed_weights_df.index.isin(in_gene_insertions)].copy()
     
     in_gene_lfc = in_gene_lfc.rename_axis("Timepoint", axis=1)
     in_gene_weights = in_gene_weights.rename_axis("Timepoint", axis=1)
@@ -104,15 +107,12 @@ def filter_in_gene_data(lfc_df: pd.DataFrame, weights_df: pd.DataFrame,
     return in_gene_lfc, in_gene_weights
 
 @logger.catch
-def prepare_weighted_data(lfc_df: pd.DataFrame, weights_df: pd.DataFrame) -> pd.DataFrame:
+def prepare_weighted_data(lfc_df: pd.DataFrame, transformed_weights_df: pd.DataFrame) -> pd.DataFrame:
     """Merge LFC and weights data into a single DataFrame."""
     lfc_series = lfc_df.stack().to_frame("LFC")
-    weights_series = weights_df.stack().to_frame("Weights")
-    
+    weights_series = transformed_weights_df.stack().to_frame("Weights")
+
     merged = pd.merge(lfc_series, weights_series, left_index=True, right_index=True)
-    
-    # Transform weights using -log10
-    merged["Weights"] = -np.log10(merged["Weights"].clip(lower=1e-10, upper=1-1e-10))
     
     weight_stats = merged["Weights"].describe()
     logger.info(f"Weight stats: mean={weight_stats['mean']:.2f}, max={weight_stats['max']:.2f}")
@@ -272,8 +272,8 @@ def main() -> None:
         args.output_path.parent.mkdir(parents=True, exist_ok=True)
         
         # Load and process data
-        lfc_df, weights_df, annotations_df, in_gene_insertions = load_data(config)
-        in_gene_lfc, in_gene_weights = filter_in_gene_data(lfc_df, weights_df, in_gene_insertions)
+        lfc_df, transformed_weights_df, annotations_df, in_gene_insertions = load_data(config)
+        in_gene_lfc, in_gene_weights = filter_in_gene_data(lfc_df, transformed_weights_df, in_gene_insertions)
         
         # Prepare weighted data and annotations
         weighted_data = prepare_weighted_data(in_gene_lfc, in_gene_weights)
@@ -289,6 +289,7 @@ def main() -> None:
         # Save results
         gene_results = gene_results.set_index("Systematic ID")
         gene_results.to_csv(args.output_path.parent / "LFC.tsv", sep="\t")
+        transformed_weights_df.to_csv(args.output_path.parent / "transformed_weights.tsv", sep="\t")
         gene_results.to_csv(args.output_path, sep="\t")
         
         elapsed = time.time() - start_time
