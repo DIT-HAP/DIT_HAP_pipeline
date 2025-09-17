@@ -107,20 +107,29 @@ def setup_logging(verbose: bool = False) -> None:
 # =============================== Core Functions ===============================
 @logger.catch
 def sigmoid_function(x: np.ndarray, A: float, um: float, lam: float) -> np.ndarray:
-    """Calculate sigmoid function values with numerical stability using gompertz function."""
+    """Calculate sigmoid function values with numerical stability using logistic function."""
+    # Calculate the exponent term
     if A == 0:
         return np.zeros_like(x)
-    
-    exponent = np.clip((um * np.e / A) * (lam - x) + 1, -700, 700)
-    return A * np.exp(-np.exp(exponent))
+        
+    exponent_arg = (4 * um / A) * (lam - x) + 2
+    # Clip exponent_arg to prevent overflow/underflow in np.exp
+    exponent_arg = np.clip(exponent_arg, -700, 700)
+
+    # Calculate the denominator
+    denominator = 1 + np.exp(exponent_arg)
+
+    # Calculate the final result, handle potential division by zero if needed
+    # (though denominator should always be > 1 here)
+    y = A / denominator
+    return y
 
 
 @logger.catch
 def sigmoid_derivative(x: np.ndarray, A: float, um: float, lam: float) -> np.ndarray:
-    """Calculate derivative of sigmoid function using gompertz function."""
-    alpha = (um * np.e) / A
-    u = alpha * (lam - x) + 1
-    return A * alpha * np.exp(u - np.exp(u))
+    """Calculate derivative of sigmoid function using logistic function."""
+    exponent_arg = (4 * um / A) * (lam - x) + 2
+    return 4*um*np.exp(exponent_arg) / ((1 + np.exp(exponent_arg))**2)
 
 
 @logger.catch
