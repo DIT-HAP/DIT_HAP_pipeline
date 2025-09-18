@@ -75,6 +75,13 @@ class FittingResult(BaseModel):
     R2: float = Field(..., description="R-squared value")
     RMSE: float = Field(..., description="Root mean square error")
     normalized_RMSE: float = Field(..., description="Normalized RMSE")
+    t10: float = Field(..., description="Time to reach 10% of the maximum depletion level")
+    t50: float = Field(..., description="Time to reach 50% of the maximum depletion level")
+    t90: float = Field(..., description="Time to reach 90% of the maximum depletion level")
+    t_window: float = Field(..., description="Time window between t10 and t90")
+    t_inflection: float = Field(..., description="Time of the inflection point")
+    y_inflection: float = Field(..., description="Depletion level at the inflection point")
+    auc: float = Field(..., description="Area under the curve")
     AIC: float = Field(..., description="Akaike Information Criterion")
     BIC: float = Field(..., description="Bayesian Information Criterion")
 
@@ -88,6 +95,13 @@ class SummaryStatistics(BaseModel):
     mean_RMSE: Optional[float] = Field(None, ge=0.0, description="Mean RMSE value")
     mean_A: Optional[float] = Field(None, description="Mean A parameter")
     mean_um: Optional[float] = Field(None, description="Mean um parameter")
+    mean_t10: Optional[float] = Field(None, description="Mean t10 parameter")
+    mean_t50: Optional[float] = Field(None, description="Mean t50 parameter")
+    mean_t90: Optional[float] = Field(None, description="Mean t90 parameter")
+    mean_t_window: Optional[float] = Field(None, description="Mean t_window parameter")
+    mean_t_inflection: Optional[float] = Field(None, description="Mean t_inflection parameter")
+    mean_y_inflection: Optional[float] = Field(None, description="Mean y_inflection parameter")
+    mean_auc: Optional[float] = Field(None, description="Mean auc parameter")
     mean_AIC: Optional[float] = Field(None, description="Mean AIC value")
     mean_BIC: Optional[float] = Field(None, description="Mean BIC value")
 
@@ -112,25 +126,24 @@ def sigmoid_function(x: np.ndarray, A: float, um: float, lam: float) -> np.ndarr
     if A == 0:
         return np.zeros_like(x)
         
-    exponent_arg = (4 * um / A) * (lam - x) + 2
-    # Clip exponent_arg to prevent overflow/underflow in np.exp
-    exponent_arg = np.clip(exponent_arg, -700, 700)
-
-    # Calculate the denominator
-    denominator = 1 + np.exp(exponent_arg)
-
-    # Calculate the final result, handle potential division by zero if needed
-    # (though denominator should always be > 1 here)
-    y = A / denominator
-    return y
+    alpha = (4 * um) / A
+    u = alpha * (lam - x) + 2
+    exponent = np.clip(u, -700, 700)
+    return A / (1 + np.exp(exponent))
 
 
 @logger.catch
 def sigmoid_derivative(x: np.ndarray, A: float, um: float, lam: float) -> np.ndarray:
     """Calculate derivative of sigmoid function using logistic function."""
-    exponent_arg = (4 * um / A) * (lam - x) + 2
-    return 4*um*np.exp(exponent_arg) / ((1 + np.exp(exponent_arg))**2)
+    alpha = (4 * um) / A
+    u = alpha * (lam - x) + 2
+    exp_u = np.exp(u)
+    return (4 * um * exp_u) / ((1 + exp_u) ** 2)
 
+@logger.catch
+def time_at_p_effect(p: float, A: float, um: float, lam: float) -> float:
+    """Calculate the time at which the function reaches p proportion of its maximum effect."""
+    return lam - (A / (4 * um)) * (np.log((1 - p) / p) - 2)
 
 @logger.catch
 def objective_function(params: List[float], x: np.ndarray, y: np.ndarray, 
@@ -160,7 +173,7 @@ def constraint_function1(params: List[float], t_last: float) -> float:
 def constraint_function2(params: List[float]) -> float:
     """Constraint to ensure smooth curve behavior."""
     A, um, lam = params
-    x0 = lam + A / um / np.e
+    x0 = lam + A / (2 * um)
     return (abs(sigmoid_derivative(x0 - 1, A, um, lam)) + 
             abs(sigmoid_derivative(x0 + 1, A, um, lam)) - 1.8 * abs(um))
 
@@ -194,6 +207,22 @@ def fit_single_curve(x_values: np.ndarray, y_values: np.ndarray,
             rmse = np.sqrt(ss_res / len(y_values))
             normalized_rmse = rmse / (y_values.max() - y_values.min())
 
+            t_inflection = lam + A / (2 * um)
+            y_inflection = A / 2
+
+            t10 = time_at_p_effect(0.1, A, um, lam)
+            t50 = time_at_p_effect(0.5, A, um, lam)
+            t90 = time_at_p_effect(0.9, A, um, lam)
+            t_window = t90 - t10
+
+            # Calculate area under the curve (AUC) between curve and x-axis
+            # Use numerical integration over the data range
+            x_min, x_max = x_values.min(), x_values.max()
+            x_integration = np.linspace(x_min, x_max, 1000)
+            y_integration = sigmoid_function(x_integration, A, um, lam)
+            auc = np.trapezoid(y_integration, x_integration)
+
+
             # Calculate additional curve fitting metrics
             # Akaike Information Criterion (AIC)
             n_params = 3  # A, um, lam
@@ -205,7 +234,7 @@ def fit_single_curve(x_values: np.ndarray, y_values: np.ndarray,
             return {
                 'ID': ID,
                 'Status': 'Success',
-                'A': A, 'um': um, 'lam': lam, 'AIC': aic, 'BIC': bic,
+                'A': A, 'um': um, 'lam': lam, 't10': t10, 't50': t50, 't90': t90, 't_window': t_window, 't_inflection': t_inflection, 'y_inflection': y_inflection, 'auc': auc, 'AIC': aic, 'BIC': bic,
                 'R2': r_squared, 'RMSE': rmse, 'normalized_RMSE': normalized_rmse,
             }
         else:
@@ -213,7 +242,7 @@ def fit_single_curve(x_values: np.ndarray, y_values: np.ndarray,
             return {
                 'ID': ID,
                 'Status': 'Optimization failed',
-                'A': np.nan, 'um': np.nan, 'lam': np.nan, 'AIC': np.nan, 'BIC': np.nan,
+                'A': np.nan, 'um': np.nan, 'lam': np.nan, 't10': np.nan, 't50': np.nan, 't90': np.nan, 't_window': np.nan, 't_inflection': np.nan, 'y_inflection': np.nan, 'auc': np.nan, 'AIC': np.nan, 'BIC': np.nan,
                 'R2': np.nan, 'RMSE': np.nan, 'normalized_RMSE': np.nan,
             }
 
@@ -222,7 +251,7 @@ def fit_single_curve(x_values: np.ndarray, y_values: np.ndarray,
         return {
             'ID': ID,
             'Status': 'Fitting error',
-            'A': np.nan, 'um': np.nan, 'lam': np.nan, 'AIC': np.nan, 'BIC': np.nan,
+            'A': np.nan, 'um': np.nan, 'lam': np.nan, 't10': np.nan, 't50': np.nan, 't90': np.nan, 't_window': np.nan, 't_inflection': np.nan, 'y_inflection': np.nan, 'auc': np.nan, 'AIC': np.nan, 'BIC': np.nan,
             'R2': np.nan, 'RMSE': np.nan, 'normalized_RMSE': np.nan,
         }
 
@@ -234,7 +263,7 @@ def create_fitted_plot(ax: plt.Axes, x_values: np.ndarray, y_values: np.ndarray,
     ax.grid(True)
     
     if params['Status'] == 'Success':
-        A, um, lam, AIC, BIC = params['A'], params['um'], params['lam'], params['AIC'], params['BIC'],
+        A, um, lam, t10, t50, t90, t_window, t_inflection, y_inflection, auc, AIC, BIC = params['A'], params['um'], params['lam'], params['t10'], params['t50'], params['t90'], params['t_window'], params['t_inflection'], params['y_inflection'], params['auc'], params['AIC'], params['BIC'],
         
         # Plot data points
         ax.scatter(x_values, y_values, 
@@ -366,6 +395,13 @@ def generate_summary_statistics(results_df: pd.DataFrame) -> SummaryStatistics:
         stats.mean_RMSE = successful_fits['RMSE'].mean()
         stats.mean_A = successful_fits['A'].mean()
         stats.mean_um = successful_fits['um'].mean()
+        stats.mean_t10 = successful_fits['t10'].mean()
+        stats.mean_t50 = successful_fits['t50'].mean()
+        stats.mean_t90 = successful_fits['t90'].mean()
+        stats.mean_t_window = successful_fits['t_window'].mean()
+        stats.mean_t_inflection = successful_fits['t_inflection'].mean()
+        stats.mean_y_inflection = successful_fits['y_inflection'].mean()
+        stats.mean_auc = successful_fits['auc'].mean()
         stats.mean_AIC = successful_fits['AIC'].mean()
         stats.mean_BIC = successful_fits['BIC'].mean()
     
@@ -468,7 +504,7 @@ def main():
     
     # Round numeric columns
     numeric_columns = {
-        'A':3, 'um':3, 'lam':3, 'R2':6, 'RMSE':3, 'normalized_RMSE':6, 'AIC':3, 'BIC':3,
+        'A':3, 'um':3, 'lam':3, 't10':3, 't50':3, 't90':3, 't_window':3, 't_inflection':3, 'y_inflection':3, 'auc':3, 'R2':6, 'RMSE':3, 'normalized_RMSE':6, 'AIC':3, 'BIC':3,
     }
     results_df[list(numeric_columns.keys())] = results_df[list(numeric_columns.keys())].round(numeric_columns)
     

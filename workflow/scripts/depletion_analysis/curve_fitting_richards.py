@@ -76,6 +76,12 @@ class FittingResult(BaseModel):
     RMSE: float = Field(..., description="Root mean square error")
     normalized_RMSE: float = Field(..., description="Normalized RMSE")
     nu: float = Field(..., description="nu parameter")
+    t_inflection: float = Field(..., description="Time of the inflection point")
+    y_inflection: float = Field(..., description="Depletion level at the inflection point")
+    t10: float = Field(..., description="Time to reach 10% of the maximum depletion level")
+    t50: float = Field(..., description="Time to reach 50% of the maximum depletion level")
+    t90: float = Field(..., description="Time to reach 90% of the maximum depletion level")
+    t_window: float = Field(..., description="Time window between t10 and t90")
     AIC: float = Field(..., description="Akaike Information Criterion")
     BIC: float = Field(..., description="Bayesian Information Criterion")
 
@@ -90,6 +96,12 @@ class SummaryStatistics(BaseModel):
     mean_A: Optional[float] = Field(None, description="Mean A parameter")
     mean_um: Optional[float] = Field(None, description="Mean um parameter")
     mean_nu: Optional[float] = Field(None, description="Mean nu parameter")
+    mean_t_inflection: Optional[float] = Field(None, description="Mean t_inflection parameter")
+    mean_y_inflection: Optional[float] = Field(None, description="Mean y_inflection parameter")
+    mean_t10: Optional[float] = Field(None, description="Mean t10 parameter")
+    mean_t50: Optional[float] = Field(None, description="Mean t50 parameter")
+    mean_t90: Optional[float] = Field(None, description="Mean t90 parameter")
+    mean_t_window: Optional[float] = Field(None, description="Mean t_window parameter")
     mean_AIC: Optional[float] = Field(None, description="Mean AIC value")
     mean_BIC: Optional[float] = Field(None, description="Mean BIC value")
 
@@ -110,122 +122,39 @@ def setup_logging(verbose: bool = False) -> None:
 @logger.catch
 def sigmoid_function(x: np.ndarray, A: float, um: float, lam: float, nu: float) -> np.ndarray:
     """Calculate sigmoid function values with numerical stability using richards function."""
-    # Ensure nu is not exactly zero to avoid division by zero
-    if np.isclose(nu, 0):
-        # The limit nu->0 should correspond to Gompertz, but direct calculation is unstable.
-        # Raise error or return NaN or handle as a special case (e.g., call Gompertz).
-        # For now, raise an error to prevent incorrect results.
-        raise ValueError("Richards model parameter 'nu' (v) cannot be zero.")
-        # Alternatively, approximate using a small epsilon:
-        # epsilon = 1e-9 * np.sign(nu) if nu != 0 else 1e-9
-        # nu = epsilon
     if A == 0:
         return np.zeros_like(x)
-
-    # Calculate the term inside the inner exponential's square brackets
-    exponent_arg = (um / A) * (1 + nu)**(1 + 1/nu) * (lam - x)
-    # Clip exponent_arg to prevent overflow/underflow in np.exp
-    exponent_arg = np.clip(exponent_arg, -700, 700) # Adjust bounds if necessary
-
-    # Calculate the term inside the curly braces {}
-    base_term = 1 + nu * np.exp(1 + nu) * np.exp(exponent_arg)
-
-    # Handle potential issues where the base_term is non-positive,
-    # which would lead to complex numbers or errors when raised to power (-1/nu).
-    # Clip to a small positive number.
-    base_term = np.maximum(base_term, 1e-12) # Use a smaller epsilon if needed
-
-    # Calculate the final result
-    try:
-        power_term = base_term**(-1/nu)
-    except OverflowError:
-        # Handle cases where the result might still be too large
-        print(f"Warning: Overflow encountered in Richards model calculation for nu={nu}, base_term={base_term}")
-        # Return NaN or Inf depending on desired behavior
-        power_term = np.inf if -1/nu > 0 else 0
-
-    y = A * power_term
-
-    # Handle potential NaN results if A or power_term resulted in issues
-    if np.isnan(y).any():
-         print(f"Warning: NaN produced in Richards model calculation for nu={nu}")
-
-    return y
+    z = (um/A) * ((1+nu)**(1 + 1/nu)) * (lam - x)
+    u = (1 + nu) + z
+    exponent = np.clip(u, -700, 700)
+    return A * (1 + nu * np.exp(exponent))**(-1/nu)
 
 
 @logger.catch
 def sigmoid_derivative(x: np.ndarray, A: float, um: float, lam: float, nu: float) -> np.ndarray:
     """Calculate derivative of sigmoid function using richards function."""
-    # Ensure nu is not exactly zero
-    if np.isclose(nu, 0):
-        raise ValueError("Richards model derivative parameter 'nu' cannot be zero.")
+        # First compute the factor in the exponent
+    z = (um/A) * ((1+nu)**(1 + 1/nu)) * (lam - x)
+    # Compute exponential term
+    exp_term = np.exp((1 + nu) + z)
+    # Compute denominator base
+    denom_base = 1 + nu * exp_term
+    # Compute the derivative
+    derivative = um * ((1+nu)**(1 + 1/nu)) * exp_term * (denom_base**(-1/nu - 1))
+    
+    return derivative
 
-    # Handle A = 0 case
-    if np.isclose(A, 0):
-        # If A=0, model output y is always 0, so derivative is 0.
-        # Ensure output shape matches input x if x is an array.
-        return np.zeros_like(np.asarray(x), dtype=float)
-
-    # Calculate y using the original richards_model function
-    # This assumes richards_model handles its own numerical stability (like nu=-1 limit)
-    y = sigmoid_function(x, A, um, lam, nu)
-
-    # Handle the special case limit nu -> -1
-    if np.isclose(nu, -1.0):
-        # In the limit nu -> -1, the derivative becomes um * (1 - y/A)
-        # This assumes richards_model correctly computes y in the limit nu -> -1
-        y_over_A = y / A
-        dydx = um * (1 - y_over_A)
-        return dydx
-
-    # Proceed with the general formula for nu != 0 and nu != -1
-
-    # Calculate the factor involving nu: (1+nu)**(1+1/nu)
-    # This requires 1+nu > 0, which richards_model should also enforce
-    base_power = 1 + nu
-    if base_power <= 0:
-         # This case should ideally be caught by richards_model, but check again.
-         raise ValueError("Richards model requires 1+nu > 0 for real-valued results.")
-    # Handle limit nu -> -1 for this factor was implicitly done above.
-    # If nu is not close to -1, calculate normally.
-    nu_term_factor = base_power**(1 + 1/nu)
-
-    # Calculate the terms involving y/A
-    y_over_A = y / A
-
-    # Clip y/A slightly away from 0 to avoid issues with (y/A)**nu when y=0 and nu<0
-    # Model typically has 0 <= y <= A, so 0 <= y/A <= 1
-    y_over_A_clipped = np.maximum(y_over_A, 1e-12) # Prevent log(0) or 0**negative
-
-    try:
-        # Calculate (y/A)**nu
-        y_over_A_pow_nu = y_over_A_clipped**nu
-    except ValueError as e:
-        # Should not happen if y_over_A is positive due to clipping/model behavior
-        print(f"Warning: ValueError calculating (y/A)**nu: {e}")
-        # Decide error handling: return NaN or raise error
-        return np.full_like(np.asarray(x), np.nan)
-    except OverflowError:
-         print(f"Warning: OverflowError calculating (y/A)**nu for y/A={y_over_A}, nu={nu}")
-         # Decide error handling: return Inf or NaN
-         return np.full_like(np.asarray(x), np.nan)
-
-
-    # Calculate the derivative using the formula
-    # dydx = (um/nu) * nu_term_factor * (y/A) * (1 - (y/A)**nu)
-    term1 = um / nu
-    term2 = nu_term_factor
-    term3 = y_over_A # Use original y/A here, not clipped one
-    term4 = 1 - y_over_A_pow_nu
-
-    dydx = term1 * term2 * term3 * term4
-
-    # Final check for NaNs that might have slipped through
-    if np.isnan(dydx).any():
-        print(f"Warning: NaN produced in Richards derivative final calculation for nu={nu}")
-
-    return dydx
-
+@logger.catch
+def time_at_p_effect(p: float, A: float, um: float, lam: float, nu: float) -> float:
+    """Calculate the time at which the function reaches p proportion of its maximum effect."""
+    # Calculate the exponent term
+    exponent = -(1 + 1/nu)
+    power_term = (1 + nu) ** exponent
+    
+    # Calculate the logarithm term
+    log_term = np.log(p**(-nu) - 1) - np.log(nu) - (1 + nu)
+    
+    return lam - (A / um) * power_term * log_term
 
 @logger.catch
 def objective_function(params: List[float], x: np.ndarray, y: np.ndarray, 
@@ -255,7 +184,7 @@ def constraint_function1(params: List[float], t_last: float) -> float:
 def constraint_function2(params: List[float]) -> float:
     """Constraint to ensure smooth curve behavior."""
     A, um, lam, nu = params
-    x0 = lam + A / um / np.e
+    x0 = lam + A / um * ((1 + nu)**(-1/nu))
     return (abs(sigmoid_derivative(x0 - 1, A, um, lam, nu)) + 
             abs(sigmoid_derivative(x0 + 1, A, um, lam, nu)) - 1.8 * abs(um))
 
@@ -289,6 +218,14 @@ def fit_single_curve(x_values: np.ndarray, y_values: np.ndarray,
             rmse = np.sqrt(ss_res / len(y_values))
             normalized_rmse = rmse / (y_values.max() - y_values.min())
 
+            t_inflection = lam + A / um * ((1 + nu)**(-1/nu))
+            y_inflection = A * ((1 + nu)**(-1/nu))
+
+            t10 = time_at_p_effect(0.1, A, um, lam, nu)
+            t50 = time_at_p_effect(0.5, A, um, lam, nu)
+            t90 = time_at_p_effect(0.9, A, um, lam, nu)
+            t_window = t90 - t10
+
             # Calculate additional curve fitting metrics
             # Akaike Information Criterion (AIC)
             n_params = 4  # A, um, lam, nu
@@ -300,7 +237,7 @@ def fit_single_curve(x_values: np.ndarray, y_values: np.ndarray,
             return {
                 'ID': ID,
                 'Status': 'Success',
-                'A': A, 'um': um, 'lam': lam, 'nu': nu, 'AIC': aic, 'BIC': bic,
+                'A': A, 'um': um, 'lam': lam, 'nu': nu, 't_inflection': t_inflection, 'y_inflection': y_inflection, 't10': t10, 't50': t50, 't90': t90, 't_window': t_window, 'AIC': aic, 'BIC': bic,
                 'R2': r_squared, 'RMSE': rmse, 'normalized_RMSE': normalized_rmse,
             }
         else:
@@ -308,7 +245,7 @@ def fit_single_curve(x_values: np.ndarray, y_values: np.ndarray,
             return {
                 'ID': ID,
                 'Status': 'Optimization failed',
-                'A': np.nan, 'um': np.nan, 'lam': np.nan, 'nu': np.nan, 'AIC': np.nan, 'BIC': np.nan,
+                'A': np.nan, 'um': np.nan, 'lam': np.nan, 'nu': np.nan, 't_inflection': np.nan, 'y_inflection': np.nan, 't10': np.nan, 't50': np.nan, 't90': np.nan, 't_window': np.nan, 'AIC': np.nan, 'BIC': np.nan,
                 'R2': np.nan, 'RMSE': np.nan, 'normalized_RMSE': np.nan,
             }
 
@@ -317,7 +254,7 @@ def fit_single_curve(x_values: np.ndarray, y_values: np.ndarray,
         return {
             'ID': ID,
             'Status': 'Fitting error',
-            'A': np.nan, 'um': np.nan, 'lam': np.nan, 'nu': np.nan, 'AIC': np.nan, 'BIC': np.nan,
+            'A': np.nan, 'um': np.nan, 'lam': np.nan, 'nu': np.nan, 't_inflection': np.nan, 'y_inflection': np.nan, 't10': np.nan, 't50': np.nan, 't90': np.nan, 't_window': np.nan, 'AIC': np.nan, 'BIC': np.nan,
             'R2': np.nan, 'RMSE': np.nan, 'normalized_RMSE': np.nan,
         }
 
@@ -329,7 +266,7 @@ def create_fitted_plot(ax: plt.Axes, x_values: np.ndarray, y_values: np.ndarray,
     ax.grid(True)
     
     if params['Status'] == 'Success':
-        A, um, lam, nu, AIC, BIC = params['A'], params['um'], params['lam'], params['nu'], params['AIC'], params['BIC'],
+        A, um, lam, nu, t_inflection, y_inflection, t10, t50, t90, t_window, AIC, BIC = params['A'], params['um'], params['lam'], params['nu'], params['t_inflection'], params['y_inflection'], params['t10'], params['t50'], params['t90'], params['t_window'], params['AIC'], params['BIC'],
         
         # Plot data points
         ax.scatter(x_values, y_values, 
@@ -462,6 +399,12 @@ def generate_summary_statistics(results_df: pd.DataFrame) -> SummaryStatistics:
         stats.mean_A = successful_fits['A'].mean()
         stats.mean_um = successful_fits['um'].mean()
         stats.mean_nu = successful_fits['nu'].mean()
+        stats.mean_t_inflection = successful_fits['t_inflection'].mean()
+        stats.mean_y_inflection = successful_fits['y_inflection'].mean()
+        stats.mean_t10 = successful_fits['t10'].mean()
+        stats.mean_t50 = successful_fits['t50'].mean()
+        stats.mean_t90 = successful_fits['t90'].mean()
+        stats.mean_t_window = successful_fits['t_window'].mean()
         stats.mean_AIC = successful_fits['AIC'].mean()
         stats.mean_BIC = successful_fits['BIC'].mean()
     
@@ -564,7 +507,7 @@ def main():
     
     # Round numeric columns
     numeric_columns = {
-        'A':3, 'um':3, 'lam':3, 'nu':3, 'R2':6, 'RMSE':3, 'normalized_RMSE':6, 'AIC':3, 'BIC':3,
+        'A':3, 'um':3, 'lam':3, 'nu':3, 't_inflection':3, 'y_inflection':3, 't10':3, 't50':3, 't90':3, 't_window':3, 'R2':6, 'RMSE':3, 'normalized_RMSE':6, 'AIC':3, 'BIC':3,
     }
     results_df[list(numeric_columns.keys())] = results_df[list(numeric_columns.keys())].round(numeric_columns)
     
