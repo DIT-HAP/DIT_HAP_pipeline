@@ -4,7 +4,7 @@ rule control_insertion_selection:
         counts_df = rules.hard_filtering.output,
         annotation_df = rules.concat_counts_and_annotations.output.annotations
     output:
-        protected(f"results/{project_name}/13_filtered/control_insertions.tsv")
+        f"results/{project_name}/13_filtered/control_insertions.tsv"
     log:
         f"logs/{project_name}/depletion_analysis/control_insertion_selection.log"
     conda:

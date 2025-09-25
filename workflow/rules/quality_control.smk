@@ -193,13 +193,13 @@ rule insertion_density_analysis:
         annotation = rules.concat_counts_and_annotations.output.annotations
     output:
         table = report(
-            f"reports/{project_name}/insertion_density_analysis/insertion_density_analysis.csv",
+            f"reports/{project_name}/insertion_density_analysis/insertion_density_analysis.tsv",
             category="Quality Control",
             subcategory="Density Analysis",
             labels={
                 "type": "Statistics Table",
                 "stage": "Insertion Analysis",
-                "format": "CSV",
+                "format": "TSV",
                 "metric": "Insertion Density"
             }
         ),

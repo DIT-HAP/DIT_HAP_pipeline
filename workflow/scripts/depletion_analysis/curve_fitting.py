@@ -34,6 +34,9 @@ plt.style.use("/data/c/yangyusheng_optimized/DIT_HAP_pipeline/config/DIT_HAP.mpl
 AX_WIDTH, AX_HEIGHT = plt.rcParams['figure.figsize']
 COLORS = plt.rcParams['axes.prop_cycle'].by_key()['color']
 
+LAM_PENALTY = 6e-3
+TOL = 2e-6
+
 
 # =============================== Configuration & Models ===============================
 class CurveFittingConfig(BaseModel):
@@ -135,12 +138,13 @@ def sigmoid_derivative(x: np.ndarray, A: float, um: float, lam: float) -> np.nda
     """Calculate derivative of sigmoid function using gompertz function."""
     alpha = (um * np.e) / A
     u = alpha * (lam - x) + 1
-    return A * alpha * np.exp(u - np.exp(u))
+    exponent = np.clip(u, -700, 700)
+    return A * alpha * np.exp(exponent - np.exp(exponent))
 
 @logger.catch
 def time_at_p_effect(p: float, A: float, um: float, lam: float) -> float:
     """Calculate the time at which the function reaches p proportion of its maximum effect."""
-    return lam - (A / (um * np.e)) * (np.log(-np.log(p)) - 1)
+    return lam - (abs(A) / (abs(um) * np.e)) * (np.log(-np.log(p)) - 1)
 
 
 @logger.catch
@@ -156,7 +160,7 @@ def objective_function(params: List[float], x: np.ndarray, y: np.ndarray,
     rho_z = np.where(z <= 1, z, 2 * np.sqrt(z) - 1)
     
     # Add L1 regularization to lam
-    lam_penalty = 6e-3 * abs(lam)
+    lam_penalty = LAM_PENALTY * abs(lam)
     return np.sum(rho_z) + lam_penalty
 
 
@@ -172,8 +176,9 @@ def constraint_function2(params: List[float]) -> float:
     """Constraint to ensure smooth curve behavior."""
     A, um, lam = params
     x0 = lam + A / um / np.e
-    return (abs(sigmoid_derivative(x0 - 1, A, um, lam)) + 
-            abs(sigmoid_derivative(x0 + 1, A, um, lam)) - 1.8 * abs(um))
+    val1 = float(np.abs(sigmoid_derivative(np.array([x0 - 1]), A, um, lam))[0])
+    val2 = float(np.abs(sigmoid_derivative(np.array([x0 + 1]), A, um, lam))[0])
+    return (val1 + val2 - 1.8 * abs(um))
 
 
 @logger.catch
@@ -193,7 +198,7 @@ def fit_single_curve(x_values: np.ndarray, y_values: np.ndarray,
             bounds=((-1, t_last), (-1, np.inf), (-1e-6, t_last)),
             constraints=constraints,
             options={'maxiter': 3000, 'disp': False},
-            tol=1e-4
+            tol=TOL
         )
 
         if result.success:
@@ -205,7 +210,7 @@ def fit_single_curve(x_values: np.ndarray, y_values: np.ndarray,
             rmse = np.sqrt(ss_res / len(y_values))
             normalized_rmse = rmse / (y_values.max() - y_values.min())
 
-            t_inflection = lam + A / (um * np.e)
+            t_inflection = lam + abs(A) / (abs(um) * np.e)
             y_inflection = A / np.e
 
             t10 = time_at_p_effect(0.1, A, um, lam)
@@ -260,7 +265,7 @@ def create_fitted_plot(ax: plt.Axes, x_values: np.ndarray, y_values: np.ndarray,
     ax.grid(True)
     
     if params['Status'] == 'Success':
-        A, um, lam, t10, t50, t90, t_window, t_inflection, y_inflection, auc, AIC, BIC = params['A'], params['um'], params['lam'], params['t10'], params['t50'], params['t90'], params['t_window'], params['t_inflection'], params['y_inflection'], params['auc'], params['AIC'], params['BIC'],
+        A, um, lam, _, _, _, _, _, _, _, AIC, BIC = params['A'], params['um'], params['lam'], params['t10'], params['t50'], params['t90'], params['t_window'], params['t_inflection'], params['y_inflection'], params['auc'], params['AIC'], params['BIC'],
         
         # Plot data points
         ax.scatter(x_values, y_values, 
@@ -523,7 +528,7 @@ def main():
     
     # Generate plots
     output_plot = config.output_file.with_suffix('.pdf').with_name(config.output_file.stem + '_fitted_curves.pdf')
-    # generate_fitting_plots(results_df, x_values, y_values, output_plot)
+    generate_fitting_plots(results_df, x_values, y_values, output_plot)
     
     # Calculate and display statistics
     stats = generate_summary_statistics(results_df)

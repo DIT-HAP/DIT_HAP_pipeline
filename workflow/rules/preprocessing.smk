@@ -7,8 +7,8 @@ rule fastp_preprocessing:
     output:
         fq1=temp(f"results/{project_name}/1_fastp/{{sample}}_{{timepoint}}_{{condition}}.fastp_1.fq.gz"),
         fq2=temp(f"results/{project_name}/1_fastp/{{sample}}_{{timepoint}}_{{condition}}.fastp_2.fq.gz"),
-        html=protected(f"reports/{project_name}/fastp/{{sample}}_{{timepoint}}_{{condition}}.fastp.html"),
-        json=protected(f"reports/{project_name}/fastp/{{sample}}_{{timepoint}}_{{condition}}.fastp.json")
+        html=f"reports/{project_name}/fastp/{{sample}}_{{timepoint}}_{{condition}}.fastp.html",
+        json=f"reports/{project_name}/fastp/{{sample}}_{{timepoint}}_{{condition}}.fastp.json"
     log:
         f"logs/{project_name}/preprocessing/fastp/{{sample}}_{{timepoint}}_{{condition}}.log"
     conda:
@@ -47,7 +47,7 @@ rule demultiplexing:
         PBL_r2=temp(f"results/{project_name}/2_demultiplexed/{{sample}}_{{timepoint}}_{{condition}}.PBL_2.fq.gz"),
         PBR_r1=temp(f"results/{project_name}/2_demultiplexed/{{sample}}_{{timepoint}}_{{condition}}.PBR_1.fq.gz"),
         PBR_r2=temp(f"results/{project_name}/2_demultiplexed/{{sample}}_{{timepoint}}_{{condition}}.PBR_2.fq.gz"),
-        json=protected(f"reports/{project_name}/demultiplexing/{{sample}}_{{timepoint}}_{{condition}}.json"),
+        json=f"reports/{project_name}/demultiplexing/{{sample}}_{{timepoint}}_{{condition}}.json",
     log:
         f"logs/{project_name}/preprocessing/demultiplexing/{{sample}}_{{timepoint}}_{{condition}}.log"
     conda:
@@ -86,14 +86,14 @@ rule fastqc_demultiplexed:
         PBR_r2=rules.demultiplexing.output.PBR_r2
     output:
         # Explicitly specify output files for better dependency tracking
-        PBL_r1_html=protected(f"reports/{project_name}/fastqc/{{sample}}_{{timepoint}}_{{condition}}.PBL_1_fastqc.html"),
-        PBL_r1_zip=protected(f"reports/{project_name}/fastqc/{{sample}}_{{timepoint}}_{{condition}}.PBL_1_fastqc.zip"),
-        PBL_r2_html=protected(f"reports/{project_name}/fastqc/{{sample}}_{{timepoint}}_{{condition}}.PBL_2_fastqc.html"),
-        PBL_r2_zip=protected(f"reports/{project_name}/fastqc/{{sample}}_{{timepoint}}_{{condition}}.PBL_2_fastqc.zip"),
-        PBR_r1_html=protected(f"reports/{project_name}/fastqc/{{sample}}_{{timepoint}}_{{condition}}.PBR_1_fastqc.html"),
-        PBR_r1_zip=protected(f"reports/{project_name}/fastqc/{{sample}}_{{timepoint}}_{{condition}}.PBR_1_fastqc.zip"),
-        PBR_r2_html=protected(f"reports/{project_name}/fastqc/{{sample}}_{{timepoint}}_{{condition}}.PBR_2_fastqc.html"),
-        PBR_r2_zip=protected(f"reports/{project_name}/fastqc/{{sample}}_{{timepoint}}_{{condition}}.PBR_2_fastqc.zip")
+        PBL_r1_html=f"reports/{project_name}/fastqc/{{sample}}_{{timepoint}}_{{condition}}.PBL_1_fastqc.html",
+        PBL_r1_zip=f"reports/{project_name}/fastqc/{{sample}}_{{timepoint}}_{{condition}}.PBL_1_fastqc.zip",
+        PBL_r2_html=f"reports/{project_name}/fastqc/{{sample}}_{{timepoint}}_{{condition}}.PBL_2_fastqc.html",
+        PBL_r2_zip=f"reports/{project_name}/fastqc/{{sample}}_{{timepoint}}_{{condition}}.PBL_2_fastqc.zip",
+        PBR_r1_html=f"reports/{project_name}/fastqc/{{sample}}_{{timepoint}}_{{condition}}.PBR_1_fastqc.html",
+        PBR_r1_zip=f"reports/{project_name}/fastqc/{{sample}}_{{timepoint}}_{{condition}}.PBR_1_fastqc.zip",
+        PBR_r2_html=f"reports/{project_name}/fastqc/{{sample}}_{{timepoint}}_{{condition}}.PBR_2_fastqc.html",
+        PBR_r2_zip=f"reports/{project_name}/fastqc/{{sample}}_{{timepoint}}_{{condition}}.PBR_2_fastqc.zip"
     log:
         f"logs/{project_name}/preprocessing/fastqc/{{sample}}_{{timepoint}}_{{condition}}_fastqc_demultiplexed.log"
     conda:
@@ -160,10 +160,10 @@ rule samtools_sorting_and_indexing:
         PBR=rules.bwa_mem_mapping.output.PBR,
         ref_index=rules.samtools_faidx.output[0].format(release_version=config["Pombase_release_version"])
     output:
-        PBL_sorted=protected(f"results/{project_name}/4_sorted/{{sample}}_{{timepoint}}_{{condition}}.PBL.sorted.bam"),
-        PBR_sorted=protected(f"results/{project_name}/4_sorted/{{sample}}_{{timepoint}}_{{condition}}.PBR.sorted.bam"),
-        PBL_index=protected(f"results/{project_name}/4_sorted/{{sample}}_{{timepoint}}_{{condition}}.PBL.sorted.bam.bai"),
-        PBR_index=protected(f"results/{project_name}/4_sorted/{{sample}}_{{timepoint}}_{{condition}}.PBR.sorted.bam.bai")
+        PBL_sorted=f"results/{project_name}/4_sorted/{{sample}}_{{timepoint}}_{{condition}}.PBL.sorted.bam",
+        PBR_sorted=f"results/{project_name}/4_sorted/{{sample}}_{{timepoint}}_{{condition}}.PBR.sorted.bam",
+        PBL_index=f"results/{project_name}/4_sorted/{{sample}}_{{timepoint}}_{{condition}}.PBL.sorted.bam.bai",
+        PBR_index=f"results/{project_name}/4_sorted/{{sample}}_{{timepoint}}_{{condition}}.PBR.sorted.bam.bai"
     log:
         f"logs/{project_name}/preprocessing/samtools_sorting_and_indexing/{{sample}}_{{timepoint}}_{{condition}}.log"
     conda:
@@ -191,12 +191,12 @@ rule samtools_mapping_statistics:
         PBL=rules.samtools_sorting_and_indexing.output.PBL_sorted,
         PBR=rules.samtools_sorting_and_indexing.output.PBR_sorted
     output:
-        PBL_stats=protected(f"reports/{project_name}/samtools_mapping_statistics/{{sample}}_{{timepoint}}_{{condition}}.PBL.stats.txt"),
-        PBR_stats=protected(f"reports/{project_name}/samtools_mapping_statistics/{{sample}}_{{timepoint}}_{{condition}}.PBR.stats.txt"),
-        PBL_flagstat=protected(f"reports/{project_name}/samtools_mapping_statistics/{{sample}}_{{timepoint}}_{{condition}}.PBL.flagstat.txt"),
-        PBR_flagstat=protected(f"reports/{project_name}/samtools_mapping_statistics/{{sample}}_{{timepoint}}_{{condition}}.PBR.flagstat.txt"),
-        PBL_idxstats=protected(f"reports/{project_name}/samtools_mapping_statistics/{{sample}}_{{timepoint}}_{{condition}}.PBL.idxstats.txt"),
-        PBR_idxstats=protected(f"reports/{project_name}/samtools_mapping_statistics/{{sample}}_{{timepoint}}_{{condition}}.PBR.idxstats.txt")
+        PBL_stats=f"reports/{project_name}/samtools_mapping_statistics/{{sample}}_{{timepoint}}_{{condition}}.PBL.stats.txt",
+        PBR_stats=f"reports/{project_name}/samtools_mapping_statistics/{{sample}}_{{timepoint}}_{{condition}}.PBR.stats.txt",
+        PBL_flagstat=f"reports/{project_name}/samtools_mapping_statistics/{{sample}}_{{timepoint}}_{{condition}}.PBL.flagstat.txt",
+        PBR_flagstat=f"reports/{project_name}/samtools_mapping_statistics/{{sample}}_{{timepoint}}_{{condition}}.PBR.flagstat.txt",
+        PBL_idxstats=f"reports/{project_name}/samtools_mapping_statistics/{{sample}}_{{timepoint}}_{{condition}}.PBL.idxstats.txt",
+        PBR_idxstats=f"reports/{project_name}/samtools_mapping_statistics/{{sample}}_{{timepoint}}_{{condition}}.PBR.idxstats.txt"
     log:
         f"logs/{project_name}/preprocessing/samtools_mapping_statistics/{{sample}}_{{timepoint}}_{{condition}}.log"
     conda:
@@ -223,8 +223,8 @@ rule bam_to_tsv:
         PBL=rules.bwa_mem_mapping.output.PBL,
         PBR=rules.bwa_mem_mapping.output.PBR
     output:
-        PBL_tsv=protected(f"results/{project_name}/5_tabulated/{{sample}}_{{timepoint}}_{{condition}}.PBL.tsv"),
-        PBR_tsv=protected(f"results/{project_name}/5_tabulated/{{sample}}_{{timepoint}}_{{condition}}.PBR.tsv"),
+        PBL_tsv=f"results/{project_name}/5_tabulated/{{sample}}_{{timepoint}}_{{condition}}.PBL.tsv",
+        PBR_tsv=f"results/{project_name}/5_tabulated/{{sample}}_{{timepoint}}_{{condition}}.PBR.tsv",
     log:
         f"logs/{project_name}/preprocessing/bam_to_tsv/{{sample}}_{{timepoint}}_{{condition}}.log"
     conda:
@@ -249,8 +249,8 @@ rule filter_aligned_reads:
         PBL_tsv=rules.bam_to_tsv.output.PBL_tsv,
         PBR_tsv=rules.bam_to_tsv.output.PBR_tsv
     output:
-        PBL_filtered=protected(f"results/{project_name}/6_filtered/{{sample}}_{{timepoint}}_{{condition}}.PBL.filtered.tsv"),
-        PBR_filtered=protected(f"results/{project_name}/6_filtered/{{sample}}_{{timepoint}}_{{condition}}.PBR.filtered.tsv")
+        PBL_filtered=f"results/{project_name}/6_filtered/{{sample}}_{{timepoint}}_{{condition}}.PBL.filtered.tsv",
+        PBR_filtered=f"results/{project_name}/6_filtered/{{sample}}_{{timepoint}}_{{condition}}.PBR.filtered.tsv"
     log:
         f"logs/{project_name}/preprocessing/filter_aligned_reads/{{sample}}_{{timepoint}}_{{condition}}.log"
     conda:
@@ -279,8 +279,8 @@ rule extract_insertion_sites:
         PBL_filtered=rules.filter_aligned_reads.output.PBL_filtered,
         PBR_filtered=rules.filter_aligned_reads.output.PBR_filtered
     output:
-        PBL_insertions=protected(f"results/{project_name}/7_insertions/{{sample}}_{{timepoint}}_{{condition}}.PBL.tsv"),
-        PBR_insertions=protected(f"results/{project_name}/7_insertions/{{sample}}_{{timepoint}}_{{condition}}.PBR.tsv")
+        PBL_insertions=f"results/{project_name}/7_insertions/{{sample}}_{{timepoint}}_{{condition}}.PBL.tsv",
+        PBR_insertions=f"results/{project_name}/7_insertions/{{sample}}_{{timepoint}}_{{condition}}.PBR.tsv"
     log:
         f"logs/{project_name}/preprocessing/extract_insertion_sites/{{sample}}_{{timepoint}}_{{condition}}.log"
     conda:
@@ -304,7 +304,7 @@ rule merge_strand_insertions:
         PBL_insertions=rules.extract_insertion_sites.output.PBL_insertions,
         PBR_insertions=rules.extract_insertion_sites.output.PBR_insertions
     output:
-        protected(f"results/{project_name}/8_merged/{{sample}}_{{timepoint}}_{{condition}}.tsv")
+        f"results/{project_name}/8_merged/{{sample}}_{{timepoint}}_{{condition}}.tsv"
     log:
         f"logs/{project_name}/preprocessing/merge_strand_insertions/{{sample}}_{{timepoint}}_{{condition}}.log"
     conda:
@@ -326,9 +326,9 @@ rule concat_timepoints:
         counts = lambda wildcards: expand(rules.merge_strand_insertions.output, sample=wildcards.sample, timepoint=timepoints, condition=wildcards.condition),
         ref = rules.download_pombase_data.output.fasta.format(release_version=config["Pombase_release_version"])
     output:
-        PBL = protected(f"results/{project_name}/9_concatenated/{{sample}}_{{condition}}.PBL.tsv"),
-        PBR = protected(f"results/{project_name}/9_concatenated/{{sample}}_{{condition}}.PBR.tsv"),
-        Reads = protected(f"results/{project_name}/9_concatenated/{{sample}}_{{condition}}.Reads.tsv")
+        PBL = f"results/{project_name}/9_concatenated/{{sample}}_{{condition}}.PBL.tsv",
+        PBR = f"results/{project_name}/9_concatenated/{{sample}}_{{condition}}.PBR.tsv",
+        Reads = f"results/{project_name}/9_concatenated/{{sample}}_{{condition}}.Reads.tsv"
     log:
         f"logs/{project_name}/preprocessing/concat_timepoints/{{sample}}_{{condition}}.log"
     conda:
@@ -354,7 +354,7 @@ rule annotate_insertions:
         insertions=rules.concat_timepoints.output.Reads,
         genome_region=rules.extract_genome_region.output.genome_intervals_bed.format(release_version=config["Pombase_release_version"])
     output:
-        protected(f"results/{project_name}/10_annotated/{{sample}}_{{condition}}.annotated.tsv")
+        f"results/{project_name}/10_annotated/{{sample}}_{{condition}}.annotated.tsv"
     log:
         f"logs/{project_name}/preprocessing/annotate_insertions/{{sample}}_{{condition}}.log"
     conda:
@@ -373,7 +373,7 @@ if config["merge_similar_timepoints"]:
         input:
             rules.concat_timepoints.output.Reads
         output:
-            protected(f"results/{project_name}/11_merged/{{sample}}_{{condition}}.merged.tsv")
+            f"results/{project_name}/11_merged/{{sample}}_{{condition}}.merged.tsv"
         log:
             f"logs/{project_name}/preprocessing/merge_similar_timepoints/{{sample}}_{{condition}}.log"
         params:
@@ -414,8 +414,8 @@ rule concat_counts_and_annotations:
         ),
         annotations = expand(rules.annotate_insertions.output, sample=samples, condition=conditions)
     output:
-        counts = protected(f"results/{project_name}/12_concatenated/raw_reads.tsv"),
-        annotations = protected(f"results/{project_name}/12_concatenated/annotations.tsv")
+        counts = f"results/{project_name}/12_concatenated/raw_reads.tsv",
+        annotations = f"results/{project_name}/12_concatenated/annotations.tsv"
     log:
         f"logs/{project_name}/preprocessing/concat_counts_and_annotations.log"
     conda:
@@ -460,7 +460,7 @@ rule hard_filtering:
     input:
         rules.concat_counts_and_annotations.output.counts
     output:
-        protected(f"results/{project_name}/13_filtered/raw_reads.filtered.tsv")
+        f"results/{project_name}/13_filtered/raw_reads.filtered.tsv"
     log:
         f"logs/{project_name}/preprocessing/hard_filtering.log"
     conda:

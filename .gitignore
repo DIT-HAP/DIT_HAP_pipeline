@@ -13,5 +13,8 @@ workflow/notebooks/.ipynb_checkpoints/**
 **/.RData
 **/Rplots.pdf
 tmp
+experiments/*/__pycache__
+experiments/*/mlruns
+experiments/*/results
 
 

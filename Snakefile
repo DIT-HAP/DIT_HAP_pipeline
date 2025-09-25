@@ -11,9 +11,11 @@ min_version("8.0")
 
 # load configuration
 # -----------------------------------------------------
-snakemake_config_file="config/config_1328_spore2YES6.yaml"
+snakemake_config_file="config/config_HD_generationPLUS1.yaml"
 # snakemake_config_file="config/config_LD_generationPLUS1.yaml"
+# snakemake_config_file="config/config_1328_spore2YES6.yaml"
 # snakemake_config_file="config/config_LD_haploid.yaml"
+# snakemake_config_file="config/config_HD_diploid.yaml"
 configfile: snakemake_config_file
 workdir: "/data/c/yangyusheng_optimized/DIT_HAP_pipeline"
 
@@ -62,13 +64,14 @@ wildcard_constraints:
 # -----------------------------------------------------
 rule all:
     input:
-        f"results/{project_name}/17_gene_level_curve_fitting/Gene_level_statistics_fitted.tsv",
+        f"results/{project_name}/15_insertion_level_curve_fitting/insertion_level_fitting_statistics.tsv",
+        f"results/{project_name}/17_gene_level_curve_fitting/gene_level_fitting_statistics.tsv",
         f"reports/{project_name}/multiqc/quality_control_multiqc_report.html",
         f"reports/{project_name}/mapping_filtering_statistics/mapping_filtering_statistics.tsv",
         f"reports/{project_name}/PBL_PBR_correlation_analysis/PBL_PBR_correlation_analysis.pdf",
         f"reports/{project_name}/read_count_distribution_analysis/read_count_distribution_analysis.pdf",
         f"reports/{project_name}/insertion_orientation_analysis/insertion_orientation_analysis.pdf",
-        f"reports/{project_name}/insertion_density_analysis/insertion_density_analysis.csv",
+        f"reports/{project_name}/insertion_density_analysis/insertion_density_analysis.tsv",
         f"reports/{project_name}/depletion_LFC_and_curve_features_analysis/insertion_level_depletion_LFC_and_curve_features_analysis.pdf",
         f"reports/{project_name}/depletion_LFC_and_curve_features_analysis/gene_level_depletion_and_curve_features_analysis.pdf",
         f"reports/{project_name}/gene_coverage_analysis"
