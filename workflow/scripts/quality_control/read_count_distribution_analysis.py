@@ -31,7 +31,8 @@ from loguru import logger
 from pydantic import BaseModel, Field, field_validator
 
 # =============================== Constants ===============================
-plt.style.use('/data/c/yangyusheng_optimized/DIT_HAP_pipeline/config/DIT_HAP.mplstyle')
+SCRIPT_DIR = Path(__file__).parent.resolve()
+plt.style.use(SCRIPT_DIR / "../../../config/DIT_HAP.mplstyle")
 AX_WIDTH, AX_HEIGHT = plt.rcParams['figure.figsize']
 COLORS = plt.rcParams['axes.prop_cycle'].by_key()['color']
 
@@ -167,15 +168,16 @@ def create_distribution_plot(df: pd.DataFrame, filename: str, initial_time_point
     
     num_subplots = len(numeric_cols)
     fig, axes = plt.subplots(
-        1, num_subplots,
-        figsize=(num_subplots * AX_WIDTH, AX_HEIGHT),
+        num_subplots, 1,
+        figsize=(AX_WIDTH, num_subplots * AX_HEIGHT),
+        sharex=True,
         sharey=True
     )
     if num_subplots == 1:
         axes = [axes]
     
     fig.suptitle(
-        f"Value Distributions: {filename}\\nInitial Time Point: '{initial_time_point_col}', Cutoff >= {cutoff_val}"
+        f"Value Distributions: {filename}\nInitial Time Point: '{initial_time_point_col}', Cutoff >= {cutoff_val}", y=1.01
     )
     
     max_y_val = 0
@@ -184,6 +186,8 @@ def create_distribution_plot(df: pd.DataFrame, filename: str, initial_time_point
         ax = axes[i]
         col_data = df[col_name].dropna()
         positive_col_data = col_data[col_data > 0]
+        ax.set_xlabel('Log10(Value)')
+        ax.set_ylabel('Frequency')
         
         if positive_col_data.empty:
             ax.text(0.5, 0.5, 'No positive data', ha='center', va='center', transform=ax.transAxes)
@@ -198,15 +202,7 @@ def create_distribution_plot(df: pd.DataFrame, filename: str, initial_time_point
                 max_y_val = max(max_y_val, hist_counts.max())
         
         ax.set_title(col_name)
-        
-        if not log_col_data_for_plot.empty:
-            tick_locator = mticker.MaxNLocator(nbins=5, prune='both')
-            log_ticks = tick_locator.tick_values(log_col_data_for_plot.min(), log_col_data_for_plot.max())
-            ax.set_xticks(log_ticks)
-            ax.set_xticklabels([f"{10**val:.1e}" for val in log_ticks], rotation=45, ha="right")
-        else:
-            ax.set_xticks([])
-            ax.set_xticklabels([])
+        ax.tick_params(axis='both', which='major', labelsize=10, labelbottom=True, labelleft=True, bottom=True, left=True)
         
         if col_name == initial_time_point_col:
             if cutoff_val > 0:
@@ -223,16 +219,6 @@ def create_distribution_plot(df: pd.DataFrame, filename: str, initial_time_point
                     ax.legend(frameon=False)
             else:
                 logger.warning(f"Cutoff value ({cutoff_val}) for {initial_time_point_col} is not positive")
-        
-        if i > 0:
-            ax.set_yticklabels([])
-    
-    for ax_idx, ax in enumerate(axes):
-        ax.set_ylim(0, max_y_val * 1.15 if max_y_val > 0 else 1)
-        if ax_idx == 0:
-            ax.set_ylabel('Frequency')
-        ax.set_xlabel('Value (Original Scale)')
-        ax.grid(True)
     
     # Add statistics text box
     stat_text_lines = [
@@ -246,7 +232,7 @@ def create_distribution_plot(df: pd.DataFrame, filename: str, initial_time_point
     ]
     stat_text = "\n".join(stat_text_lines)
     
-    fig.text(0.01, 0.97, stat_text, transform=fig.transFigure,
+    fig.text(0.5, 0.95, stat_text, transform=fig.transFigure,
              verticalalignment='top', horizontalalignment='left',
              bbox=dict(boxstyle='round,pad=0.4', fc='white', alpha=0.7, ec='gray'))
     

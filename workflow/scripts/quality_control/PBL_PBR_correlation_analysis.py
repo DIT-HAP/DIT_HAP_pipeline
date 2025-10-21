@@ -23,9 +23,14 @@ import pandas as pd
 from matplotlib import pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 
+SCRIPT_DIR = Path(__file__).parent.resolve()
+TARGET_path = str((SCRIPT_DIR / "../../src").resolve())
+sys.path.append(TARGET_path)
+from plot import create_scatter_correlation_plot
 
 # =============================== Constants ===============================
-plt.style.use('/data/c/yangyusheng_optimized/DIT_HAP_pipeline/config/DIT_HAP.mplstyle')
+STYLE_path = str((SCRIPT_DIR / "../../../config/DIT_HAP.mplstyle").resolve())
+plt.style.use(STYLE_path)
 AX_WIDTH, AX_HEIGHT = plt.rcParams['figure.figsize']
 COLORS = plt.rcParams['axes.prop_cycle'].by_key()['color']
 
@@ -53,14 +58,6 @@ class PBL_PBR_CorrelationAnalysisConfig(BaseModel):
     class Config:
         frozen = True
 
-class CorrelationStatistics(BaseModel):
-    """Pydantic model to hold and validate correlation statistics results."""
-    pcc: float = Field(..., ge=-1.0, le=1.0, description="Pearson correlation coefficient")
-    p_value: float = Field(..., ge=0.0, le=1.0, description="P-value for correlation")
-    r_squared: float = Field(..., ge=0.0, le=1.0, description="R-squared value")
-    slope: float = Field(..., description="Log-scale slope")
-    intercept: float = Field(..., description="Log-scale intercept")
-
 
 # =============================== Setup Logging ===============================
 def setup_logging(log_level: str = "INFO") -> None:
@@ -78,104 +75,46 @@ def setup_logging(log_level: str = "INFO") -> None:
 def read_tsv_file(file_path: Path) -> Optional[pd.DataFrame]:
     """Read TSV file and validate required columns."""
     logger.info(f"Reading TSV file: {file_path}")
+
+    df = pd.read_csv(file_path, sep='\t', index_col=[0,1,2])
     
-    try:
-        df = pd.read_csv(file_path, sep='\t', index_col=[0,1,2])
-        
-        # Check if PBL and PBR columns exist
-        required_cols = ['PBL', 'PBR']
-        missing_cols = [col for col in required_cols if col not in df.columns]
-        
-        if missing_cols:
-            logger.warning(f"Warning: Missing columns {missing_cols} in {file_path}")
-            return None
-        
-        # Remove rows with missing values in PBL or PBR
-        df_clean = df[['PBL', 'PBR']].dropna()
-        
-        # Remove zero or negative values for log scaling
-        df_clean = df_clean[(df_clean['PBL'] > 0) & (df_clean['PBR'] > 0)]
-        
-        if df_clean.empty:
-            logger.warning(f"Warning: No valid data points in {file_path}")
-            return None
-        
-        return df_clean
-        
-    except Exception as e:
-        logger.error(f"Error reading {file_path}: {str(e)}")
+    # Check if PBL and PBR columns exist
+    required_cols = ['PBL', 'PBR']
+    missing_cols = [col for col in required_cols if col not in df.columns]
+    
+    if missing_cols:
+        logger.warning(f"Warning: Missing columns {missing_cols} in {file_path}")
         return None
+    
+    # Remove rows with missing values in PBL or PBR
+    df_clean = df[['PBL', 'PBR']].dropna()
+    
+    # Remove zero or negative values for log scaling
+    df_clean = df_clean[(df_clean['PBL'] > 0) & (df_clean['PBR'] > 0)]
+    
+    if df_clean.empty:
+        logger.warning(f"Warning: No valid data points in {file_path}")
+        return None
+    
+    return df_clean
 
 @logger.catch
-def calculate_correlation_statistics(x: pd.Series, y: pd.Series) -> CorrelationStatistics:
-    """Calculate correlation statistics between two data series."""
-    # Pearson correlation coefficient
-    pcc = np.corrcoef(x, y)[0, 1]
-    p_value = 0
-    
-    # R-squared
-    r_squared = pcc ** 2
-    
-    # Linear regression for trend line
-    slope, intercept = np.polyfit(np.log10(x), np.log10(y), 1)
-    
-    return CorrelationStatistics(
-        pcc=pcc,
-        p_value=p_value,
-        r_squared=r_squared,
-        slope=slope,
-        intercept=intercept
-    )
-
-@logger.catch
-def create_correlation_plot(filename: str, df: pd.DataFrame, stats_info: CorrelationStatistics) -> plt.Figure:
+def create_correlation_plot(filename: str, df: pd.DataFrame) -> plt.Figure:
     """Create correlation plot for a single file with statistics."""
     fig, ax = plt.subplots(figsize=(AX_WIDTH, AX_HEIGHT))
     
-    # Plot data points
-    ax.scatter(df['PBL'], df['PBR'], 
-              alpha=0.5, s=10, facecolor="none", edgecolor=COLORS[7],
-              rasterized=True)
-    
-    # Set log scale for both axes
-    ax.set_xscale('log')
-    ax.set_yscale('log')
-    
-    # Get axis limits for diagonal line
-    xlim = ax.get_xlim()
-    ylim = ax.get_ylim()
-    
-    # Plot diagonal reference line (y=x)
-    min_val = max(min(xlim), min(ylim))
-    max_val = min(max(xlim), max(ylim))
-    ax.plot([min_val, max_val], [min_val, max_val], 
-            'k--', alpha=0.8, linewidth=2)
-    
-    # Add regression line
-    x_line = np.logspace(np.log10(min_val), np.log10(max_val), 100)
-    y_line = 10**(stats_info.intercept + stats_info.slope * np.log10(x_line))
-    ax.plot(x_line, y_line, 'r-', alpha=0.8, linewidth=2)
+    ax = create_scatter_correlation_plot(
+        x=df['PBL'],
+        y=df['PBR'],
+        ax=ax,
+        xscale='log',
+        yscale='log'
+    )
     
     # Customize the plot
     ax.set_xlabel('PBL (log scale)')
     ax.set_ylabel('PBR (log scale)')
     ax.set_title(f'PBL vs PBR Correlation Analysis\n{filename}')
-    
-    # Add grid
-    ax.grid(True)
-    
-    # Add statistics text box
-    stats_text = []
-    stats_text.append(f"Dataset: {filename}")
-    stats_text.append(f"Data points: {len(df):,}")
-    stats_text.append(f"PCC: {stats_info.pcc:.4f}")
-    stats_text.append(f"R²: {stats_info.r_squared:.4f}")
-    stats_text.append(f"Log-slope: {stats_info.slope:.3f}")
-    stats_text.append(f"Log-intercept: {stats_info.intercept:.3f}")
-    
-    # Add text box with statistics
-    textstr = '\n'.join(stats_text)
-    ax.text(0.02, 0.98, textstr, transform=ax.transAxes, verticalalignment='top')
     
     return fig
 
@@ -212,7 +151,6 @@ def main():
         
         # Read and process files
         data_dict = {}
-        stats_dict = {}
         
         for file_path in sorted_files:
             filename = file_path.name
@@ -221,14 +159,6 @@ def main():
             df = read_tsv_file(file_path)
             if df is not None:
                 data_dict[filename] = df
-                
-                # Calculate statistics
-                stats_info = calculate_correlation_statistics(df['PBL'], df['PBR'])
-                stats_dict[filename] = stats_info
-                
-                logger.info(f"  - {len(df)} valid data points")
-                logger.info(f"  - PCC: {stats_info.pcc:.3f}")
-                logger.info(f"  - R²: {stats_info.r_squared:.3f}")
         
         if not data_dict:
             logger.error("Error: No valid data found in any input file!")
@@ -243,8 +173,7 @@ def main():
             with PdfPages(config.output_path) as pdf:
                 for filename, df in data_dict.items():
                     logger.info(f"  - Processing {filename}...")
-                    stats_info = stats_dict[filename]
-                    fig = create_correlation_plot(filename, df, stats_info)
+                    fig = create_correlation_plot(filename, df)
                     pdf.savefig(fig)
                     plt.close(fig)  # Close figure to free memory
             
@@ -256,23 +185,6 @@ def main():
             total_points = sum(len(df) for df in data_dict.values())
             logger.info(f"Total data points analyzed: {total_points}")
             logger.info(f"Files processed: {len(data_dict)}")
-            
-            # Print individual file statistics
-            for filename, stats_info in stats_dict.items():
-                df = data_dict[filename]
-                logger.info(f"\n{filename}:")
-                logger.info(f"  Data points: {len(df):,}")
-                logger.info(f"  PCC: {stats_info.pcc:.4f}")
-                logger.info(f"  R²: {stats_info.r_squared:.4f}")
-            
-            # Overall statistics if multiple files
-            if len(data_dict) > 1:
-                all_pbl = pd.concat([df['PBL'] for df in data_dict.values()])
-                all_pbr = pd.concat([df['PBR'] for df in data_dict.values()])
-                overall_stats = calculate_correlation_statistics(all_pbl, all_pbr)
-                logger.info("\nOverall (combined data):")
-                logger.info(f"  PCC: {overall_stats.pcc:.4f}")
-                logger.info(f"  R²: {overall_stats.r_squared:.4f}")
         
         except Exception as e:
             logger.error(f"Error saving plots: {str(e)}")

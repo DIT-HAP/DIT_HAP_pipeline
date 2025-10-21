@@ -33,11 +33,6 @@ Output:
     - Original and filtered read pair counts
     - Retention rates per sample and read type
     - Total statistics across PBL and PBR pairs
-
-Dependencies:
-    - pandas>=1.3.0
-    - pydantic>=2.0.0
-    - loguru>=0.6.0
 """
 
 # =============================== Imports ===============================
