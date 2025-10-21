@@ -16,5 +16,11 @@ tmp
 experiments/*/__pycache__
 experiments/*/mlruns
 experiments/*/results
+experiments
+openspec
+.*cache
+.vscode
+.cursor
+
 
 
