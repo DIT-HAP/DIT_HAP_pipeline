@@ -423,13 +423,13 @@ def parse_arguments():
         description="Extract comprehensive summary for read pairs from BAM/SAM files"
     )
     parser.add_argument(
-        "-i", "--input_bam",
+        "-i", "--input",
         type=Path,
         required=True,
         help="Path to the input BAM/SAM file (must be qname-sorted)",
     )
     parser.add_argument(
-        "-o", "--output_file",
+        "-o", "--output",
         type=Path,
         required=True,
         help="Path to the output tab-delimited file",
@@ -451,8 +451,8 @@ def main():
     setup_logging()
     
     config = InputOutputConfig(
-        input_bam=args.input_bam,
-        output_file=args.output_file,
+        input_bam=args.input,
+        output_file=args.output,
         threads=args.threads,
     )
     

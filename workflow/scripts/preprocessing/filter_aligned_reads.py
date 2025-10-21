@@ -344,17 +344,17 @@ def parse_arguments():
     
     # Required arguments
     parser.add_argument(
-        "-i", "--input-file", 
+        "-i", "--input", 
         required=True, 
         help="Input TSV file with read pair data"
     )
     parser.add_argument(
-        "-o", "--output-file", 
+        "-o", "--output", 
         required=True, 
         help="Output TSV file for filtered data"
     )
     parser.add_argument(
-        "--config-file", 
+        "--config", 
         required=True, 
         help="YAML configuration file with filtering parameters"
     )
@@ -377,11 +377,11 @@ def main():
     
     try:
         # Load configuration from YAML file
-        config_data = load_config_from_yaml(Path(args.config_file))
+        config_data = load_config_from_yaml(Path(args.config))
         
         config = InputOutputConfig(
-            input_file=Path(args.input_file),
-            output_file=Path(args.output_file),
+            input_file=Path(args.input),
+            output_file=Path(args.output),
             chunk_size=args.chunk_size,
             config_data=config_data
         )

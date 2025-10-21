@@ -293,8 +293,8 @@ def parse_arguments():
         description="Extract insertion sites from aligned read TSV files",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
-    parser.add_argument("-i", "--input_tsv", type=Path, required=True, help="Input TSV file from BAM parsing")
-    parser.add_argument("-o", "--output_tsv", type=Path, required=True, help="Output TSV file with insertion counts")
+    parser.add_argument("-i", "--input", type=Path, required=True, help="Input TSV file from BAM parsing")
+    parser.add_argument("-o", "--output", type=Path, required=True, help="Output TSV file with insertion counts")
     parser.add_argument("-c", "--chunk_size", type=int, default=500000, help="Number of rows to process per chunk")
     parser.add_argument("-v", "--verbose", action="store_true", help="Enable verbose logging")
     return parser.parse_args()
@@ -312,8 +312,8 @@ def main():
     # Validate input and output paths using the Pydantic model
     try:
         config = InputOutputConfig(
-            input_file=args.input_tsv,
-            output_file=args.output_tsv,
+            input_file=args.input,
+            output_file=args.output,
             chunk_size=args.chunk_size
         )
 
