@@ -29,7 +29,7 @@ rule samtools_faidx:
     message:
         "*** Indexing genome fasta file with samtools faidx"
     wrapper:
-        "v7.2.0/bio/samtools/faidx"
+        f"{snakemake_wrapper_version}/bio/samtools/faidx"
 
 # index the genome fasta file with bwa
 # -----------------------------------------------------
@@ -37,13 +37,17 @@ rule bwa_index:
     input:
         rules.download_pombase_data.output.fasta
     output:
-        multiext(rules.download_pombase_data.output.fasta, ".amb", ".ann", ".bwt", ".pac", ".sa")
+        rules.download_pombase_data.output.fasta + ".0123",
+        rules.download_pombase_data.output.fasta + ".amb",
+        rules.download_pombase_data.output.fasta + ".ann",
+        rules.download_pombase_data.output.fasta + ".bwt.2bit.64",
+        rules.download_pombase_data.output.fasta + ".pac"
     log:
         f"logs/{project_name}/preparation/bwa_index_{{release_version}}.log"
     message:
         "*** Indexing genome fasta file with bwa"
     wrapper:
-        "v7.2.0/bio/bwa/index"
+        f"{snakemake_wrapper_version}/bio/bwa-mem2/index"
 
 # extract genome region from gff3 file
 # -----------------------------------------------------
@@ -60,7 +64,7 @@ rule extract_genome_region:
         intergenic_regions_bed = "resources/pombase_data/{release_version}/genome_region/intergenic_regions.bed",
         non_coding_rna_bed = "resources/pombase_data/{release_version}/genome_region/non_coding_rna.bed",
         genome_intervals_bed = "resources/pombase_data/{release_version}/genome_region/genome_intervals.bed",
-        overlapped_region_bed = "resources/pombase_data/{release_version}/genome_region/overlapped_region.bed"
+        overlapped_region_bed = "resources/pombase_data/{release_version}/genome_region/overlapped_region.bed" 
     log:
         notebook=f"logs/{project_name}/preparation/gff_processing_and_annotation_{{release_version}}.ipynb"
     params:

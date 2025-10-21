@@ -16,7 +16,7 @@ rule fastp_preprocessing:
     params:
         adapter_sequence=config["adapter_sequence"],
         adapter_sequence_r2=config["adapter_sequence_r2"]
-    threads: 4
+    threads: 6
     message:
         "*** Preprocessing fastp for {input.fq1} and {input.fq2}..."
     shell:
@@ -36,20 +36,20 @@ rule fastp_preprocessing:
               --out2 {output.fq2} &> {log}
         """
 
-# Cutadapt preprocessing for demultiplexing of PBL and PBR
+# Cutadapt preprocessing for classification of PBL and PBR
 # -----------------------------------------------------
-rule demultiplexing:
+rule junction_classification:
     input:
         fq1 = rules.fastp_preprocessing.output.fq1,
         fq2 = rules.fastp_preprocessing.output.fq2
     output:
-        PBL_r1=temp(f"results/{project_name}/2_demultiplexed/{{sample}}_{{timepoint}}_{{condition}}.PBL_1.fq.gz"),
-        PBL_r2=temp(f"results/{project_name}/2_demultiplexed/{{sample}}_{{timepoint}}_{{condition}}.PBL_2.fq.gz"),
-        PBR_r1=temp(f"results/{project_name}/2_demultiplexed/{{sample}}_{{timepoint}}_{{condition}}.PBR_1.fq.gz"),
-        PBR_r2=temp(f"results/{project_name}/2_demultiplexed/{{sample}}_{{timepoint}}_{{condition}}.PBR_2.fq.gz"),
-        json=f"reports/{project_name}/demultiplexing/{{sample}}_{{timepoint}}_{{condition}}.json",
+        PBL_r1=f"results/{project_name}/2_junction_classification/{{sample}}_{{timepoint}}_{{condition}}.PBL_1.fq.gz",
+        PBL_r2=f"results/{project_name}/2_junction_classification/{{sample}}_{{timepoint}}_{{condition}}.PBL_2.fq.gz",
+        PBR_r1=f"results/{project_name}/2_junction_classification/{{sample}}_{{timepoint}}_{{condition}}.PBR_1.fq.gz",
+        PBR_r2=f"results/{project_name}/2_junction_classification/{{sample}}_{{timepoint}}_{{condition}}.PBR_2.fq.gz",
+        json=f"reports/{project_name}/junction_classification/{{sample}}_{{timepoint}}_{{condition}}.json",
     log:
-        f"logs/{project_name}/preprocessing/demultiplexing/{{sample}}_{{timepoint}}_{{condition}}.log"
+        f"logs/{project_name}/preprocessing/junction_classification/{{sample}}_{{timepoint}}_{{condition}}.log"
     conda:
         "../envs/cutadapt.yml"
     params:
@@ -57,10 +57,10 @@ rule demultiplexing:
         PBR_adapter=config["PBR_adapter"],
         PBL_reverseComplement_adapter=config["PBL_reverseComplement_adapter"],
         PBR_reverseComplement_adapter=config["PBR_reverseComplement_adapter"],
-        output_folder = f"results/{project_name}/2_demultiplexed"
-    threads: 4
+        output_folder = f"results/{project_name}/2_junction_classification"
+    threads: 6
     message:
-        "*** Demultiplexing {input.fq1} and {input.fq2}..."
+        "*** Junction classification {input.fq1} and {input.fq2}..."
     shell:
         """
         cutadapt --cores {threads} \
@@ -76,14 +76,14 @@ rule demultiplexing:
                  {input.fq1} {input.fq2} &> {log}
         """
 
-# fastqc for demultiplexed reads
+# fastqc for junction classified reads
 # -----------------------------------------------------
-rule fastqc_demultiplexed:
+rule fastqc_junction_classification:
     input:
-        PBL_r1=rules.demultiplexing.output.PBL_r1,
-        PBL_r2=rules.demultiplexing.output.PBL_r2,
-        PBR_r1=rules.demultiplexing.output.PBR_r1,
-        PBR_r2=rules.demultiplexing.output.PBR_r2
+        PBL_r1=rules.junction_classification.output.PBL_r1,
+        PBL_r2=rules.junction_classification.output.PBL_r2,
+        PBR_r1=rules.junction_classification.output.PBR_r1,
+        PBR_r2=rules.junction_classification.output.PBR_r2
     output:
         # Explicitly specify output files for better dependency tracking
         PBL_r1_html=f"reports/{project_name}/fastqc/{{sample}}_{{timepoint}}_{{condition}}.PBL_1_fastqc.html",
@@ -102,7 +102,7 @@ rule fastqc_demultiplexed:
         output_dir = f"reports/{project_name}/fastqc"
     threads: 4  # Increased threads for parallel processing
     message:
-        "*** Running FastQC for demultiplexed paired-end reads for {wildcards.sample}_{wildcards.timepoint}_{wildcards.condition}..."
+        "*** Running FastQC for junction classified paired-end reads for {wildcards.sample}_{wildcards.timepoint}_{wildcards.condition}..."
     shell:
         """
         echo "*** Running FastQC for PBL R1 reads..." > {log}
@@ -125,18 +125,18 @@ rule fastqc_demultiplexed:
 rule bwa_mem_mapping:
     input:
         ref=rules.download_pombase_data.output.fasta.format(release_version=config["Pombase_release_version"]),
-        ref_index=expand(rules.bwa_index.output, release_version=config["Pombase_release_version"]),
-        PBL_fq1=rules.demultiplexing.output.PBL_r1,
-        PBL_fq2=rules.demultiplexing.output.PBL_r2,
-        PBR_fq1=rules.demultiplexing.output.PBR_r1,
-        PBR_fq2=rules.demultiplexing.output.PBR_r2,
-        PBL_fastqc_r1=rules.fastqc_demultiplexed.output.PBL_r1_html, # make sure the quality control before mapping
-        PBL_fastqc_r2=rules.fastqc_demultiplexed.output.PBL_r2_html, # make sure the quality control before mapping
-        PBR_fastqc_r1=rules.fastqc_demultiplexed.output.PBR_r1_html, # make sure the quality control before mapping
-        PBR_fastqc_r2=rules.fastqc_demultiplexed.output.PBR_r2_html # make sure the quality control before mapping
+        ref_index=expand(rules.bwa_index.output, release_version=config["Pombase_release_version"]), # ensure the reference index is built
+        PBL_fq1=rules.junction_classification.output.PBL_r1,
+        PBL_fq2=rules.junction_classification.output.PBL_r2,
+        PBR_fq1=rules.junction_classification.output.PBR_r1,
+        PBR_fq2=rules.junction_classification.output.PBR_r2,
+        PBL_fastqc_r1=rules.fastqc_junction_classification.output.PBL_r1_html, # make sure the quality control before mapping
+        PBL_fastqc_r2=rules.fastqc_junction_classification.output.PBL_r2_html, # make sure the quality control before mapping
+        PBR_fastqc_r1=rules.fastqc_junction_classification.output.PBR_r1_html, # make sure the quality control before mapping
+        PBR_fastqc_r2=rules.fastqc_junction_classification.output.PBR_r2_html # make sure the quality control before mapping
     output:
-        PBL=temp(f"results/{project_name}/3_mapped/{{sample}}_{{timepoint}}_{{condition}}.PBL.name_sorted.bam"),
-        PBR=temp(f"results/{project_name}/3_mapped/{{sample}}_{{timepoint}}_{{condition}}.PBR.name_sorted.bam")
+        PBL=f"results/{project_name}/3_mapped/{{sample}}_{{timepoint}}_{{condition}}.PBL.name_sorted.bam",
+        PBR=f"results/{project_name}/3_mapped/{{sample}}_{{timepoint}}_{{condition}}.PBR.name_sorted.bam"
     log:
         f"logs/{project_name}/preprocessing/bwa_mem_mapping/{{sample}}_{{timepoint}}_{{condition}}.log"
     conda:
@@ -147,9 +147,9 @@ rule bwa_mem_mapping:
     shell:
         """
         echo "*** Mapping PBL reads..." > {log}
-        bwa mem -t {threads} {input.ref} {input.PBL_fq1} {input.PBL_fq2} 2>> {log} | samtools sort -n -@ {threads} -O BAM -o {output.PBL} &>> {log}
+        bwa-mem2 mem -t {threads} {input.ref} {input.PBL_fq1} {input.PBL_fq2} 2>> {log} | samtools sort -n -@ {threads} -O BAM -o {output.PBL} &>> {log}
         echo "*** Mapping PBR reads..." >> {log}
-        bwa mem -t {threads} {input.ref} {input.PBR_fq1} {input.PBR_fq2} 2>> {log} | samtools sort -n -@ {threads} -O BAM -o {output.PBR} &>> {log}
+        bwa-mem2 mem -t {threads} {input.ref} {input.PBR_fq1} {input.PBR_fq2} 2>> {log} | samtools sort -n -@ {threads} -O BAM -o {output.PBR} &>> {log}
         """
 
 # Samtools sorting and indexing for BAM files
@@ -216,6 +216,28 @@ rule samtools_mapping_statistics:
         samtools idxstats {input.PBR} > {output.PBR_idxstats} 2>> {log}
         """
 
+# Picard collect insertion size metrics
+# -----------------------------------------------------
+rule insert_size:
+    input:
+        f"results/{project_name}/4_sorted/{{sample}}_{{timepoint}}_{{condition}}.{{fragment}}.sorted.bam"
+    output:
+        txt=f"reports/{project_name}/picard_insert_size/{{sample}}_{{timepoint}}_{{condition}}.{{fragment}}.txt",
+        pdf=f"reports/{project_name}/picard_insert_size/{{sample}}_{{timepoint}}_{{condition}}.{{fragment}}.pdf",
+    log:
+        f"logs/{project_name}/preprocessing/insert_size/{{sample}}_{{timepoint}}_{{condition}}.{{fragment}}.log",
+    params:
+        # optional parameters (e.g. relax checks as below)
+        extra="--VALIDATION_STRINGENCY LENIENT --METRIC_ACCUMULATION_LEVEL null --METRIC_ACCUMULATION_LEVEL SAMPLE",
+    # optional specification of memory usage of the JVM that snakemake will respect with global
+    # resource restrictions (https://snakemake.readthedocs.io/en/latest/snakefiles/rules.html#resources)
+    # and which can be used to request RAM during cluster job submission as `{resources.mem_mb}`:
+    # https://snakemake.readthedocs.io/en/latest/executing/cluster.html#job-properties
+    resources:
+        mem_mb=1024,
+    wrapper:
+        f"{snakemake_wrapper_version}/bio/picard/collectinsertsizemetrics"
+
 # transform bam to tsv for filtering and extracting insertions
 # -----------------------------------------------------
 rule bam_to_tsv:
@@ -265,11 +287,11 @@ rule filter_aligned_reads:
         python workflow/scripts/preprocessing/filter_aligned_reads.py -i {input.PBL_tsv} \
                                                                       -o {output.PBL_filtered} \
                                                                       -c {params.chunk_size} \
-                                                                      --config-file {params.snakemake_config_file} &> {log}
+                                                                      --config {params.snakemake_config_file} &> {log}
         python workflow/scripts/preprocessing/filter_aligned_reads.py -i {input.PBR_tsv} \
                                                                       -o {output.PBR_filtered} \
                                                                       -c {params.chunk_size} \
-                                                                      --config-file {params.snakemake_config_file} &>> {log}
+                                                                      --config {params.snakemake_config_file} &>> {log}
         """
 
 # Extract insertion sites from filtered read pairs

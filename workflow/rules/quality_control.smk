@@ -1,40 +1,19 @@
-# Quality Control Rules for Transposon Insertion Sequencing
-# ==========================================================
-#
-# This file contains rules for comprehensive quality control analysis
-# of transposon insertion sequencing data. Each rule generates reports
-# with enhanced metadata for beautiful HTML report generation.
-#
-# To generate the comprehensive HTML report, run:
-#   snakemake --report reports/{project_name}/{project_name}_quality_control_report.html
-#
-# The report includes:
-# - MultiQC preprocessing summary
-# - Mapping and filtering statistics  
-# - PBL-PBR correlation analysis
-# - Read count distribution analysis
-# - Insertion orientation analysis
-# - Insertion density analysis
-#
-# All reports include detailed captions, categorization, and metadata
-# for professional presentation and easy interpretation.
-
 # MultiQC for preprocessing reports
 # -----------------------------------------------------
 rule multiqc_preprocessing:
     input:
         fastp_json=expand(rules.fastp_preprocessing.output.json, sample=samples, timepoint=timepoints, condition=conditions),
-        demux_json=expand(rules.demultiplexing.output.json, sample=samples, timepoint=timepoints, condition=conditions),
+        junction_classification_json=expand(rules.junction_classification.output.json, sample=samples, timepoint=timepoints, condition=conditions),
         fastqc=expand(f"reports/{project_name}/fastqc/{{sample}}_{{timepoint}}_{{condition}}.{{read}}_fastqc.zip", sample=samples, timepoint=timepoints, condition=conditions, read=["PBL_1", "PBL_2", "PBR_1", "PBR_2"]),
-        bam_stats=expand(f"reports/{project_name}/samtools_mapping_statistics/{{sample}}_{{timepoint}}_{{condition}}.{{fragment}}.{{type}}.txt", sample=samples, timepoint=timepoints, condition=conditions, fragment=["PBL", "PBR"], type=["stats", "flagstat", "idxstats"])
+        bam_stats=expand(f"reports/{project_name}/samtools_mapping_statistics/{{sample}}_{{timepoint}}_{{condition}}.{{fragment}}.{{type}}.txt", sample=samples, timepoint=timepoints, condition=conditions, fragment=["PBL", "PBR"], type=["stats", "flagstat", "idxstats"]),
+        picard_metrics=expand(f"reports/{project_name}/picard_insert_size/{{sample}}_{{timepoint}}_{{condition}}.{{fragment}}.txt", sample=samples, timepoint=timepoints, condition=conditions, fragment=["PBL", "PBR"])
     output:
         report(
             f"reports/{project_name}/multiqc/quality_control_multiqc_report.html",
             category="Quality Control",
-            subcategory="Preprocessing Summary",
             labels={
+                "name": "1. Preprocessing MultiQC Report",
                 "type": "MultiQC Report",
-                "stage": "Preprocessing",
                 "format": "HTML"
             }
         )
@@ -59,28 +38,22 @@ rule multiqc_preprocessing:
             --fn_as_s_name \
             --config {params.multiqc_config} \
             {input.fastp_json} \
-            {input.demux_json} \
+            {input.junction_classification_json} \
             {input.fastqc} \
             {input.bam_stats} \
+            {input.picard_metrics} \
             &> {log}
         """
 
 # Mapping filtering statistics
 # -----------------------------------------------------
+# Concat filtering statistics
+# ---------------------------
 rule mapping_filtering_statistics:
     input:
         expand(rules.filter_aligned_reads.log, sample=samples, timepoint=timepoints, condition=conditions)
     output:
-        report(
-            f"reports/{project_name}/mapping_filtering_statistics/mapping_filtering_statistics.tsv",
-            category="Quality Control",
-            subcategory="Mapping Statistics",
-            labels={
-                "type": "Statistics Table",
-                "stage": "Mapping",
-                "format": "TSV"
-            }
-        )
+        f"reports/{project_name}/mapping_filtering_statistics/mapping_filtering_statistics.tsv"
     log:
         f"logs/{project_name}/quality_control/mapping_filtering_statistics.log"
     conda:
@@ -93,6 +66,30 @@ rule mapping_filtering_statistics:
         -i {input} \
         -o {output} &> {log}
         """
+
+# Datavzrd report for mapping filtering statistics
+# ---------------------------
+rule datavzrd_mapping_filtering_statistics:
+    input:
+        config="workflow/reports/datavzrd/mapping_filtering_statistics.yaml",
+        table=rules.mapping_filtering_statistics.output[0]
+    params:
+        extra="",
+    output:
+        report(
+            directory(f"reports/{project_name}/mapping_filtering_statistics/datavzrd_mapping_filtering_statistics"),
+            htmlindex="index.html",
+            category="Quality Control",
+            labels={
+                "name": "2. Mapping Filtering Statistics",
+                "type": "Datavzrd Report",
+                "format": "Datavzrd HTML"
+            }
+        ),
+    log:
+        f"logs/{project_name}/quality_control/mapping_filtering_statistics_datavzrd.log"
+    wrapper:
+        f"{snakemake_wrapper_version}/utils/datavzrd"
         
 # PBL-PBR correlation analysis
 # -----------------------------------------------------
@@ -103,12 +100,10 @@ rule PBL_PBR_correlation_analysis:
         report(
             f"reports/{project_name}/PBL_PBR_correlation_analysis/PBL_PBR_correlation_analysis.pdf",
             category="Quality Control",
-            subcategory="Correlation Analysis",
             labels={
+                "name": "3. PBL-PBR Correlation Analysis",
                 "type": "Correlation Plot",
-                "stage": "Insertion Analysis",
                 "format": "PDF",
-                "comparison": "PBL vs PBR"
             }
         )
     log:
@@ -135,12 +130,10 @@ rule read_count_distribution_analysis:
         report(
             f"reports/{project_name}/read_count_distribution_analysis/read_count_distribution_analysis.pdf",
             category="Quality Control",
-            subcategory="Distribution Analysis",
             labels={
+                "name": "4. Read Count Distribution Analysis",
                 "type": "Distribution Plot",
-                "stage": "Read Analysis",
                 "format": "PDF",
-                "metric": "Read Counts"
             }
         )
     log:
@@ -166,12 +159,10 @@ rule insertion_orientation_analysis:
         report(
             f"reports/{project_name}/insertion_orientation_analysis/insertion_orientation_analysis.pdf",
             category="Quality Control",
-            subcategory="Insertion Analysis",
             labels={
-                "type": "Orientation Plot",
-                "stage": "Insertion Analysis",
+                "name": "5. Insertion Orientation Analysis",
+                "type": "Correlation Plot",
                 "format": "PDF",
-                "metric": "Insertion Orientation"
             }
         )
     log:
@@ -192,26 +183,14 @@ rule insertion_density_analysis:
         insertion_data = f"results/{project_name}/14_insertion_level_depletion_analysis/LFC.tsv",
         annotation = rules.concat_counts_and_annotations.output.annotations
     output:
-        table = report(
-            f"reports/{project_name}/insertion_density_analysis/insertion_density_analysis.tsv",
-            category="Quality Control",
-            subcategory="Density Analysis",
-            labels={
-                "type": "Statistics Table",
-                "stage": "Insertion Analysis",
-                "format": "TSV",
-                "metric": "Insertion Density"
-            }
-        ),
+        table = f"reports/{project_name}/insertion_density_analysis/insertion_density_analysis.tsv",
         plot = report(
             f"reports/{project_name}/insertion_density_analysis/insertion_density_analysis_histograms.pdf",
             category="Quality Control",
-            subcategory="Density Analysis",
             labels={
-                "type": "Density Plot",
-                "stage": "Insertion Analysis",
-                "format": "PDF",
-                "metric": "Insertion Density"
+                "name": "6. Insertion Density",
+                "type": "Distribution Plot",
+                "format": "PDF"
             }
         )
     log:
@@ -229,6 +208,29 @@ rule insertion_density_analysis:
                                                                               -t {params.initial_time_point} \
                                                                               -o {output.table} &> {log}
         """
+# Insertion density datavzrd report
+# ---------------------------
+rule datavzrd_insertion_density_analysis:
+    input:
+        config="workflow/reports/datavzrd/insertion_density_analysis.yaml",
+        table=rules.insertion_density_analysis.output.table
+    params:
+        extra="",
+    output:
+        report(
+            directory(f"reports/{project_name}/insertion_density_analysis/datavzrd_insertion_density_analysis"),
+            htmlindex="index.html",
+            category="Quality Control",
+            labels={
+                "name": "6. Insertion Density",
+                "type": "Datavzrd Report",
+                "format": "Datavzrd HTML"
+            }
+        ),
+    log:
+        f"logs/{project_name}/quality_control/insertion_density_analysis_datavzrd.log"
+    wrapper:
+        f"{snakemake_wrapper_version}/utils/datavzrd"
 
 # Insertion-level depletion LFC and curve features analysis
 # -----------------------------------------------------
@@ -237,7 +239,13 @@ rule insertion_level_depletion_LFC_and_curve_features_analysis:
         rules.insertion_level_curve_fitting.output
     output:
         report(
-            f"reports/{project_name}/depletion_LFC_and_curve_features_analysis/insertion_level_depletion_LFC_and_curve_features_analysis.pdf"
+            f"reports/{project_name}/depletion_LFC_and_curve_features_analysis/insertion_level_depletion_LFC_and_curve_features_analysis.pdf",
+            category="Insertion-level results",
+            labels={
+                "name": "Insertion-level Depletion LFC and Curve Features Analysis",
+                "type": "Distribution Plot",
+                "format": "PDF",
+            }
         )
     log:
         f"logs/{project_name}/quality_control/insertion_level_depletion_LFC_and_curve_features_analysis.log"
@@ -257,7 +265,13 @@ use rule insertion_level_depletion_LFC_and_curve_features_analysis as gene_level
         rules.gene_level_curve_fitting.output
     output:
         report(
-            f"reports/{project_name}/depletion_LFC_and_curve_features_analysis/gene_level_depletion_and_curve_features_analysis.pdf"
+            f"reports/{project_name}/depletion_LFC_and_curve_features_analysis/gene_level_depletion_and_curve_features_analysis.pdf",
+            category="Gene-level results",
+            labels={
+                "name": "Gene-level Depletion LFC and Curve Features Analysis",
+                "type": "Distribution Plot",
+                "format": "PDF",
+            }
         )
     log:
         f"logs/{project_name}/quality_control/gene_level_depletion_and_curve_features_analysis.log"
@@ -269,7 +283,16 @@ rule gene_coverage_analysis:
         covered_genes = rules.gene_level_curve_fitting.output,
         all_genes = rules.download_pombase_data.output.gene_IDs_names_products.format(release_version=config["Pombase_release_version"])
     output:
-        directory(f"reports/{project_name}/gene_coverage_analysis")
+        report(
+            directory(f"reports/{project_name}/gene_coverage_analysis"),
+            patterns=["{name}.png"],
+            category="Gene-level results",
+            labels={
+                "name": "Gene Coverage Analysis",
+                "type": "Donut Plot",
+                "format": "PNG",
+            }
+        )
     log:
         f"logs/{project_name}/quality_control/gene_coverage_analysis.log"
     conda:

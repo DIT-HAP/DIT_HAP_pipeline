@@ -53,8 +53,24 @@ if config.get("use_DEseq2_for_biological_replicates", False):
             counts_df = rules.impute_missing_values_using_FR.output,
             control_insertions_df = rules.control_insertion_selection.output
         output:
-            LFC = f"results/{project_name}/14_insertion_level_depletion_analysis/LFC.tsv",
-            padj = f"results/{project_name}/14_insertion_level_depletion_analysis/padj.tsv"
+            LFC = report(
+                f"results/{project_name}/14_insertion_level_depletion_analysis/LFC.tsv",
+                category="Insertion-level results",
+                labels={
+                    "name": "Insertion-level LFC",
+                    "type": "Statistics Table",
+                    "format": "TSV"
+                }
+            ),
+            padj = report(
+                f"results/{project_name}/14_insertion_level_depletion_analysis/padj.tsv",
+                category="Insertion-level results",
+                labels={
+                    "name": "Insertion-level adjusted p-values",
+                    "type": "Statistics Table",
+                    "format": "TSV"
+                }
+            )
         log:
             f"logs/{project_name}/depletion_analysis/insertion_level_depletion_analysis_has_replicates.log"
         params:
@@ -81,7 +97,15 @@ else:
             counts_df = rules.hard_filtering.output,
             control_insertions_df = rules.control_insertion_selection.output
         output:
-            LFC = f"results/{project_name}/14_insertion_level_depletion_analysis/LFC.tsv"
+            LFC = report(
+                f"results/{project_name}/14_insertion_level_depletion_analysis/LFC.tsv",
+                category="Insertion-level results",
+                labels={
+                    "name": "Insertion-level LFC",
+                    "type": "Statistics Table",
+                    "format": "TSV"
+                }
+            )
         log:
             f"logs/{project_name}/depletion_analysis/insertion_level_depletion_analysis_no_replicates.log"
         params:
@@ -105,7 +129,15 @@ rule insertion_level_curve_fitting:
     input:
         f"results/{project_name}/14_insertion_level_depletion_analysis/LFC.tsv"
     output:
-        f"results/{project_name}/15_insertion_level_curve_fitting/insertion_level_fitting_statistics.tsv"
+        report(
+            f"results/{project_name}/15_insertion_level_curve_fitting/insertion_level_fitting_statistics.tsv",
+            category="Insertion-level results",
+            labels={
+                "name": "Insertion-level Curve Fitting Statistics",
+                "type": "Statistics Table",
+                "format": "TSV"
+            }
+        )
     log:
         f"logs/{project_name}/depletion_analysis/insertion_level_curve_fitting.log"
     conda:
@@ -127,7 +159,15 @@ if not config.get("use_DEseq2_for_biological_replicates", False):
         input:
             rules.insertion_level_curve_fitting.output
         output:
-            f"results/{project_name}/15_insertion_level_curve_fitting/insertions_LFC_fitted_with_r_square_as_weights.tsv"
+            report(
+                f"results/{project_name}/15_insertion_level_curve_fitting/insertions_LFC_fitted_with_r_square_as_weights.tsv",
+                category="Insertion-level results",
+                labels={
+                    "name": "Insertion-level LFC Fitted with R-square as Weights",
+                    "type": "Statistics Table",
+                    "format": "TSV"
+                }
+            )
         log:
             f"logs/{project_name}/depletion_analysis/r_square_as_weights.log"
         conda:
@@ -161,7 +201,15 @@ rule gene_level_depletion_analysis:
         annotations_path = rules.concat_counts_and_annotations.output.annotations
     output:
         all_statistics = f"results/{project_name}/16_gene_level_depletion_analysis/gene_level_statistics.tsv",
-        LFC = f"results/{project_name}/16_gene_level_depletion_analysis/LFC.tsv"
+        LFC = report(
+            f"results/{project_name}/16_gene_level_depletion_analysis/LFC.tsv",
+            category="Gene-level results",
+            labels={
+                "name": "Gene-level LFC",
+                "type": "Statistics Table",
+                "format": "TSV"
+            }
+        )
     log:
         f"logs/{project_name}/depletion_analysis/gene_level_depletion_analysis.log"
     conda:
@@ -181,7 +229,15 @@ rule gene_level_curve_fitting:
     input:
         LFC = rules.gene_level_depletion_analysis.output.LFC
     output:
-        f"results/{project_name}/17_gene_level_curve_fitting/gene_level_fitting_statistics.tsv"
+        report(
+            f"results/{project_name}/17_gene_level_curve_fitting/gene_level_fitting_statistics.tsv",
+            category="Gene-level results",
+            labels={
+                "name": "Gene-level Curve Fitting Statistics",
+                "type": "Statistics Table",
+                "format": "TSV"
+            }
+        )
     log:
         f"logs/{project_name}/depletion_analysis/gene_level_curve_fitting.log"
     params:
