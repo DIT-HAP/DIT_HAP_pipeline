@@ -43,10 +43,10 @@ rule junction_classification:
         fq1 = rules.fastp_preprocessing.output.fq1,
         fq2 = rules.fastp_preprocessing.output.fq2
     output:
-        PBL_r1=f"results/{project_name}/2_junction_classification/{{sample}}_{{timepoint}}_{{condition}}.PBL_1.fq.gz",
-        PBL_r2=f"results/{project_name}/2_junction_classification/{{sample}}_{{timepoint}}_{{condition}}.PBL_2.fq.gz",
-        PBR_r1=f"results/{project_name}/2_junction_classification/{{sample}}_{{timepoint}}_{{condition}}.PBR_1.fq.gz",
-        PBR_r2=f"results/{project_name}/2_junction_classification/{{sample}}_{{timepoint}}_{{condition}}.PBR_2.fq.gz",
+        PBL_r1=temp(f"results/{project_name}/2_junction_classification/{{sample}}_{{timepoint}}_{{condition}}.PBL_1.fq.gz"),
+        PBL_r2=temp(f"results/{project_name}/2_junction_classification/{{sample}}_{{timepoint}}_{{condition}}.PBL_2.fq.gz"),
+        PBR_r1=temp(f"results/{project_name}/2_junction_classification/{{sample}}_{{timepoint}}_{{condition}}.PBR_1.fq.gz"),
+        PBR_r2=temp(f"results/{project_name}/2_junction_classification/{{sample}}_{{timepoint}}_{{condition}}.PBR_2.fq.gz"),
         json=f"reports/{project_name}/junction_classification/{{sample}}_{{timepoint}}_{{condition}}.json",
     log:
         f"logs/{project_name}/preprocessing/junction_classification/{{sample}}_{{timepoint}}_{{condition}}.log"
@@ -135,8 +135,8 @@ rule bwa_mem_mapping:
         PBR_fastqc_r1=rules.fastqc_junction_classification.output.PBR_r1_html, # make sure the quality control before mapping
         PBR_fastqc_r2=rules.fastqc_junction_classification.output.PBR_r2_html # make sure the quality control before mapping
     output:
-        PBL=f"results/{project_name}/3_mapped/{{sample}}_{{timepoint}}_{{condition}}.PBL.name_sorted.bam",
-        PBR=f"results/{project_name}/3_mapped/{{sample}}_{{timepoint}}_{{condition}}.PBR.name_sorted.bam"
+        PBL=temp(f"results/{project_name}/3_mapped/{{sample}}_{{timepoint}}_{{condition}}.PBL.name_sorted.bam"),
+        PBR=temp(f"results/{project_name}/3_mapped/{{sample}}_{{timepoint}}_{{condition}}.PBR.name_sorted.bam")
     log:
         f"logs/{project_name}/preprocessing/bwa_mem_mapping/{{sample}}_{{timepoint}}_{{condition}}.log"
     conda:
@@ -245,8 +245,8 @@ rule bam_to_tsv:
         PBL=rules.bwa_mem_mapping.output.PBL,
         PBR=rules.bwa_mem_mapping.output.PBR
     output:
-        PBL_tsv=f"results/{project_name}/5_tabulated/{{sample}}_{{timepoint}}_{{condition}}.PBL.tsv",
-        PBR_tsv=f"results/{project_name}/5_tabulated/{{sample}}_{{timepoint}}_{{condition}}.PBR.tsv",
+        PBL_tsv=temp(f"results/{project_name}/5_tabulated/{{sample}}_{{timepoint}}_{{condition}}.PBL.tsv"),
+        PBR_tsv=temp(f"results/{project_name}/5_tabulated/{{sample}}_{{timepoint}}_{{condition}}.PBR.tsv"),
     log:
         f"logs/{project_name}/preprocessing/bam_to_tsv/{{sample}}_{{timepoint}}_{{condition}}.log"
     conda:
