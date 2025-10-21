@@ -3,6 +3,7 @@ use_filename_as_sample_name:
   - cutadapt
   - fastqc
   - samtools
+  - picard
 
 table_sample_merge:
   "R1": "_1"
@@ -13,3 +14,4 @@ module_order:
   - cutadapt
   - fastqc
   - samtools
+  - picard

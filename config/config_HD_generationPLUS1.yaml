@@ -1,3 +1,5 @@
+snakemake_wrapper_version: v7.7.0
+
 workdir: /data/c/yangyusheng_optimized/DIT_HAP_pipeline
 
 project_name: HD_DIT_HAP_generationPLUS1
