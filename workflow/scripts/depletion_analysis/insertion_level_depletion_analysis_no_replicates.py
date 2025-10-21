@@ -30,7 +30,8 @@ import matplotlib.pyplot as plt
 
 
 # =============================== Constants ===============================
-plt.style.use("/data/c/yangyusheng_optimized/DIT_HAP_pipeline/config/DIT_HAP.mplstyle")
+SCRIPT_DIR = Path(__file__).parent.resolve()
+plt.style.use(SCRIPT_DIR / "../../../config/DIT_HAP.mplstyle")
 AX_WIDTH, AX_HEIGHT = plt.rcParams['figure.figsize']
 COLORS = plt.rcParams['axes.prop_cycle'].by_key()['color']
 

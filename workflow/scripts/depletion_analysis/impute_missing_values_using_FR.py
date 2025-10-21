@@ -281,13 +281,18 @@ def main():
         # Concatenate complete datasets
         imputed_counts = pd.concat([intergenic_counts_df, imputed_in_gene_counts_df_noNA], axis=0)
 
-        # Save imputed datas
-        imputed_counts.to_csv(config.output_file, index=True, sep="\t")
-        logger.success(f"Imputation complete. Results saved to {config.output_file}")
-
         imputation_statistics = counts_df.loc[imputed_counts.index].xs(timepoints[0], level=1, axis=1).isna().sum(axis=1).astype(int).rename("num_of_imputed_insertions")
         imputation_statistics.to_csv(config.output_file.parent/f"imputation_statistics.tsv", index=True, sep="\t")
         logger.success(f"Number of imputed insertions saved to {config.output_file.parent/f"imputation_statistics.tsv"}")
+
+        logger.info(f"Total insertions with all replicates available after imputation: {imputed_counts.value_counts()}")
+
+        # only imputate less than once
+        imputated_LTonce_idx = imputed_counts[imputed_counts <= 1].index
+
+        # Save imputed datas
+        imputed_counts.loc[imputated_LTonce_idx].to_csv(config.output_file, index=True, sep="\t")
+        logger.success(f"Imputation complete. Results saved to {config.output_file}")
 
         # Calculate and print statistics
         stats = calculate_imputation_statistics(
