@@ -10,7 +10,7 @@ multiqc_config: config/multiqc_config.yml
 
 # Preparation configuration
 # -----------------------------------------------------
-Pombase_release_version: 2025-09-01
+Pombase_release_version: 2025-10-01
 
 # Preprocessing configuration
 # -----------------------------------------------------
@@ -66,9 +66,9 @@ initial_time_point: "YES0"
 # -----------------------------------------------------
 time_points:
   - 0
-  - 3.723
-  - 6.969
-  - 10.334
-  - 13.554
-  - 17.098
-  - 20.059
+  - 2.723
+  - 5.969
+  - 9.334
+  - 12.554
+  - 16.098
+  - 29.059
