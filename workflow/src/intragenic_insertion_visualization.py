@@ -1,7 +1,7 @@
 # ================================ Imports =================================
 from pathlib import Path
-from typing import List, Optional
 import pandas as pd
+from matplotlib.axes import Axes
 import matplotlib.pyplot as plt
 
 # ================================= Constants =================================
@@ -16,14 +16,14 @@ def intragenic_insertion_visualization(
     gene_statistics: pd.DataFrame,
     gene: str,
     color: str,
-    ax: plt.Axes,
+    ax: Axes,
     feature: str = "um",
-) -> plt.Axes:
+) -> Axes:
     """Visualize intragenic insertions for a given gene."""
     gene_insertions = insertions_with_annotations.query("Name == @gene")
     gene_metrics = gene_statistics.loc[gene]
     ax.axhline(0, color="gray", linestyle="--", alpha=0.5)
-    ax.axhline(gene_metrics[feature], color="darkred", linestyle="--", alpha=0.5)
+    ax.axhline(float(gene_metrics[feature].item()), color="darkred", linestyle="--", alpha=0.5)
     x = gene_insertions['Residue_affected']
     y = gene_insertions[feature]
     ax.scatter(x, y, marker='o', color=color, alpha=0.7)

@@ -1,10 +1,9 @@
-from xmlrpc.server import resolve_dotted_attribute
+# ================================ Imports =================================
 import numpy as np
 import pandas as pd
 from pathlib import Path
-from typing import Any
+from matplotlib.axes import Axes
 from matplotlib import pyplot as plt
-from matplotlib.backends.backend_pdf import PdfPages
 
 # ================================ Constants =================================
 SCRIPT_DIR = Path(__file__).parent.resolve()
@@ -17,10 +16,10 @@ COLORS = plt.rcParams['axes.prop_cycle'].by_key()['color']
 def create_scatter_correlation_plot(
 x: pd.Series | np.ndarray | list,
 y: pd.Series | np.ndarray | list,
-ax: plt.Axes,
+ax: Axes,
 xscale: None | str = None,
 yscale: None | str = None,
-) -> plt.Axes:
+) -> Axes:
     """Create correlation plot for a single file with statistics."""    
     # Plot data points
     ax.scatter(

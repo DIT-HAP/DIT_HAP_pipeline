@@ -7,7 +7,7 @@ Enrichment functions.
 import pandas as pd
 import numpy as np
 from pathlib import Path
-from typing import Literal, List
+from typing import Literal
 import time
 import requests
 from requests.exceptions import RequestException
@@ -53,7 +53,7 @@ class OntologyDataConfig:
 
     ontology_obo: Path
     ontology_association_gaf: Path
-    slim_terms_table: List[Path]
+    slim_terms_table: list[Path]
 
     def validate_paths(self) -> None:
         """Validate that all required files exist."""
