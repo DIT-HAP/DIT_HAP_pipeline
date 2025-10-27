@@ -153,7 +153,7 @@ def analyze_multiple_files(
         
         try:
             # Read the file
-            df = read_file(file_path, index_col=[0,1,2,3], header=[0,1])
+            df = read_file(file_path, **{"index_col": [0,1,2,3], "header": [0,1]})
             
             # Create figure for this file
             create_file_comparison_figure(
