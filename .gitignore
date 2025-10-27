@@ -21,6 +21,7 @@ openspec
 .*cache
 .vscode
 .cursor
+*.zip
 
 
 

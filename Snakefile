@@ -12,12 +12,13 @@ min_version("8.0")
 # load configuration
 # -----------------------------------------------------
 # snakemake_config_file="config/config_HD_generationPLUS1.yaml"
-# snakemake_config_file="config/config_HD_generationRAW.yaml"
+snakemake_config_file="config/config_HD_generationRAW.yaml"
 # snakemake_config_file="config/config_LD_generationPLUS1.yaml"
 # snakemake_config_file="config/config_LD_generationRAW.yaml"
 # snakemake_config_file="config/config_1328_spore2YES6.yaml"
-snakemake_config_file="config/config_LD_haploid.yaml"
+# snakemake_config_file="config/config_LD_haploid.yaml"
 # snakemake_config_file="config/config_HD_diploid.yaml"
+# snakemake_config_file="config/config_spikein.yaml"
 configfile: snakemake_config_file
 workdir: "/data/c/yangyusheng_optimized/DIT_HAP_pipeline"
 
