@@ -7,14 +7,14 @@ Enrichment functions.
 import pandas as pd
 import numpy as np
 from pathlib import Path
-from typing import Optional, Literal, List
+from typing import Literal, List
 import time
 import requests
-from requests.exceptions import ConnectionError, RequestException
+from requests.exceptions import RequestException
 from io import StringIO
 import altair as alt
 from datetime import date
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 from .utils import read_file
 
@@ -74,7 +74,7 @@ class OntologyDataConfig:
         self.validate_paths()
 
         slim_dfs = [
-            read_file(path, header=None, names=["Term", "Description"])
+            read_file(path, **{"header": None, "names": ["Term", "Description"]})
             for path in self.slim_terms_table
         ]
         slim_df = pd.concat(slim_dfs, ignore_index=True)
@@ -392,7 +392,7 @@ def create_enrichment_dataframe(
 # ================================= Main Functions =================================
 def load_ontology_data(
     ontology_data: OntologyData, **kwargs
-) -> tuple[GODag, GafReader, dict]:
+) -> tuple[GODag, GafReader, dict, dict, dict, dict, dict]:
     """Load ontology data from obo file and association file."""
     try:
         dag = GODag(
@@ -445,7 +445,7 @@ def format_ontology_enrichment_results(
     # transform the result to a dataframe
     try:
         oea_results_sig_prt = pd.DataFrame(get_goea_nts_prt(oea_results_sig, **kwargs))
-    except Exception as e:
+    except Exception:
         oea_results_sig_prt = create_enrichment_dataframe(oea_results_sig, **kwargs)
 
     if oea_results_sig_prt.empty:
@@ -512,7 +512,7 @@ def ontology_enrichment_pipeline(
     load_kwargs: dict = {},
     enrichment_kwargs: dict = {},
     format_kwargs: dict = {},
-) -> tuple[pd.DataFrame, pd.DataFrame]:
+) -> tuple[pd.DataFrame, pd.DataFrame, GODag, GafReader]:
     """Perform ontology enrichment analysis pipeline."""
 
     dag, objanno, ns2assoc, gene2go, go2genes, slim_dag, ns2slim_assoc = (
@@ -675,7 +675,7 @@ def stringdb_enrichment(query_genes, bg_genes):
     return enrichment_df
 
 
-def display_enrichment_results(enrichment_results: pd.DataFrame) -> alt.Chart:
+def display_enrichment_results(enrichment_results: pd.DataFrame) -> alt.VConcatChart:
     """Display enrichment results."""
     charts = []
     for ns, ns_results in enrichment_results.groupby("namespace", sort=False):
@@ -741,7 +741,8 @@ def create_customized_enrichment_plot(
     return scatter
 
 
-def revigo_analysis(enrich_df, cut_off=0.7):
+def revigo_analysis(enrich_df: pd.DataFrame, cut_off: float = 0.7) -> pd.DataFrame:
+    """Perform REVIGO analysis on enrichment results."""
     GOs = enrich_df["GO"].tolist()
     padj = enrich_df["p_fdr_bh"].tolist()
     data = "\n".join([f"{GO}\t{padj}" for GO, padj in zip(GOs, padj)])
