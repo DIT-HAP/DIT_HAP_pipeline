@@ -154,7 +154,7 @@ rule read_count_distribution_analysis:
 # -----------------------------------------------------
 rule insertion_orientation_analysis:
     input:
-        expand(rules.hard_filtering.output, sample=samples, condition=conditions)
+        rules.hard_filtering.output
     output:
         report(
             f"reports/{project_name}/insertion_orientation_analysis/insertion_orientation_analysis.pdf",
@@ -175,6 +175,7 @@ rule insertion_orientation_analysis:
         """
         python workflow/scripts/quality_control/insertion_orientation_analysis.py -i {input} -o {output} &> {log}
         """
+
 
 # Insertion density analysis
 # -----------------------------------------------------
@@ -285,11 +286,11 @@ rule gene_coverage_analysis:
     output:
         report(
             directory(f"reports/{project_name}/gene_coverage_analysis"),
-            patterns=["{name}.png"],
+            patterns=["{picture}.png"],
             category="Gene-level results",
             labels={
                 "name": "Gene Coverage Analysis",
-                "type": "Donut Plot",
+                "type": "Pie Chart Plot",
                 "format": "PNG",
             }
         )
