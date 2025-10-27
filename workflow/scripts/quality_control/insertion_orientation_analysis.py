@@ -82,7 +82,8 @@ def setup_logging(log_level: str = "INFO") -> None:
 def create_file_comparison_figure(
     df: pd.DataFrame,
     filename: str,
-) -> plt.Figure:
+    output_path: Path,
+) -> None:
     """Create a figure with subplots comparing +/- strand values for all columns."""
     
     plus_minus_pair = df.stack(future_stack=True).stack(future_stack=True).unstack("Strand").dropna(axis=0)
@@ -92,40 +93,46 @@ def create_file_comparison_figure(
     n_rows = len(timepoints)
     fig_width = AX_WIDTH
     fig_height = n_rows * AX_HEIGHT
-    
-    fig, axes = plt.subplots(n_rows, 1, figsize=(fig_width, fig_height))
-    if n_rows == 1:
-        axes = [axes]  # Ensure axes is always a list
-    
-    # Set overall title
-    fig.suptitle(f'Strand Orientation Analysis:\n{filename}', y=1)
-    
-    # Process each column
-    for row_idx, ((sample, timepoint), sub_df) in enumerate(plus_minus_pair.groupby(level=["Sample", "Timepoint"])):
-        ax = axes[row_idx]
 
-        filtered_sub_df = sub_df[sub_df.min(axis=1) > 0]
-
-        pos_array = filtered_sub_df["+"].to_numpy()
-        neg_array = filtered_sub_df["-"].to_numpy()
-
-        create_scatter_correlation_plot(
-            x=pos_array,
-            y=neg_array,
-            ax=ax,
-            xscale='log',
-            yscale='log',
-        )
-        
-        # Customize subplot
-        ax.set_xlabel('Positive Strand (+)')
-        if row_idx == 0:  # Only label y-axis on leftmost subplot
-            ax.set_ylabel('Negative Strand (-)')
-        ax.set_title(f"Sample: {sample}\nTimepoint: {timepoint}")
-        ax.grid(True)
+    total_figures = 0
+    with PdfPages(output_path) as pdf:
+        for sample, sample_df in plus_minus_pair.groupby(level="Sample"):
     
-    plt.tight_layout()
-    return fig
+            fig, axes = plt.subplots(n_rows, 1, figsize=(fig_width, fig_height))
+            if n_rows == 1:
+                axes = [axes]  # Ensure axes is always a list
+            
+            # Process each column
+            for row_idx, (timepoint, sub_df) in enumerate(sample_df.groupby(level="Timepoint")):
+                ax = axes[row_idx]
+
+                filtered_sub_df = sub_df[sub_df.min(axis=1) > 0]
+
+                pos_array = filtered_sub_df["+"].to_numpy()
+                neg_array = filtered_sub_df["-"].to_numpy()
+
+                create_scatter_correlation_plot(
+                    x=pos_array,
+                    y=neg_array,
+                    ax=ax,
+                    xscale='log',
+                    yscale='log',
+                )
+                
+                # Customize subplot
+                ax.set_xlabel('Positive Strand (+)')
+                if row_idx == 0:  # Only label y-axis on leftmost subplot
+                    ax.set_ylabel('Negative Strand (-)')
+                ax.set_title(f"Sample: {sample}\nTimepoint: {timepoint}")
+                ax.grid(True)
+            
+            plt.tight_layout()
+            # Save figure to PDF
+            pdf.savefig(fig, bbox_inches='tight')
+            plt.close(fig)
+            total_figures += 1
+
+    logger.info(f"Generated {total_figures} figures")
 
 @logger.catch
 def analyze_multiple_files(
@@ -137,35 +144,26 @@ def analyze_multiple_files(
     
     # Sort files by name for consistent processing order
     sorted_files = sorted(input_files, key=lambda p: p.name)
-    
-    total_figures = 0
+    logger.info(f"Processing files in order: {[f.name for f in sorted_files]}")
     
     # Generate plots and save to PDF
-    with PdfPages(output_path) as pdf:
-        for file_path in sorted_files:
-            filename = file_path.name
-            logger.info(f"--- Processing file: {filename} ---")
+    for file_path in sorted_files:
+        filename = file_path.name
+        logger.info(f"--- Processing file: {filename} ---")
+        
+        try:
+            # Read the file
+            df = read_file(file_path, index_col=[0,1,2,3], header=[0,1])
             
-            try:
-                # Read the file
-                df = read_file(file_path, index_col=[0,1,2,3], header=[0,1])
-                
-                # Create figure for this file
-                fig = create_file_comparison_figure(
-                    df, filename
-                )
-                
-                # Save figure to PDF
-                pdf.savefig(fig, bbox_inches='tight')
-                plt.close(fig)
-                total_figures += 1
-                
-                logger.info(f"Generated figure for {filename}")
-                
-            except Exception as e:
-                logger.error(f"Failed to process {filename}: {e}", exc_info=True)
-    
-    logger.info(f"Processed {len(sorted_files)} files, generated {total_figures} figures")
+            # Create figure for this file
+            create_file_comparison_figure(
+                df, filename, output_path
+            )
+            
+            logger.info(f"Generated figure for {filename}")
+            
+        except Exception as e:
+            logger.error(f"Failed to process {filename}: {e}", exc_info=True)
 
 # =============================== Main Function ===============================
 def parse_arguments():
@@ -190,10 +188,6 @@ def main():
 
     logger.info("=== Insertion Orientation Analysis ===")
     logger.info(f"Processing {len(config.input_files)} input files...")
-    
-    # Sort files by name
-    sorted_files = sorted(config.input_files, key=lambda x: x.name)
-    logger.info(f"Processing files in order: {[f.name for f in sorted_files]}")
     
     start_time = time.time()
     
