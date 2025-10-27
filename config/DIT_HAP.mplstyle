@@ -51,7 +51,7 @@ hatch.linewidth: 1.0
 # ***************************************************************************
 # * BOXPLOT                                                                 *
 # ***************************************************************************
-boxplot.notch:       True
+boxplot.notch:       False
 boxplot.vertical:    True
 boxplot.whiskers:    1.5
 boxplot.bootstrap:   None
