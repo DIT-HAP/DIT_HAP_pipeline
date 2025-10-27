@@ -37,8 +37,8 @@ yscale: None | str = None,
     ylim = ax.get_ylim()
     
     # Plot diagonal reference line (y=x)
-    min_val = max(min(xlim), min(ylim))
-    max_val = min(max(xlim), max(ylim))
+    min_val = min(min(xlim), min(ylim))
+    max_val = max(max(xlim), max(ylim))
     ax.plot([min_val, max_val], [min_val, max_val], 
             'k--', alpha=0.8, linewidth=2)
     
