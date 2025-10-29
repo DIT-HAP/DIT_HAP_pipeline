@@ -183,3 +183,51 @@ def plot_groups_on_feature_space(
         fig.delaxes(axes[j])
 
     return fig
+
+def distribution_bar_for_given_genes(
+    cluster_data_df: pd.DataFrame,
+    genes: list[str],
+    cluster_column: str,
+    gene_column: str,
+    ax: Axes | None = None,
+    title: str = "Gene Distribution"
+) -> Axes | Figure:
+    """ Plot distribution bar for the given genes across clusters. """
+    return_ax = True
+    if ax is None:
+        fig, ax = plt.subplots(figsize=(AX_WIDTH, 1))
+        return_ax = False
+    # Calculate cluster counts and percentages for the given genes
+    cluster_count = cluster_data_df.query(f"{gene_column} in @genes").groupby(cluster_column).size()
+    cluster_percentages = ((cluster_count / cluster_count.sum()) * 100).fillna(0).to_dict()
+
+    # calculate the cumulative percentages for positioning
+    cumulative_percentages = pd.Series(cluster_percentages).cumsum()
+    left_values = cumulative_percentages.shift(1).fillna(0)
+
+    # Create horizontal stacked bars
+    bars = []
+    for i, (cluster, percentage) in enumerate(cluster_percentages.items()):
+        if percentage > 0:
+            bar = ax.barh(0, percentage, 1, left=left_values.iloc[i], 
+                        color=COLORS[i], alpha=0.7, edgecolor='white', linewidth=0.5,
+                        label=f'Cluster {int(cluster)}')
+            bars.append(bar)
+
+            # Add cluster number and percentage labels in the middle of each segment
+            if i % 2 == 0:
+                ax.text(left_values.iloc[i] + percentage/2, 0.25, 
+                        f'{percentage:.1f}%', ha='center', va='center')
+            else:
+                ax.text(left_values.iloc[i] + percentage/2, -0.25, 
+                        f'{percentage:.1f}%', ha='center', va='center')
+            ax.text(left_values.iloc[i] + percentage/2, 1, 
+                    f'{int(cluster)}', ha='center', va='center', fontweight="bold")
+            
+    # ax.set_ylim(-0.5, 0.5)
+    ax.axis('off')
+    
+    if return_ax:
+        return ax
+    else:
+        return fig
