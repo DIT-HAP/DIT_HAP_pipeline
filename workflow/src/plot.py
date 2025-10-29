@@ -2,6 +2,7 @@
 import numpy as np
 import pandas as pd
 from pathlib import Path
+from matplotlib.figure import Figure
 from matplotlib.axes import Axes
 from matplotlib import pyplot as plt
 
@@ -79,3 +80,48 @@ yscale: None | str = None,
     ax.text(0.02, 0.98, textstr, transform=ax.transAxes, verticalalignment='top')
     
     return ax
+
+def donut_chart(
+    values: list[int],
+    labels: list[str],
+    colors: list[str],
+    center_text: str = "",
+    ax: Axes | None = None,
+) -> Axes | Figure:
+    """Create a donut chart with given values, labels, and colors."""
+    # Create axis if not provided
+    return_ax = True
+    if ax is None:
+        # Create the donut chart
+        fig, ax = plt.subplots()
+        return_ax = False
+    
+    # Create the donut chart
+    ax.pie(
+        values, 
+        # labels=labels,
+        colors=colors,
+        autopct=lambda pct: f'{pct:.1f}%\n({int(pct/100*sum(values)):,})',
+        startangle=90,
+        pctdistance=0.75,
+        wedgeprops=dict(width=0.5, edgecolor='white'),
+        textprops={'fontsize': 22, 'weight': 'bold'},
+    )
+
+    # Add total count in center
+    ax.text(
+        0, 0, 
+        f'{sum(values)} genes\n' + center_text, 
+        ha='center', 
+        va='center', 
+        fontsize=26, 
+        fontweight='bold'
+    )
+
+    # Equal aspect ratio ensures that pie is drawn as a circle
+    ax.axis('equal')
+
+    if return_ax:
+        return ax
+    else:
+        return fig
