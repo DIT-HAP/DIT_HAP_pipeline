@@ -432,6 +432,43 @@ download_protein_features() {
 }
 
 #===============================================================================
+# CURATED ORTHOLOGS DOWNLOAD FUNCTIONS
+# ===============================================================================
+download_curated_orthologs() {
+    local base_url="$1"
+    local target_dir="$2"
+
+    log_info "Starting curated orthologs download..."
+
+    local orthologs_dir="${target_dir}/curated_orthologs"
+    create_directory "${orthologs_dir}" "curated orthologs" || return 1
+
+    # Download curated pombe_japonicus_orthologs file
+    log_info "Downloading curated pombe_japonicus_orthologs file..."
+    download_file \
+        "${base_url}/curated_orthologs/pombe_japonicus_orthologs.txt" \
+        "${orthologs_dir}" \
+        "curated orthologs" || return 1
+
+    # Download curated pombe_cerevisiae_orthologs file
+    log_info "Downloading curated pombe_cerevisiae_orthologs file..."
+    download_file \
+        "${base_url}/curated_orthologs/pombe_cerevisiae_orthologs.txt" \
+        "${orthologs_dir}" \
+        "curated orthologs" || return 1
+
+    # Download curated pombe_human_orthologs file
+    log_info "Downloading curated pombe_human_orthologs file..."
+    download_file \
+        "${base_url}/curated_orthologs/pombe_human_orthologs.txt" \
+        "${orthologs_dir}" \
+        "curated orthologs" || return 1
+
+    log_info "Curated orthologs download completed successfully"
+    return 0
+}
+
+#===============================================================================
 # ONTOLOGY AND ANNOTATION DOWNLOAD FUNCTIONS
 #===============================================================================
 
@@ -544,7 +581,10 @@ main() {
     # Phase 4: Download protein features
     download_protein_features "${base_url}" "${download_dir}" || exit 1
 
-    # Phase 5: Download ontologies and associations
+    # Phase 5: Download curated orthologs
+    download_curated_orthologs "${base_url}" "${download_dir}" || exit 1
+
+    # Phase 6: Download ontologies and associations
     download_ontologies "${base_url}" "${download_dir}" "${fypo_version}" "${mondo_version}" || exit 1
 
     # Generate comprehensive completion summary
@@ -562,6 +602,7 @@ main() {
     echo "  ├── Gene_metadata/                   # Gene information and viability"
     echo "  ├── RNA_metadata/                    # Expression data (qualitative/quantitative)"
     echo "  ├── Protein_features/                # Protein annotations and modifications"
+    echo "  ├── curated_orthologs/               # Curated ortholog datasets"
     echo "  └── ontologies_and_associations/     # Ontologies (GO, FYPO, Mondo) and associations"
     echo ""
     echo "Total downloaded files: $(find "${download_dir}" -type f | wc -l)"
