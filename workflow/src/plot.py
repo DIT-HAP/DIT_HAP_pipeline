@@ -15,11 +15,11 @@ COLORS = plt.rcParams['axes.prop_cycle'].by_key()['color']
 
 # ================================ Functions =================================
 def create_scatter_correlation_plot(
-x: pd.Series | np.ndarray | list,
-y: pd.Series | np.ndarray | list,
-ax: Axes,
-xscale: None | str = None,
-yscale: None | str = None,
+    x: pd.Series | np.ndarray | list,
+    y: pd.Series | np.ndarray | list,
+    ax: Axes,
+    xscale: None | str = None,
+    yscale: None | str = None
 ) -> Axes:
     """Create correlation plot for a single file with statistics."""    
     # Plot data points
@@ -60,11 +60,15 @@ yscale: None | str = None,
     pcc = np.corrcoef(x_for_fitting, y_for_fitting)[0, 1]
     # R-squared
     r_squared = pcc**2
-    # Linear regression
-    slope, intercept = np.polyfit(x_for_fitting, y_for_fitting, 1)
-    # RMSE
-    y_pred = intercept + slope * x_for_fitting
-    rmse = np.sqrt(np.mean((y_for_fitting - y_pred)**2))
+    try:
+        # Linear regression
+        slope, intercept = np.polyfit(x_for_fitting, y_for_fitting, 1)
+        # RMSE
+        y_pred = intercept + slope * x_for_fitting
+        rmse = np.sqrt(np.mean((y_for_fitting - y_pred)**2))
+    except Exception as e:
+        print("Error in linear regression:", e)
+        slope, intercept, rmse = np.nan, np.nan, np.nan
     
     # Add statistics text box
     stats_text = []
