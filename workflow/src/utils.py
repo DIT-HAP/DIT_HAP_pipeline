@@ -36,6 +36,12 @@ def update_sysIDs(genes: list[str], gene_meta_file: Path, gene_filter: str = "ge
     # Update systematic IDs
     updated_sysIDs = []
     for gene in genes:
+        if isinstance(gene, str):
+            gene = gene.strip()
+            if "." in gene:
+                gene = gene.split(".")[0].upper() + "." + gene.split(".")[1].lower()
+        else:
+            gene = gene
         if pd.isna(gene):
             updated_sysIDs.append(gene)
             print(f"{gene} is NA")
