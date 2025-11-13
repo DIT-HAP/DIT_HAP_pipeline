@@ -379,9 +379,9 @@ snakemake --use-conda --cores 8 --show-failed-logs
 If you use DIT-HAP in your research, please cite:
 
 ```
-DIT-HAP: A comprehensive pipeline for piggyBac transposon insertion sequencing analysis
-[Your Name et al., Year]
-GitHub Repository: https://github.com/your-username/DIT-HAP_pipeline
+DIT-HAP: Diploid for Insertional Mutagenesis by Transposon and Haploid for Analysis of Phenotype
+[Yusheng Yang et al., Year]
+GitHub Repository: https://github.com/DIT-HAP/DIT_HAP_pipeline
 ```
 
 ## License
