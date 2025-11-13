@@ -3,7 +3,7 @@ Enrichment functions.
 """
 
 # ================================= Imports =================================
-
+import sys
 import pandas as pd
 import numpy as np
 from pathlib import Path
@@ -16,7 +16,8 @@ import altair as alt
 from datetime import date
 from dataclasses import dataclass
 
-from .utils import read_file
+sys.path.append(str(Path(__file__).parent))
+from utils import read_file
 
 # == GOATools imports ==
 from goatools.obo_parser import GODag
