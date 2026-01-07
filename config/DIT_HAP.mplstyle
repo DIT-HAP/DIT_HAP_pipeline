@@ -307,7 +307,7 @@ figure.titleweight: heavy    # weight of the figure title
 figure.labelsize:   22     # size of the figure label (``Figure.sup[x|y]label()``)
 figure.labelweight: bold    # weight of the figure label
 figure.figsize:     7, 6  # figure size in inches
-figure.dpi:         300       # figure dots per inch
+figure.dpi:         100       # figure dots per inch
 figure.facecolor:   white     # figure face color
 figure.edgecolor:   white     # figure edge color
 figure.frameon:     True      # enable figure frame
