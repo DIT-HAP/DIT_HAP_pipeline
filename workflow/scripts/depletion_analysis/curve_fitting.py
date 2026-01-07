@@ -25,6 +25,7 @@ from scipy.optimize import minimize
 from matplotlib import pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 import time
+from sklearn.metrics import max_error
 from tqdm import tqdm
 
 
