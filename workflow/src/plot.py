@@ -19,10 +19,15 @@ def create_scatter_correlation_plot(
     y: pd.Series | np.ndarray | list,
     ax: Axes,
     xscale: None | str = None,
-    yscale: None | str = None
+    yscale: None | str = None,
+    show_diagonal: bool = True
 ) -> Axes:
     """Create correlation plot for a single file with statistics."""    
     # Plot data points
+
+    x, y = np.array(x), np.array(y)
+    x, y = x[~np.isnan(x) & ~np.isnan(y)], y[~np.isnan(x) & ~np.isnan(y)]
+
     ax.scatter(
         x, y,
         alpha=0.5,
@@ -37,10 +42,11 @@ def create_scatter_correlation_plot(
     ylim = ax.get_ylim()
     
     # Plot diagonal reference line (y=x)
-    min_val = min(min(xlim), min(ylim))
-    max_val = max(max(xlim), max(ylim))
-    ax.plot([min_val, max_val], [min_val, max_val], 
-            'k--', alpha=0.8, linewidth=2)
+    if show_diagonal:
+        min_val = min(min(xlim), min(ylim))
+        max_val = max(max(xlim), max(ylim))
+        ax.plot([min_val, max_val], [min_val, max_val], 
+                'k--', alpha=0.8, linewidth=2)
     
     # Set log scale for both axes
     if xscale == 'log':
