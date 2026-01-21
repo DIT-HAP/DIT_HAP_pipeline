@@ -1,0 +1,22 @@
+repos:
+  # Jupyter Notebook 清理钩子
+  - repo: https://github.com/kynan/nbstripout
+    rev: 0.9.0
+    hooks:
+      - id: nbstripout
+        # args:
+        #   - --strip
+        #   - --extra-keys
+        #   - |
+        #     metadata.kernelspec
+        #     metadata.language_info
+        #     cell.metadata.execution
+        #     cell.metadata.collapsed
+        #     cell.metadata.scrolled
+        #     cell.metadata.ExecuteTime
+        #     cell.metadata.pycharm
+        #     cell.metadata.vscode
+        # verbose: true
+        # always_run: true
+        types: [jupyter]
+        # files: \.ipynb$

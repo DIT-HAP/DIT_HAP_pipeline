@@ -68,20 +68,21 @@ wildcard_constraints:
 # -----------------------------------------------------
 rule all:
     input:
-        f"results/{project_name}/15_insertion_level_curve_fitting/insertion_level_fitting_statistics.tsv",
-        f"results/{project_name}/17_gene_level_curve_fitting/gene_level_fitting_statistics.tsv",
-        f"reports/{project_name}/multiqc/quality_control_multiqc_report.html",
-        f"reports/{project_name}/mapping_filtering_statistics/mapping_filtering_statistics.tsv",
-        f"reports/{project_name}/PBL_PBR_correlation_analysis/PBL_PBR_correlation_analysis.pdf",
-        f"reports/{project_name}/read_count_distribution_analysis/read_count_distribution_analysis.pdf",
-        f"reports/{project_name}/insertion_orientation_analysis/insertion_orientation_analysis.pdf",
-        f"reports/{project_name}/insertion_density_analysis/insertion_density_analysis.tsv",
-        f"results/{project_name}/13_filtered/raw_reads.filtered.tsv",
-        f"reports/{project_name}/mapping_filtering_statistics/datavzrd_mapping_filtering_statistics",
-        f"reports/{project_name}/insertion_density_analysis/datavzrd_insertion_density_analysis",
-        f"reports/{project_name}/depletion_LFC_and_curve_features_analysis/insertion_level_depletion_LFC_and_curve_features_analysis.pdf",
-        f"reports/{project_name}/depletion_LFC_and_curve_features_analysis/gene_level_depletion_and_curve_features_analysis.pdf",
-        f"reports/{project_name}/gene_coverage_analysis"
+        # f"results/{project_name}/15_insertion_level_curve_fitting/insertion_level_fitting_statistics.tsv",
+        # f"results/{project_name}/17_gene_level_curve_fitting/gene_level_fitting_statistics.tsv",
+        # f"reports/{project_name}/multiqc/quality_control_multiqc_report.html",
+        # f"reports/{project_name}/mapping_filtering_statistics/mapping_filtering_statistics.tsv",
+        # f"reports/{project_name}/PBL_PBR_correlation_analysis/PBL_PBR_correlation_analysis.pdf",
+        # f"reports/{project_name}/read_count_distribution_analysis/read_count_distribution_analysis.pdf",
+        # f"reports/{project_name}/insertion_orientation_analysis/insertion_orientation_analysis.pdf",
+        # f"reports/{project_name}/insertion_density_analysis/insertion_density_analysis.tsv",
+        # f"results/{project_name}/13_filtered/raw_reads.filtered.tsv",
+        # f"reports/{project_name}/mapping_filtering_statistics/datavzrd_mapping_filtering_statistics",
+        # f"reports/{project_name}/insertion_density_analysis/datavzrd_insertion_density_analysis",
+        # f"reports/{project_name}/depletion_LFC_and_curve_features_analysis/insertion_level_depletion_LFC_and_curve_features_analysis.pdf",
+        # f"reports/{project_name}/depletion_LFC_and_curve_features_analysis/gene_level_depletion_and_curve_features_analysis.pdf",
+        # f"reports/{project_name}/gene_coverage_analysis"
+        f"results/{project_name}/19_insertion_in_non_coding_genes/Non_coding_genes_Gene_level_statistics_fitted.tsv"
 
 # load rules
 # -----------------------------------------------------
@@ -89,6 +90,6 @@ include: "workflow/rules/preparation.smk"
 include: "workflow/rules/preprocessing.smk"
 include: "workflow/rules/depletion_analysis.smk"
 include: "workflow/rules/quality_control.smk"
-# include: "workflow/rules/misc.smk"
+include: "workflow/rules/misc.smk"
 
 

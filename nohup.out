@@ -1,0 +1,206 @@
+Assuming unrestricted shared filesystem usage.
+host: dulab
+Building DAG of jobs...
+Your conda installation is not configured to use strict channel priorities. This is however important for having robust and correct environments (for details, see https://conda-forge.org/docs/user/tipsandtricks.html). Please consider to configure strict priorities by executing 'conda config --set channel_priority strict'.
+Using shell: /usr/bin/bash
+Provided cores: 8
+Rules claiming more threads will be scaled down.
+Job stats:
+job                                                  count
+-------------------------------------------------  -------
+all                                                      1
+annotate_insertions                                      3
+concat_counts_and_annotations                            1
+control_insertion_selection                              1
+extract_genome_region                                    1
+gene_level_curve_fitting_non_coding_genes                1
+gene_level_depletion_analysis_non_coding_genes           1
+hard_filtering                                           1
+impute_missing_values_using_FR                           1
+insertion_annotation_with_non_coding_genes               1
+insertion_level_curve_fitting                            1
+insertion_level_depletion_analysis_has_replicates        1
+total                                                   14
+
+Select jobs to execute...
+Execute 1 jobs...
+
+[Mon Jan 19 16:59:16 2026]
+Job 160: *** Extracting genome region from gff3 file
+Reason: Missing output files: resources/pombase_data/2025-10-01/genome_region/non_coding_rna.bed, resources/pombase_data/2025-10-01/genome_region/genome_intervals.bed; Params have changed since last execution: Union of exclusive params before and now across all output: before: 'resources/Hayles_2013_OB_merged_categories.xlsx' now: 'resources/Hayles_2013_OB_merged_categories_sysIDupdated.xlsx' 
+Activating conda environment: .snakemake/conda/633d9be83e436dacc4f6952ff28e02bb_
+/usr/bin/bash: papermill: command not found
+Activating conda environment: .snakemake/conda/633d9be83e436dacc4f6952ff28e02bb_
+[Mon Jan 19 17:00:08 2026]
+Finished jobid: 160 (Rule: extract_genome_region)
+1 of 14 steps (7%) done
+Select jobs to execute...
+Failed to solve scheduling problem with ILP solver, falling back to greedy scheduler. You likely have to fix your ILP solver installation. Error message: PULP_CBC_CMD: Not Available (check permissions on cbc)
+Execute 3 jobs...
+
+[Mon Jan 19 17:00:08 2026]
+Job 159: *** Annotating insertions for HD1328-4_YES...
+Reason: Input files updated by another job: resources/pombase_data/2025-10-01/genome_region/genome_intervals.bed
+Activating conda environment: .snakemake/conda/633d9be83e436dacc4f6952ff28e02bb_
+
+[Mon Jan 19 17:00:08 2026]
+Job 162: *** Annotating insertions for HD1328-7_YES...
+Reason: Input files updated by another job: resources/pombase_data/2025-10-01/genome_region/genome_intervals.bed
+Activating conda environment: .snakemake/conda/633d9be83e436dacc4f6952ff28e02bb_
+
+[Mon Jan 19 17:00:08 2026]
+Job 163: *** Annotating insertions for HD1328-8_YES...
+Reason: Input files updated by another job: resources/pombase_data/2025-10-01/genome_region/genome_intervals.bed
+Activating conda environment: .snakemake/conda/633d9be83e436dacc4f6952ff28e02bb_
+[Mon Jan 19 17:08:05 2026]
+Finished jobid: 163 (Rule: annotate_insertions)
+2 of 14 steps (14%) done
+[Mon Jan 19 17:08:06 2026]
+Finished jobid: 162 (Rule: annotate_insertions)
+3 of 14 steps (21%) done
+[Mon Jan 19 17:23:18 2026]
+Finished jobid: 159 (Rule: annotate_insertions)
+4 of 14 steps (29%) done
+Select jobs to execute...
+Execute 1 jobs...
+
+[Mon Jan 19 17:23:18 2026]
+Job 6: *** Concatenating counts and annotations...
+Reason: Input files updated by another job: results/HD_DIT_HAP_generationRAW/10_annotated/HD1328-4_YES.annotated.tsv, results/HD_DIT_HAP_generationRAW/10_annotated/HD1328-7_YES.annotated.tsv, results/HD_DIT_HAP_generationRAW/10_annotated/HD1328-8_YES.annotated.tsv
+*** All count files:  ['results/HD_DIT_HAP_generationRAW/11_merged/HD1328-4_YES.merged.tsv', 'results/HD_DIT_HAP_generationRAW/11_merged/HD1328-7_YES.merged.tsv', 'results/HD_DIT_HAP_generationRAW/11_merged/HD1328-8_YES.merged.tsv']
+*** All annotation files:  ['results/HD_DIT_HAP_generationRAW/10_annotated/HD1328-4_YES.annotated.tsv', 'results/HD_DIT_HAP_generationRAW/10_annotated/HD1328-7_YES.annotated.tsv', 'results/HD_DIT_HAP_generationRAW/10_annotated/HD1328-8_YES.annotated.tsv']
+*** Counts file:  results/HD_DIT_HAP_generationRAW/11_merged/HD1328-4_YES.merged.tsv
+*** Counts file shape:  659362
+*** Counts file:  results/HD_DIT_HAP_generationRAW/11_merged/HD1328-7_YES.merged.tsv
+*** Counts file shape:  287220
+*** Counts file:  results/HD_DIT_HAP_generationRAW/11_merged/HD1328-8_YES.merged.tsv
+*** Counts file shape:  287186
+*** Counts dataframe shape:  789942
+*** Annotations file:  results/HD_DIT_HAP_generationRAW/10_annotated/HD1328-4_YES.annotated.tsv
+*** Annotations file shape:  661532
+*** Annotations file:  results/HD_DIT_HAP_generationRAW/10_annotated/HD1328-7_YES.annotated.tsv
+*** Annotations file shape:  288034
+*** Annotations file:  results/HD_DIT_HAP_generationRAW/10_annotated/HD1328-8_YES.annotated.tsv
+*** Annotations file shape:  287882
+*** Annotations dataframe shape:  792418
+*** Concatenated counts and annotations completed
+*** Counts dataframe shape:  789942
+*** Annotations dataframe shape:  792418
+[Mon Jan 19 17:23:53 2026]
+Finished jobid: 6 (Rule: concat_counts_and_annotations)
+5 of 14 steps (36%) done
+Select jobs to execute...
+Execute 1 jobs...
+
+[Mon Jan 19 17:23:53 2026]
+Job 5: *** Hard filtering the insertions...
+Reason: Input files updated by another job: results/HD_DIT_HAP_generationRAW/12_concatenated/raw_reads.tsv
+Activating conda environment: .snakemake/conda/500cdcceb03f7db60aa7e7fe8cbe1d20_
+[Mon Jan 19 17:24:01 2026]
+Finished jobid: 5 (Rule: hard_filtering)
+6 of 14 steps (43%) done
+Select jobs to execute...
+Execute 2 jobs...
+
+[Mon Jan 19 17:24:01 2026]
+Job 4: *** Imputing missing values using FR...
+Reason: Input files updated by another job: results/HD_DIT_HAP_generationRAW/12_concatenated/annotations.tsv, results/HD_DIT_HAP_generationRAW/13_filtered/raw_reads.filtered.tsv
+Activating conda environment: .snakemake/conda/500cdcceb03f7db60aa7e7fe8cbe1d20_
+
+[Mon Jan 19 17:24:01 2026]
+Job 164: *** Selecting control insertions...
+Reason: Input files updated by another job: results/HD_DIT_HAP_generationRAW/12_concatenated/annotations.tsv, results/HD_DIT_HAP_generationRAW/13_filtered/raw_reads.filtered.tsv
+Activating conda environment: .snakemake/conda/500cdcceb03f7db60aa7e7fe8cbe1d20_
+[Mon Jan 19 17:24:05 2026]
+Finished jobid: 164 (Rule: control_insertion_selection)
+7 of 14 steps (50%) done
+[Mon Jan 19 17:24:08 2026]
+Finished jobid: 4 (Rule: impute_missing_values_using_FR)
+8 of 14 steps (57%) done
+Select jobs to execute...
+Execute 1 jobs...
+
+[Mon Jan 19 17:24:08 2026]
+Job 3: *** Running insertion-level depletion analysis...
+Reason: Input files updated by another job: results/HD_DIT_HAP_generationRAW/13_filtered/control_insertions.tsv, results/HD_DIT_HAP_generationRAW/13_filtered/imputed_raw_reads.tsv
+Activating conda environment: .snakemake/conda/57da95320f35177023d6e1a8d83c71c9_
+[Mon Jan 19 17:25:59 2026]
+Finished jobid: 3 (Rule: insertion_level_depletion_analysis_has_replicates)
+9 of 14 steps (64%) done
+Select jobs to execute...
+Execute 1 jobs...
+
+[Mon Jan 19 17:25:59 2026]
+Job 166: *** Running insertion-level curve fitting...
+Reason: Input files updated by another job: results/HD_DIT_HAP_generationRAW/14_insertion_level_depletion_analysis/LFC.tsv
+Activating conda environment: .snakemake/conda/500cdcceb03f7db60aa7e7fe8cbe1d20_
+[Mon Jan 19 23:18:47 2026]
+Finished jobid: 166 (Rule: insertion_level_curve_fitting)
+10 of 14 steps (71%) done
+Select jobs to execute...
+Execute 1 jobs...
+
+[Mon Jan 19 23:18:47 2026]
+Job 165: *** Annotating insertions with non-coding genes...
+Reason: Missing output files: results/HD_DIT_HAP_generationRAW/19_insertion_in_non_coding_genes/annotated_insertions_in_non_coding_genes.tsv; Input files updated by another job: resources/pombase_data/2025-10-01/genome_region/non_coding_rna.bed, results/HD_DIT_HAP_generationRAW/15_insertion_level_curve_fitting/insertion_level_fitting_statistics.tsv
+Activating conda environment: .snakemake/conda/633d9be83e436dacc4f6952ff28e02bb_
+[Mon Jan 19 23:19:45 2026]
+Finished jobid: 165 (Rule: insertion_annotation_with_non_coding_genes)
+11 of 14 steps (79%) done
+Select jobs to execute...
+Execute 1 jobs...
+
+[Mon Jan 19 23:19:45 2026]
+Job 2: *** Running gene-level depletion analysis for insertions in non-coding genes...
+Reason: Missing output files: results/HD_DIT_HAP_generationRAW/19_insertion_in_non_coding_genes/LFC.tsv; Input files updated by another job: results/HD_DIT_HAP_generationRAW/14_insertion_level_depletion_analysis/LFC.tsv, results/HD_DIT_HAP_generationRAW/19_insertion_in_non_coding_genes/annotated_insertions_in_non_coding_genes.tsv, results/HD_DIT_HAP_generationRAW/14_insertion_level_depletion_analysis/padj.tsv
+Activating conda environment: .snakemake/conda/500cdcceb03f7db60aa7e7fe8cbe1d20_
+[Mon Jan 19 23:20:43 2026]
+Finished jobid: 2 (Rule: gene_level_depletion_analysis_non_coding_genes)
+12 of 14 steps (86%) done
+Select jobs to execute...
+Execute 1 jobs...
+
+[Mon Jan 19 23:20:43 2026]
+Job 1: *** Running gene-level curve fitting...
+Reason: Missing output files: results/HD_DIT_HAP_generationRAW/19_insertion_in_non_coding_genes/Non_coding_genes_Gene_level_statistics_fitted.tsv; Input files updated by another job: results/HD_DIT_HAP_generationRAW/19_insertion_in_non_coding_genes/LFC.tsv
+Activating conda environment: .snakemake/conda/500cdcceb03f7db60aa7e7fe8cbe1d20_
+/usr/bin/bash: -c: line 1: syntax error near unexpected token `newline'
+RuleException:
+CalledProcessError in file "/data/c/yangyusheng_optimized/DIT_HAP_pipeline/workflow/rules/depletion_analysis.smk", line 250:
+Command 'source /data/a/yangyusheng/miniforge3/bin/activate '/data/c/yangyusheng_optimized/DIT_HAP_pipeline/.snakemake/conda/500cdcceb03f7db60aa7e7fe8cbe1d20_'; set -euo pipefail;  
+        python workflow/scripts/depletion_analysis/curve_fitting.py         -i results/HD_DIT_HAP_generationRAW/19_insertion_in_non_coding_genes/LFC.tsv         -t 0 2.352 5.588 9.104 12.48         -o results/HD_DIT_HAP_generationRAW/19_insertion_in_non_coding_genes/Non_coding_genes_Gene_level_statistics_fitted.tsv &>' returned non-zero exit status 2.
+[Mon Jan 19 23:20:44 2026]
+Error in rule gene_level_curve_fitting_non_coding_genes:
+    message: None
+    jobid: 1
+    input: results/HD_DIT_HAP_generationRAW/19_insertion_in_non_coding_genes/LFC.tsv
+    output: results/HD_DIT_HAP_generationRAW/19_insertion_in_non_coding_genes/Non_coding_genes_Gene_level_statistics_fitted.tsv
+    conda-env: /data/c/yangyusheng_optimized/DIT_HAP_pipeline/.snakemake/conda/500cdcceb03f7db60aa7e7fe8cbe1d20_
+    shell:
+        
+        python workflow/scripts/depletion_analysis/curve_fitting.py         -i results/HD_DIT_HAP_generationRAW/19_insertion_in_non_coding_genes/LFC.tsv         -t 0 2.352 5.588 9.104 12.48         -o results/HD_DIT_HAP_generationRAW/19_insertion_in_non_coding_genes/Non_coding_genes_Gene_level_statistics_fitted.tsv &> 
+        
+        (command exited with non-zero exit code)
+Shutting down, this might take some time.
+Exiting because a job execution failed. Look below for error messages
+[Mon Jan 19 23:20:44 2026]
+Error in rule gene_level_curve_fitting_non_coding_genes:
+    message: None
+    jobid: 1
+    input: results/HD_DIT_HAP_generationRAW/19_insertion_in_non_coding_genes/LFC.tsv
+    output: results/HD_DIT_HAP_generationRAW/19_insertion_in_non_coding_genes/Non_coding_genes_Gene_level_statistics_fitted.tsv
+    conda-env: /data/c/yangyusheng_optimized/DIT_HAP_pipeline/.snakemake/conda/500cdcceb03f7db60aa7e7fe8cbe1d20_
+    shell:
+        
+        python workflow/scripts/depletion_analysis/curve_fitting.py         -i results/HD_DIT_HAP_generationRAW/19_insertion_in_non_coding_genes/LFC.tsv         -t 0 2.352 5.588 9.104 12.48         -o results/HD_DIT_HAP_generationRAW/19_insertion_in_non_coding_genes/Non_coding_genes_Gene_level_statistics_fitted.tsv &> 
+        
+        (command exited with non-zero exit code)
+Complete log(s): /data/c/yangyusheng_optimized/DIT_HAP_pipeline/.snakemake/log/2026-01-19T165907.627907.snakemake.log
+WorkflowError:
+At least one job did not complete successfully.
+
+--- Analysis started ---
+
+
+--- An error occurred! ---
+

@@ -3,6 +3,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 from matplotlib.axes import Axes
+from matplotlib.colors import LinearSegmentedColormap
 
 import numpy as np
 import pandas as pd
@@ -109,6 +110,9 @@ def plot_given_genes_on_feature_space(
     title: str,
     x_feature: str = "um",
     y_feature: str = "lam",
+    cmap: str | LinearSegmentedColormap = 'viridis',
+    label: str = "Selected Genes",
+    title_with_count: bool = True,
     **kwargs
 ) -> Axes:
     """ Plot given genes on feature space. """
@@ -119,17 +123,19 @@ def plot_given_genes_on_feature_space(
     ax.scatter(x_all, y_all, color='lightgray', alpha=0.4, **kwargs)
 
     # points for given genes
-    subset_df = data_df.query(f"{gene_column} in @genes")
+    subset_df = data_df.query(f"`{gene_column}` in @genes")
     x_subset = subset_df[x_feature]
     y_subset = subset_df[y_feature]
     try:
         xy_subset = np.vstack([x_subset, y_subset])
         z = gaussian_kde(xy_subset)(xy_subset)
-        ax.scatter(x_subset, y_subset, c=z, cmap='viridis', **kwargs)
+        ax.scatter(x_subset, y_subset, c=z, cmap=cmap, **kwargs, label=f"{label} (n={len(subset_df)})")
     except Exception:
-        ax.scatter(x_subset, y_subset, color='red', **kwargs)
-
-    ax.set_title(f'{title}\n(n={len(subset_df)})')
+        ax.scatter(x_subset, y_subset, color='red', **kwargs, label=f"{label} (n={len(subset_df)})")
+    if title_with_count:
+        ax.set_title(f'{title}\n(n={len(subset_df)})')
+    else:
+        ax.set_title(f'{title}')
     ax.set_xlabel(x_feature)
     ax.set_ylabel(y_feature)
     ax.grid(True)
