@@ -68,7 +68,7 @@ rule extract_genome_region:
     log:
         notebook=f"logs/{project_name}/preparation/gff_processing_and_annotation_{{release_version}}.ipynb"
     params:
-        hayles_viability_path = "resources/Hayles_2013_OB_merged_categories.xlsx"
+        hayles_viability_path = "resources/Hayles_2013_OB_merged_categories_sysIDupdated.xlsx"
     message:
         "*** Extracting genome region from gff3 file"
     conda:
