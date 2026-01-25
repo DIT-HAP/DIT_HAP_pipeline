@@ -288,10 +288,11 @@ def main():
         logger.info(f"Total insertions with all replicates available after imputation: {imputed_counts.value_counts()}")
 
         # only imputate less than once
-        imputated_LTonce_idx = imputation_statistics[imputation_statistics <= 1].index
+        # imputated_LTonce_idx = imputation_statistics[imputation_statistics <= 1].index
 
         # Save imputed datas
-        imputed_counts.loc[imputated_LTonce_idx].to_csv(config.output_file, index=True, sep="\t")
+        # imputed_counts.loc[imputated_LTonce_idx].to_csv(config.output_file, index=True, sep="\t")
+        imputed_counts.to_csv(config.output_file, index=True, sep="\t")
         logger.success(f"Imputation complete. Results saved to {config.output_file}")
 
         # Calculate and print statistics
