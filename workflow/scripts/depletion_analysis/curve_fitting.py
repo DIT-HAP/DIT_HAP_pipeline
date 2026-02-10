@@ -530,7 +530,7 @@ def main():
     
     # Generate plots
     output_plot = config.output_file.with_suffix('.pdf').with_name(config.output_file.stem + '_fitted_curves.pdf')
-    generate_fitting_plots(results_df, x_values, y_values, output_plot)
+    # generate_fitting_plots(results_df, x_values, y_values, output_plot)
     
     # Calculate and display statistics
     stats = generate_summary_statistics(results_df)
