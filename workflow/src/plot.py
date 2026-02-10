@@ -28,6 +28,15 @@ def create_scatter_correlation_plot(
     x, y = np.array(x), np.array(y)
     x, y = x[~np.isnan(x) & ~np.isnan(y)], y[~np.isnan(x) & ~np.isnan(y)]
 
+    mask = np.isfinite(x) & np.isfinite(y)
+    if xscale == 'log':
+        mask &= (x > 0)
+    if yscale == 'log':
+        mask &= (y > 0)
+
+    x = x[mask]
+    y = y[mask]
+    
     ax.scatter(
         x, y,
         alpha=0.5,
@@ -121,7 +130,7 @@ def donut_chart(
     # Add total count in center
     ax.text(
         0, 0, 
-        f'{sum(values)} genes\n' + center_text, 
+        center_text, 
         ha='center', 
         va='center', 
         fontsize=26, 
