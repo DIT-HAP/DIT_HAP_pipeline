@@ -129,7 +129,8 @@ def plot_given_genes_on_feature_space(
     try:
         xy_subset = np.vstack([x_subset, y_subset])
         z = gaussian_kde(xy_subset)(xy_subset)
-        ax.scatter(x_subset, y_subset, c=z, cmap=cmap, **kwargs, label=f"{label} (n={len(subset_df)})")
+        # ax.scatter(x_subset, y_subset, c=z, cmap=cmap, **kwargs, label=f"{label} (n={len(subset_df)})")
+        ax.scatter(x_subset, y_subset, color=cmap, **kwargs, label=f"{label} (n={len(subset_df)})")
     except Exception:
         ax.scatter(x_subset, y_subset, color='red', **kwargs, label=f"{label} (n={len(subset_df)})")
     if title_with_count:
@@ -138,7 +139,7 @@ def plot_given_genes_on_feature_space(
         ax.set_title(f'{title}')
     ax.set_xlabel(x_feature)
     ax.set_ylabel(y_feature)
-    ax.grid(True)
+    # ax.grid(True)
 
     return ax
 
