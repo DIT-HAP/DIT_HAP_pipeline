@@ -82,7 +82,8 @@ rule all:
         # f"reports/{project_name}/depletion_LFC_and_curve_features_analysis/insertion_level_depletion_LFC_and_curve_features_analysis.pdf",
         # f"reports/{project_name}/depletion_LFC_and_curve_features_analysis/gene_level_depletion_and_curve_features_analysis.pdf",
         # f"reports/{project_name}/gene_coverage_analysis"
-        f"results/{project_name}/19_insertion_in_non_coding_genes/Non_coding_genes_Gene_level_statistics_fitted.tsv"
+        # f"results/{project_name}/19_insertion_in_non_coding_genes/Non_coding_genes_Gene_level_statistics_fitted.tsv"
+        f"resources/pombase_data/{config['Pombase_release_version']}/genome_region/coding_gene_primary_transcripts.bed"
 
 # load rules
 # -----------------------------------------------------
