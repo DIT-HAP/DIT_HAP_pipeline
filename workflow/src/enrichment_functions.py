@@ -3,6 +3,7 @@ Enrichment functions.
 """
 
 # ================================= Imports =================================
+import re
 import sys
 import pandas as pd
 import numpy as np
@@ -711,7 +712,8 @@ def create_customized_enrichment_plot(
     x_col: str = "gene_ratio",
     y_col: str = "name",
     color_col: str = "p_fdr",
-    size_col: str = "term_coverage"
+    size_col: str = "term_coverage",
+    sort_by: str = "gene_ratio",
 ):
     """Create an interactive Altair plot for enrichment results."""
 
@@ -723,7 +725,7 @@ def create_customized_enrichment_plot(
             x=alt.X(f"{x_col}:N", title=f"{x_col}", axis=alt.Axis(grid=True)),
             y=alt.Y(
                 f"{y_col}:N",
-                sort=alt.EncodingSortField(field=x_col, order="ascending"),
+                sort=alt.EncodingSortField(field=sort_by, order="ascending"),
                 title="Enriched Terms",
                 axis=alt.Axis(grid=True),
             ),
@@ -742,14 +744,22 @@ def create_customized_enrichment_plot(
     return scatter
 
 
-def revigo_analysis(enrich_df: pd.DataFrame, cut_off: float = 0.7) -> pd.DataFrame:
+def revigo_analysis(enrich_df: pd.DataFrame, cut_off: float = 0.7, max_retries: int = 3, retry_delay: int = 30) -> pd.DataFrame:
     """Perform REVIGO analysis on enrichment results."""
-    GOs = enrich_df["GO"].tolist()
-    padj = enrich_df["p_fdr_bh"].tolist()
+    GOs = enrich_df["term_id"].tolist()
+    padj = enrich_df["p_fdr"].tolist()
     data = "\n".join([f"{GO}\t{padj}" for GO, padj in zip(GOs, padj)])
     payload = {'cutoff':f'{cut_off}', 'valueType':'pvalue', 'speciesTaxon':'284812', 'measure':'SIMREL', 'goList':data}
-    r = requests.post("http://revigo.irb.hr/Revigo", data=payload)
-    revigo_res = pd.read_html(r.text)[0]
-    id2name = dict(zip(revigo_res["Term ID"], revigo_res["Name"]))
-    revigo_res["Representative"] = revigo_res.apply(lambda row: row["Name"] if np.isnan(row["Representative"]) else id2name["GO:" + str(int(row["Representative"])).rjust(7, "0")], axis=1)
-    return revigo_res
+    for attempt in range(max_retries):
+        try:
+            r = requests.post("http://revigo.irb.hr/Revigo", data=payload, timeout=60)
+            r.raise_for_status()
+            revigo_res = pd.read_html(r.text)[0]
+            id2name = dict(zip(revigo_res["Term ID"], revigo_res["Name"]))
+            revigo_res["Representative"] = revigo_res.apply(lambda row: row["Name"] if np.isnan(row["Representative"]) else id2name["GO:" + str(int(row["Representative"])).rjust(7, "0")], axis=1)
+            return revigo_res
+        except requests.RequestException as e:
+            if attempt < max_retries - 1:
+                sleep(retry_delay)
+            else:
+                raise ValueError(f"Error performing REVIGO analysis after {max_retries} retries: {e}")
