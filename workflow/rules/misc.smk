@@ -3,7 +3,8 @@
 rule insertion_annotation_with_non_coding_genes:
     input:
         insertions = rules.insertion_level_curve_fitting.output,
-        non_coding_genes = rules.extract_genome_region.output.non_coding_rna_bed.format(release_version=config["Pombase_release_version"])
+        # non_coding_genes = rules.extract_genome_region.output.non_coding_rna_bed.format(release_version=config["Pombase_release_version"])
+        non_coding_genes = str(Path(rules.extract_genome_region.output.non_coding_rna_bed.format(release_version=config["Pombase_release_version"])).parent/"non_coding_rna_without_overlap_with_coding_gene.bed")
     output:
        f"results/{project_name}/19_insertion_in_non_coding_genes/annotated_insertions_in_non_coding_genes.tsv"
     log:
@@ -21,7 +22,7 @@ rule insertion_annotation_with_non_coding_genes:
 # -----------------------------------------------------
 use rule gene_level_depletion_analysis as gene_level_depletion_analysis_non_coding_genes with:
     input:
-        lfc_path = f"results/{project_name}/14_insertion_level_depletion_analysis/LFC.tsv",
+        lfc_path = f"results/{project_name} ",
         weights_path = branch(
             config.get("use_DEseq2_for_biological_replicates", False),
             f"results/{project_name}/14_insertion_level_depletion_analysis/padj.tsv",
