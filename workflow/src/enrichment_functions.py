@@ -727,7 +727,7 @@ def create_customized_enrichment_plot(
                 f"{y_col}:N",
                 sort=alt.EncodingSortField(field=sort_by, order="ascending"),
                 title="Enriched Terms",
-                axis=alt.Axis(grid=True),
+                axis=alt.Axis(grid=True, labelLimit=500),
             ),
             color=alt.Color(
                 f"{color_col}:Q", title=f"{color_col}", scale=alt.Scale(scheme="yelloworangered", reverse=True)
