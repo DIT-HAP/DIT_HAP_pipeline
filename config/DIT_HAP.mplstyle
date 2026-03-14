@@ -236,7 +236,7 @@ xtick.major.top:     True    # draw x axis top major ticks
 xtick.major.bottom:  True    # draw x axis bottom major ticks
 xtick.minor.top:     True    # draw x axis top minor ticks
 xtick.minor.bottom:  True    # draw x axis bottom minor ticks
-xtick.minor.ndivs:   auto    # number of minor ticks between the major ticks on x-axis
+# xtick.minor.ndivs:   auto    # number of minor ticks between the major ticks on x-axis (deprecated)
 xtick.alignment:     right  # alignment of xticks
 
 ytick.left:          True    # draw ticks on the left side
@@ -258,7 +258,7 @@ ytick.major.left:    True    # draw y axis left major ticks
 ytick.major.right:   True    # draw y axis right major ticks
 ytick.minor.left:    True    # draw y axis left minor ticks
 ytick.minor.right:   True    # draw y axis right minor ticks
-ytick.minor.ndivs:   auto    # number of minor ticks between the major ticks on y-axis
+# ytick.minor.ndivs:   auto    # number of minor ticks between the major ticks on y-axis (deprecated)
 ytick.alignment:     center_baseline  # alignment of yticks
 
 
@@ -274,7 +274,7 @@ grid.alpha:     0.3        # transparency, between 0.0 and 1.0
 # ***************************************************************************
 # * LEGEND                                                                  *
 # ***************************************************************************
-legend.loc:           1.05,0.3
+legend.loc:           upper right
 legend.frameon:       True     # if True, draw the legend on a background patch
 legend.framealpha:    0.8      # legend patch transparency
 legend.facecolor:     inherit  # inherit from axes.facecolor; or color spec
@@ -340,7 +340,7 @@ figure.autolayout: True  # When True, automatically adjust subplot parameters to
 # ***************************************************************************
 image.aspect:          equal        # {equal, auto} or a number
 image.interpolation:   auto         # see help(imshow) for options
-image.interpolation_stage: auto     # see help(imshow) for options
+# image.interpolation_stage: auto     # see help(imshow) for options (deprecated)
 image.cmap:            viridis      # A colormap name (plasma, magma, etc.)
 image.lut:             256          # the size of the colormap lookup table
 image.origin:          upper        # {lower, upper}
