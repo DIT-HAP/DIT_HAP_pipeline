@@ -20,7 +20,8 @@ def create_scatter_correlation_plot(
     ax: Axes,
     xscale: None | str = None,
     yscale: None | str = None,
-    show_diagonal: bool = True
+    show_diagonal: bool = True,
+    **kwargs
 ) -> Axes:
     """Create correlation plot for a single file with statistics."""    
     # Plot data points
@@ -42,8 +43,9 @@ def create_scatter_correlation_plot(
         alpha=0.5,
         s=10,
         facecolor="none",
-        edgecolor=COLORS[1],
-        rasterized=True
+        edgecolor="gray",
+        rasterized=True,
+        **kwargs
     )
 
     # Get axis limits for diagonal line
@@ -120,7 +122,7 @@ def donut_chart(
         values, 
         # labels=labels,
         colors=colors,
-        autopct=lambda pct: f'{pct:.1f}%\n({int(pct/100*sum(values)):,})',
+        autopct=lambda pct: f'{pct:.1f}%\n({int(round(pct/100*sum(values))):,})',
         startangle=90,
         pctdistance=0.75,
         wedgeprops=dict(width=0.5, edgecolor='white'),
