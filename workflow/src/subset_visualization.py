@@ -208,30 +208,42 @@ def distribution_bar_for_given_genes(
     cluster_count = cluster_data_df.query(f"{gene_column} in @genes").groupby(cluster_column).size()
     cluster_percentages = ((cluster_count / cluster_count.sum()) * 100).fillna(0).to_dict()
 
+    # Sort by cluster value descending (so cluster 1 is at top, cluster 9 at bottom)
+    cluster_percentages = dict(sorted(cluster_percentages.items(), key=lambda x: x[0], reverse=True))
+
     # calculate the cumulative percentages for positioning
     cumulative_percentages = pd.Series(cluster_percentages).cumsum()
-    left_values = cumulative_percentages.shift(1).fillna(0)
+    bottom_values = cumulative_percentages.shift(1).fillna(0)
+    
+    cluster_colors = [
+        "#dd8369",
+        "#6b99df",
+        "#98a64e",
+        "#64af6d",
+        "#a78bd9",
+        "#d57fbd",
+        "#c4954b",
+        "#4bb29c",
+        "#e0788f",
+        "#4aadce",
+    ]
 
-    # Create horizontal stacked bars
+    # Create vertical stacked bars
     bars = []
     for i, (cluster, percentage) in enumerate(cluster_percentages.items()):
         if percentage > 0:
-            bar = ax.barh(0, percentage, 1, left=left_values.iloc[i], 
-                        color=COLORS[i], alpha=0.7, edgecolor='white', linewidth=0.5,
+            bar = ax.bar(0, percentage, 1, bottom=bottom_values.iloc[i], 
+                        color=cluster_colors[int(cluster)-1], alpha=0.7, edgecolor='white', linewidth=0.5,
                         label=f'Cluster {int(cluster)}')
             bars.append(bar)
 
             # Add cluster number and percentage labels in the middle of each segment
-            if i % 2 == 0:
-                ax.text(left_values.iloc[i] + percentage/2, 0.25, 
-                        f'{percentage:.1f}%', ha='center', va='center')
-            else:
-                ax.text(left_values.iloc[i] + percentage/2, -0.25, 
-                        f'{percentage:.1f}%', ha='center', va='center')
-            ax.text(left_values.iloc[i] + percentage/2, 1, 
+            ax.text(0, bottom_values.iloc[i] + percentage/2, 
+                    f'{percentage:.1f}%', ha='center', va='center')
+            ax.text(1, bottom_values.iloc[i] + percentage/2, 
                     f'{int(cluster)}', ha='center', va='center', fontweight="bold")
             
-    # ax.set_ylim(-0.5, 0.5)
+    # ax.set_xlim(-0.5, 0.5)
     ax.axis('off')
     
     if return_ax:
