@@ -665,16 +665,21 @@ def stringdb_enrichment(query_genes, bg_genes):
         "caller_identity": STRING_CALLER_IDENTITY,
     }
     # Parse results
-    enrichment_df = stringdb_api_functions(
-        output_format="xml", method="enrichment", params=enrichment_params
-    )
+    try:
+        enrichment_df = stringdb_api_functions(
+            output_format="xml", method="enrichment", params=enrichment_params
+        )
 
-    # format the results
-    enrichment_df = format_string_enrichment_results(
-        enrichment_df, query_genes, bg_genes
-    )
+        # format the results
+        enrichment_df = format_string_enrichment_results(
+            enrichment_df, query_genes, bg_genes
+        )
 
-    return enrichment_df
+        return enrichment_df
+
+    except Exception as e:
+        print(f"Error performing STRING enrichment analysis: {e}")
+        return pd.DataFrame()
 
 
 def display_enrichment_results(enrichment_results: pd.DataFrame) -> alt.VConcatChart:
@@ -689,7 +694,7 @@ def display_enrichment_results(enrichment_results: pd.DataFrame) -> alt.VConcatC
                 alt.Y(
                     "term:N",
                     axis=alt.Axis(
-                        grid=True, labelLimit=500, title="Term", orient="right"
+                        grid=True, labelLimit=0, title="Term", orient="right"
                     ),
                     sort=alt.EncodingSortField(field="gene_ratio", order="descending"),
                 ),
@@ -727,10 +732,10 @@ def create_customized_enrichment_plot(
                 f"{y_col}:N",
                 sort=alt.EncodingSortField(field=sort_by, order="ascending"),
                 title="Enriched Terms",
-                axis=alt.Axis(grid=True, labelLimit=500),
+                axis=alt.Axis(grid=True, labelLimit=0),
             ),
             color=alt.Color(
-                f"{color_col}:Q", title=f"{color_col}", scale=alt.Scale(scheme="yelloworangered", reverse=True)
+                f"{color_col}:Q", title=f"{color_col}", scale=alt.Scale(scheme="reds", reverse=True)
             ),
             size=alt.Size(
                 f"{size_col}:Q", title=f"{size_col}"
