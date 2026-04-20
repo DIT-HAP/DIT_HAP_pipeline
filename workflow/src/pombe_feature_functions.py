@@ -4,6 +4,7 @@ import re
 from pathlib import Path
 from dataclasses import dataclass
 from typing import Literal
+from collections import Counter
 from loguru import logger
 import numpy as np
 import pandas as pd
@@ -273,3 +274,59 @@ def extract_protein_features_from_peptide_sequence(peptide_fasta_file: Path, ret
     records_df = pd.DataFrame(records).set_index("Gene_id")
     records_df = records_df.join(aa_content_df).join(aa_percent_df).reset_index()
     return records_df
+
+@logger.catch
+def calculate_anticodon_usage_matrix(db: gffutils.FeatureDB, cfg: config) -> pd.DataFrame:
+    """Calculate anti-codon usage frequency matrix for all coding genes.
+
+    Args:
+        db: gffutils FeatureDB containing genome annotations
+        cfg: Configuration object with genome sequence and file paths
+
+    Returns:
+        DataFrame with genes as rows and anti-codons as columns (count matrix)
+    """
+    # Generate all 64 standard codons and their anti-codons
+    bases = ['A', 'T', 'G', 'C']
+    codons = [f"{b1}{b2}{b3}" for b1 in bases for b2 in bases for b3 in bases]
+    anticodons = [str(Seq(codon).reverse_complement()) for codon in codons]
+    codon_to_anticodon = dict(zip(codons, anticodons))
+
+    records = []
+    for mRNA in db.features_of_type('mRNA'):
+        gene_id = mRNA.attributes.get("Parent")[0]
+
+        # Extract CDS sequences
+        CDSs = list(db.children(mRNA, featuretype='CDS', order_by='start'))
+        if not CDSs:
+            logger.warning(f"No CDS found for {gene_id}, skipping")
+            continue
+
+        # Concatenate CDS sequences
+        CDS_sequence = "".join([cds.sequence(cfg.fasta_file) for cds in CDSs])
+
+        # Truncate to multiple of 3
+        CDS_length = len(CDS_sequence) - (len(CDS_sequence) % 3)
+        CDS_sequence = CDS_sequence[:CDS_length]
+
+        # Count codons
+        codon_counts = Counter([CDS_sequence[i:i+3] for i in range(0, CDS_length, 3)])
+
+        # Convert to anti-codon counts
+        anticodon_counts = {codon_to_anticodon.get(codon, None): count
+                           for codon, count in codon_counts.items()
+                           if codon in codon_to_anticodon}
+        anticodon_counts['Gene_id'] = gene_id
+        records.append(anticodon_counts)
+
+    # Create DataFrame with all anti-codon columns
+    df = pd.DataFrame(records).fillna(0)
+    df = df.set_index('Gene_id')
+
+    # Ensure all 64 anti-codons are present as columns
+    for anticodon in anticodons:
+        if anticodon not in df.columns:
+            df[anticodon] = 0
+
+    df = df[sorted(anticodons)].astype(int).reset_index()
+    return df
