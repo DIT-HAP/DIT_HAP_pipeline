@@ -132,6 +132,14 @@ The pipeline follows a modular Snakemake architecture with distinct processing s
 - **`workflow/src/protein_structure_functions.py`**: Protein structure analysis functions
 - **`workflow/scripts/`**: Individual analysis scripts for specific workflow steps
 
+### Downstream Analysis Notebooks
+Jupyter notebooks in `workflow/notebooks/` perform post-pipeline analyses on Snakemake outputs:
+- **Enrichment & GO analysis**: `comprehensive_enrichment_analysis.ipynb`, `further_analysis_based_on_enrichment.ipynb`, `phenotypic_coherence_analysis_for_terms.ipynb`
+- **Clustering & ML**: `gene_level_clustering.ipynb`, `machine_learning_data_preparation.ipynb`, `machine_learning_analysis.ipynb`
+- **Feature analysis**: `pombe_feature_collection.ipynb`, `non_coding_RNA_analysis.ipynb`, `upstream_and_downstream_analysis.ipynb`, `complex_analysis.ipynb`
+- **Comparison & figures**: `compare_with_deletion_library.ipynb`, `compare_with_other_large_scale_studies.ipynb`, `thesis_figures.ipynb`
+- **Utilities**: `gff_processing_and_annotation.ipynb`, `visualize_dit_hap_style.ipynb`, `spike_in.ipynb`
+
 ### Custom Plotting Style
 The project uses a custom matplotlib style (`config/DIT_HAP.mplstyle`) with:
 - **Arial font family** with specific sizing (title: 24pt, axis labels: 20pt, ticks: 18pt)
@@ -175,37 +183,6 @@ When writing Python scripts for this workflow, follow these standards based on t
 - **Store statistics** in structured format (dict or dataclass)
 - **Present final statistics** as formatted table using tabulate library
 - **Log processing steps** and intermediate results
-
-### Example Template Structure
-```python
-#!/usr/bin/env python3
-"""
-Brief description of the bioinformatics script.
-
-This script processes [input type] and generates [output type].
-Typical usage: python script.py -i input.file -o output.file
-
-Author: [Your name]
-Date: [Date]
-"""
-
-import logging
-from pathlib import Path
-from typing import List, Dict, Optional
-import argparse
-
-def setup_logging(verbose: bool = False) -> None:
-    """Set up logging configuration."""
-
-def process_data(input_file: Path) -> Dict[str, int]:
-    """Main data processing function using vectorized operations."""
-
-def main() -> None:
-    """Main execution function with proper error handling."""
-
-if __name__ == "__main__":
-    main()
-```
 
 ### Plotting Guidelines
 Follow the project's custom plotting style (see Custom Plotting Style section above). Key principles:
